@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Spectra — 视觉行业情报工作台</title>
+  <link rel="stylesheet" href="./app/globals.css?v=5" />
+</head>
+<body>
+  <main class="intel-app">
+    <aside class="sidebar">
+      <div class="brand-block">
+        <div class="brand-symbol"><span></span><span></span><span></span></div>
+        <div><strong>SPECTRA</strong><small>VISUAL INTELLIGENCE</small></div>
+      </div>
+      <nav class="primary-nav" aria-label="主要导航">
+        <p class="nav-caption">RESEARCH</p>
+        <button class="nav-item active"><span class="nav-icon">⌁</span><span>情报首页</span></button>
+        <button class="nav-item"><span class="nav-icon">▤</span><span>每周报告</span><em>01</em></button>
+        <button class="nav-item"><span class="nav-icon">✦</span><span>技术前沿</span></button>
+        <button class="nav-item"><span class="nav-icon">◫</span><span>行业应用</span></button>
+        <button class="nav-item"><span class="nav-icon">◌</span><span>市场洞察</span></button>
+        <button class="nav-item"><span class="nav-icon">◇</span><span>视觉价值</span></button>
+        <button class="nav-item"><span class="nav-icon">✧</span><span>灵感库</span><em>04</em></button>
+      </nav>
+      <div class="sidebar-divider"></div>
+      <p class="nav-caption">SYSTEM</p>
+      <button class="nav-item"><span class="nav-icon">◎</span><span>信息源</span><i class="source-live"></i></button>
+      <button class="nav-item"><span class="nav-icon">⌘</span><span>设置</span></button>
+      <div class="coverage-card">
+        <div class="coverage-head"><span>来源覆盖</span><b>12 / 36</b></div>
+        <div class="coverage-track"><i style="width:33%"></i></div>
+        <p><span class="live-dot"></span> 首轮来源核验完成</p>
+      </div>
+      <div class="profile">
+        <div class="avatar">WY</div>
+        <div><strong>Strategy Workspace</strong><small>AI Product Research</small></div><span>•••</span>
+      </div>
+    </aside>
+
+    <section class="workspace">
+      <header class="workspace-header">
+        <div><div class="breadcrumb">INTELLIGENCE / <span>情报首页</span></div><h1>视觉行业情报周报</h1></div>
+        <div class="header-tools">
+          <label class="search-box"><span>⌕</span><input id="search" placeholder="搜索事件、模型或场景" /></label>
+          <select aria-label="领域筛选"><option>全部领域</option><option>视频生成</option><option>世界模型</option><option>具身智能</option></select>
+          <button class="icon-button" aria-label="通知">♢<i></i></button>
+        </div>
+      </header>
+      <div class="period-row">
+        <div class="period-switch"><button>‹</button><strong>2026.08.06 — 08.12</strong><button>›</button></div>
+        <div class="status-row"><span class="demo-badge">REAL SAMPLE</span><span>更新于 08.12 18:00</span><span class="reviewed">● 二次核验</span></div>
+      </div>
+
+      <section class="thesis-card">
+        <div class="thesis-label"><span>WEEKLY THESIS</span><b>高置信度</b></div>
+        <div class="thesis-content">
+          <div><h2>视觉模型的竞争，正在从“生成得像”转向“是否具备可验证的结构”。</h2><p>视频侧开始用科学因果、4D几何与镜像一致性暴露短板；具身侧则把世界模型知识压缩成可实时执行的控制表征。</p></div>
+          <button>查看支撑信号 <span>↗</span></button>
+        </div><div class="thesis-glow"></div>
+      </section>
+
+      <section class="metrics-row">
+        <button class="metric-card blue"><div class="metric-icon"></div><span>VALID EVENTS</span><div><strong>08</strong></div><p>核验信号<em>7高 / 1中</em></p></button>
+        <button class="metric-card purple"><div class="metric-icon"></div><span>TOP STORIES</span><div><strong>05</strong></div><p>本周重点<em>P0 / P1</em></p></button>
+        <button class="metric-card pink"><div class="metric-icon"></div><span>TREND SIGNALS</span><div><strong>04</strong></div><p>正式趋势<em>2 升温</em></p></button>
+        <button class="metric-card cyan"><div class="metric-icon"></div><span>SOURCE COVERAGE</span><div><strong>33</strong><b>%</b></div><p>来源覆盖<em>12 / 36</em></p></button>
+        <button class="metric-card orange"><div class="metric-icon"></div><span>NEEDS REVIEW</span><div><strong>01</strong></div><p>观察信号<em>中置信度</em></p></button>
+      </section>
+
+      <section class="timeline-panel panel-card">
+        <div class="panel-heading"><div><span class="section-kicker">WEEKLY TIMELINE</span><h2>一周关键事件</h2></div><button class="text-button">查看全部事件 ↗</button></div>
+        <div class="timeline-grid" id="timeline">
+          <button class="day-node purple" data-tag="世界模型" data-title="Enfold更新：世界模型表征进入实时机器人控制" data-count="1"><span class="day-name">THU</span><b>08.06</b><i><em></em></i><small>1</small></button>
+          <button class="day-node blue" data-tag="视频生成" data-title="MirrorWorld发布镜像一致性视频修复方法" data-count="1"><span class="day-name">FRI</span><b>08.07</b><i><em></em></i><small>1</small></button>
+          <button class="day-node cyan" data-tag="具身智能" data-title="Evidence-RL与Ego-OSCAR补齐证据训练和具身数据" data-count="2"><span class="day-name">SAT</span><b>08.08</b><i><em></em></i><small>2</small></button>
+          <button class="day-node muted" data-tag="已检查" data-title="本日未发现达到收录阈值的新信号" data-count="0"><span class="day-name">SUN</span><b>08.09</b><i><em></em></i><small>—</small></button>
+          <button class="day-node selected orange" data-tag="评测与具身" data-title="Sci-VBench、RynnValue与Muse Glimmer集中发布" data-count="3"><span class="day-name">MON</span><b>08.10</b><i><em></em></i><small>3</small></button>
+          <button class="day-node pink" data-tag="视频生成" data-title="Beyond Pixels将视频潜变量直接解码为4D世界" data-count="1"><span class="day-name">TUE</span><b>08.11</b><i><em></em></i><small>1</small></button>
+          <button class="day-node green" data-tag="已核验" data-title="二轮原文核验完成，暂无新增重点事件" data-count="0"><span class="day-name">WED</span><b>08.12</b><i><em></em></i><small>—</small></button>
+        </div>
+        <div class="timeline-detail orange" id="eventDetail"><span class="event-tag" id="eventTag">评测与具身</span><strong id="eventTitle">Sci-VBench、RynnValue与Muse Glimmer集中发布</strong><p id="eventCopy">当日共收录 3 项有效动态，当前展示优先级最高事件。</p><button>事件详情 ↗</button></div>
+      </section>
+
+      <section class="dashboard-grid">
+        <article class="signal-radar panel-card">
+          <div class="panel-heading"><div><span class="section-kicker">TREND RADAR</span><h2>趋势雷达</h2></div><div class="legend"><span><i class="dot purple"></i>技术</span><span><i class="dot cyan"></i>应用</span><span><i class="dot orange"></i>市场</span></div></div>
+          <div class="radar-wrap">
+            <div class="radar-map">
+              <div class="axis axis-x"></div><div class="axis axis-y"></div><span class="axis-label top">影响高</span><span class="axis-label bottom">影响低</span><span class="axis-label left">早期信号</span><span class="axis-label right">规模化</span>
+              <button class="radar-dot r1 purple lg"><i></i><span>机制评测</span></button><button class="radar-dot r2 cyan md"><i></i><span>空间表征</span></button><button class="radar-dot r3 orange md"><i></i><span>具身基建</span></button><button class="radar-dot r4 pink sm"><i></i><span>证据训练</span></button><button class="radar-dot r5 blue sm"><i></i><span>本地Agent</span></button>
+            </div>
+            <div class="radar-summary">
+              <div><span class="pulse up">↑</span><p><strong>机制正确性评测</strong><small>3个同向信号 · 升温</small></p><b>94</b></div>
+              <div><span class="pulse up">↑</span><p><strong>视频先验→空间表征</strong><small>2个独立信号 · 升温</small></p><b>88</b></div>
+              <div><span class="pulse steady">→</span><p><strong>具身基础设施模块化</strong><small>3个同向信号 · 持续</small></p><b>84</b></div>
+              <div><span class="pulse watch">?</span><p><strong>证据依赖后训练</strong><small>2个研究信号 · 待验证</small></p><b>67</b></div>
+            </div>
+          </div>
+        </article>
+        <article class="top-stories panel-card">
+          <div class="panel-heading"><div><span class="section-kicker">PRIORITY WATCH</span><h2>本周重点</h2></div><button class="text-button">全部 05 ↗</button></div>
+          <div class="story-list" id="stories">
+            <button class="story" data-search="评测 科学 因果 Sci-VBench 视频"><span class="story-rank">01</span><div><small>评测与标准</small><strong>视频评测开始追问科学机制是否正确</strong><p>Sci-VBench用1,253项任务揭示：视觉逼真不等于因果与物理正确。</p><i><em style="width:96%"></em></i></div><span class="story-score">96</span></button>
+            <button class="story" data-search="世界模型 Enfold 机器人 实时控制"><span class="story-rank">02</span><div><small>世界模型</small><strong>世界模型知识被压缩为实时控制表征</strong><p>Enfold无需部署时生成视频，在机器人基准上实现49—134ms动作延迟。</p><i><em style="width:93%"></em></i></div><span class="story-score">93</span></button>
+            <button class="story" data-search="视频生成 4D 潜变量 Beyond Pixels"><span class="story-rank">03</span><div><small>视频生成</small><strong>视频潜变量正在成为4D生成的通用接口</strong><p>Beyond Pixels跨两类T2V和一类I2V模型复用同一VAE潜变量生成4D世界。</p><i><em style="width:89%"></em></i></div><span class="story-score">89</span></button>
+            <button class="story" data-search="具身智能 RynnValue 价值监督 机器人"><span class="story-rank">04</span><div><small>具身智能</small><strong>过程价值监督开始获得规模化数据路径</strong><p>RynnValue用约300万段时间距离标注提升真实机器人策略成功率。</p><i><em style="width:86%"></em></i></div><span class="story-score">86</span></button>
+            <button class="story" data-search="模型优化 MirrorWorld Evidence-RL 镜像 证据"><span class="story-rank">05</span><div><small>模型优化</small><strong>专门坏例与证据依赖成为新的优化入口</strong><p>MirrorWorld与Evidence-RL分别定位镜像几何和视觉证据依赖问题。</p><i><em style="width:82%"></em></i></div><span class="story-score">82</span></button>
+          </div>
+        </article>
+      </section>
+
+      <section class="lower-grid">
+        <article class="capability-panel panel-card">
+          <div class="panel-heading"><div><span class="section-kicker">CAPABILITY PULSE</span><h2>能力变化</h2></div><span class="week-chip">本周信号强度</span></div>
+          <div class="capability-chart">
+            <div class="capability-row"><span>机制评测</span><i><em class="violet" style="width:92%"></em></i><b>92</b><small class="positive">+18</small></div>
+            <div class="capability-row"><span>实时控制</span><i><em class="blue" style="width:86%"></em></i><b>86</b><small class="positive">+15</small></div>
+            <div class="capability-row"><span>4D空间表征</span><i><em class="cyan" style="width:79%"></em></i><b>79</b><small class="positive">+11</small></div>
+            <div class="capability-row"><span>不可见补全</span><i><em class="orange" style="width:42%"></em></i><b>42</b><small class="negative">-06</small></div>
+          </div>
+        </article>
+        <article class="signals-panel panel-card">
+          <div class="panel-heading"><div><span class="section-kicker">EMERGING</span><h2>信号状态</h2></div><button class="text-button">查看 ↗</button></div>
+          <div class="signal-list"><div class="signal-item"><span class="signal-state up">升温</span><div><strong>机制正确性评测</strong><p>Sci-VBench与MirrorWorld共同暴露结构性坏例</p></div></div><div class="signal-item"><span class="signal-state up">升温</span><div><strong>视频先验→空间表征</strong><p>Beyond Pixels与Enfold形成生成到控制链路</p></div></div><div class="signal-item"><span class="signal-state steady">持续</span><div><strong>具身基础设施模块化</strong><p>数据、价值监督与执行表征同时补齐</p></div></div><div class="signal-item"><span class="signal-state watch">待观察</span><div><strong>本地多模态Agent</strong><p>Muse Glimmer规格仍待官方正文完整复核</p></div></div></div>
+        </article>
+      </section>
+
+      <section class="ideas-section">
+        <div class="panel-heading ideas-heading"><div><span class="section-kicker">VISUAL OPPORTUNITIES</span><h2>视觉灵感库</h2></div><button class="text-button">进入灵感库 ↗</button></div>
+        <div class="idea-grid">
+          <button class="idea-card purple"><div class="idea-top"><span>PRODUCT</span><b>01</b></div><small>产品功能</small><h3>生成结果机制诊断卡</h3><p>将画质、因果、空间与时间一致性拆成可定位的问题卡片。</p><div class="idea-footer"><span>关联信号 3</span><i>↗</i></div></button>
+          <button class="idea-card blue"><div class="idea-top"><span>MODEL</span><b>02</b></div><small>模型优化</small><h3>镜像与不可见区域专项切片</h3><p>围绕反射几何、遮挡和证据依赖建立专项回归集。</p><div class="idea-footer"><span>关联信号 2</span><i>↗</i></div></button>
+          <button class="idea-card pink"><div class="idea-top"><span>CONTENT</span><b>03</b></div><small>内容创意</small><h3>科学因果可视化模板库</h3><p>把反应、运动与生物过程变成可复用的视频生成测试题。</p><div class="idea-footer"><span>关联信号 2</span><i>↗</i></div></button>
+          <button class="idea-card cyan"><div class="idea-top"><span>BUSINESS</span><b>04</b></div><small>商业应用</small><h3>低成本第一视角采集包</h3><p>组合消费级双目、IMU与质量检查，服务具身数据生产。</p><div class="idea-footer"><span>关联信号 2</span><i>↗</i></div></button>
+        </div>
+      </section>
+      <footer><span>SPECTRA / VISUAL INTELLIGENCE</span><p>8条重点信号已完成二轮原文核验 · 研究判断仅代表本期证据</p><span>ISSUE 01 · V0.1</span></footer>
+    </section>
+  </main>
+  <script>
+    const nodes = [...document.querySelectorAll('.day-node')];
+    const tag = document.getElementById('eventTag');
+    const title = document.getElementById('eventTitle');
+    const copy = document.getElementById('eventCopy');
+    nodes.forEach(node => node.addEventListener('click', () => {
+      nodes.forEach(item => item.classList.remove('selected'));
+      node.classList.add('selected');
+      tag.textContent = node.dataset.tag;
+      title.textContent = node.dataset.title;
+      copy.textContent = Number(node.dataset.count) ? `当日共收录 ${node.dataset.count} 项有效动态，当前展示优先级最高事件。` : '固定关注来源已检查，本日暂未发现显著更新。';
+    }));
+    document.querySelectorAll('.nav-item').forEach(item => item.addEventListener('click', () => {
+      document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+      item.classList.add('active');
+    }));
+    document.getElementById('search').addEventListener('input', event => {
+      const query = event.target.value.trim().toLowerCase();
+      document.querySelectorAll('.story').forEach(story => {
+        story.style.display = !query || story.dataset.search.toLowerCase().includes(query) ? 'grid' : 'none';
+      });
+    });
+  </script>
+</body>
+</html>
