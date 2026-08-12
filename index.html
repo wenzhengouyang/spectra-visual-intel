@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Spectra — 视觉行业情报工作台</title>
-  <link rel="stylesheet" href="./app/globals.css?v=5" />
+  <link rel="stylesheet" href="./app/globals.css?v=6" />
 </head>
 <body>
   <main class="intel-app">
@@ -71,15 +71,15 @@
       <section class="timeline-panel panel-card">
         <div class="panel-heading"><div><span class="section-kicker">WEEKLY TIMELINE</span><h2>一周关键事件</h2></div><button class="text-button">查看全部事件 ↗</button></div>
         <div class="timeline-grid" id="timeline">
-          <button class="day-node purple" data-tag="世界模型" data-title="Enfold更新：世界模型表征进入实时机器人控制" data-count="1"><span class="day-name">THU</span><b>08.06</b><i><em></em></i><small>1</small></button>
-          <button class="day-node blue" data-tag="视频生成" data-title="MirrorWorld发布镜像一致性视频修复方法" data-count="1"><span class="day-name">FRI</span><b>08.07</b><i><em></em></i><small>1</small></button>
-          <button class="day-node cyan" data-tag="具身智能" data-title="Evidence-RL与Ego-OSCAR补齐证据训练和具身数据" data-count="2"><span class="day-name">SAT</span><b>08.08</b><i><em></em></i><small>2</small></button>
-          <button class="day-node muted" data-tag="已检查" data-title="本日未发现达到收录阈值的新信号" data-count="0"><span class="day-name">SUN</span><b>08.09</b><i><em></em></i><small>—</small></button>
-          <button class="day-node selected orange" data-tag="评测与具身" data-title="Sci-VBench、RynnValue与Muse Glimmer集中发布" data-count="3"><span class="day-name">MON</span><b>08.10</b><i><em></em></i><small>3</small></button>
-          <button class="day-node pink" data-tag="视频生成" data-title="Beyond Pixels将视频潜变量直接解码为4D世界" data-count="1"><span class="day-name">TUE</span><b>08.11</b><i><em></em></i><small>1</small></button>
-          <button class="day-node green" data-tag="已核验" data-title="二轮原文核验完成，暂无新增重点事件" data-count="0"><span class="day-name">WED</span><b>08.12</b><i><em></em></i><small>—</small></button>
+          <button class="day-node purple" data-date="08.06"><span class="day-name">THU</span><b>08.06</b><i><em></em></i><small>1</small></button>
+          <button class="day-node blue" data-date="08.07"><span class="day-name">FRI</span><b>08.07</b><i><em></em></i><small>1</small></button>
+          <button class="day-node cyan" data-date="08.08"><span class="day-name">SAT</span><b>08.08</b><i><em></em></i><small>2</small></button>
+          <button class="day-node muted" data-date="08.09"><span class="day-name">SUN</span><b>08.09</b><i><em></em></i><small>—</small></button>
+          <button class="day-node selected orange" data-date="08.10"><span class="day-name">MON</span><b>08.10</b><i><em></em></i><small>3</small></button>
+          <button class="day-node pink" data-date="08.11"><span class="day-name">TUE</span><b>08.11</b><i><em></em></i><small>1</small></button>
+          <button class="day-node green" data-date="08.12"><span class="day-name">WED</span><b>08.12</b><i><em></em></i><small>—</small></button>
         </div>
-        <div class="timeline-detail orange" id="eventDetail"><span class="event-tag" id="eventTag">评测与具身</span><strong id="eventTitle">Sci-VBench、RynnValue与Muse Glimmer集中发布</strong><p id="eventCopy">当日共收录 3 项有效动态，当前展示优先级最高事件。</p><button>事件详情 ↗</button></div>
+        <div class="timeline-detail orange" id="eventDetail" aria-live="polite"></div>
       </section>
 
       <section class="dashboard-grid">
@@ -139,17 +139,50 @@
     </section>
   </main>
   <script>
+    const timelineData = {
+      '08.06': { summary: '世界模型开始从“生成未来画面”转向“直接服务机器人控制”。', events: [
+        { priority:'P0', tag:'世界模型', title:'Enfold：将视频世界模型压缩为实时控制表征', happened:'将视频世界模型的预测知识蒸馏为当前状态表征，部署时不再生成视频；作者报告 Flash 版本动作延迟为 49ms。', importance:'验证世界模型可以作为低延迟控制模块，而不只是可视化预测工具。', source:'arXiv 原文', url:'https://arxiv.org/abs/2607.26657' }
+      ]},
+      '08.07': { summary:'镜像反射开始被拆解为可单独评测、可定向优化的视频生成坏例。', events: [
+        { priority:'P1', tag:'视频生成', title:'MirrorWorld：发布镜像一致性视频修复方法', happened:'通过语义关系蒸馏与几何变换对齐处理镜像视频修复，并给出统一基准上的量化结果。', importance:'把镜像反射从通用视频修复坏例拆成可定位、可回归的模型问题。', source:'arXiv 原文', url:'https://arxiv.org/abs/2608.07463' }
+      ]},
+      '08.08': { summary:'视觉证据训练与具身数据采集在同一天出现基础设施进展。', events: [
+        { priority:'P1', tag:'模型优化', title:'Evidence-RL：让多模态模型依赖正确视觉证据', happened:'通过反事实遮挡识别真正支持答案的视觉区域，并将证据依赖纳入 GRPO 奖励。', importance:'多模态后训练开始从“答案正确”扩展到“答案是否依赖正确视觉证据”。', source:'arXiv 原文', url:'https://arxiv.org/abs/2608.08021' },
+        { priority:'P1', tag:'具身智能', title:'Ego-OSCAR：开放低成本第一视角具身采集系统', happened:'开放约 200 美元的双目惯性采集系统，包含长时视频、120Hz IMU 与 3D 手部数据。', importance:'降低第一视角具身数据的采集与复现门槛，为规模化数据生产提供参考。', source:'arXiv 原文', url:'https://arxiv.org/abs/2608.08285' }
+      ]},
+      '08.09': { summary:'完成检查，暂无达到阈值的事件。', events:[] },
+      '08.10': { summary:'评测、具身价值监督与本地多模态 Agent 同时出现三个有效信号。', events: [
+        { priority:'P0', tag:'评测与标准', title:'Sci-VBench：视频评测开始追问科学机制是否正确', happened:'以 1,253 项专家任务覆盖 60 个主题，从科学与因果正确性、时空一致性等维度评估 16 个文生视频模型。', importance:'提示词可以改善语义对齐，但机制正确性仍需模型与评测侧共同解决。', source:'arXiv 原文', url:'https://arxiv.org/abs/2608.09873' },
+        { priority:'P0', tag:'具身智能', title:'RynnValue：用视频时间距离训练具身价值模型', happened:'以 7,000+ 小时、约 300 万视频片段的时间距离标注训练价值模型，并在真实机器人策略上验证。', importance:'为具身过程奖励提供一种可规模化的数据生产方式。', source:'arXiv 原文', url:'https://arxiv.org/abs/2608.09853' },
+        { priority:'P2', tag:'多模态 Agent', title:'Muse Glimmer：本地开放多模态 Agent 值得观察', happened:'Meta 发布可在个人电脑运行的开放多模态 Agent；详细规格本期仍未完成充分复核。', importance:'本地 Agent 是值得跟踪的新形态，但与视觉生成主线的直接关系仍待验证。', source:'Meta AI', url:'https://research.meta.ai/blog/introducing-muse-glimmer-open-agentic-model' }
+      ]},
+      '08.11': { summary:'视频生成潜变量首次被系统性验证为跨模型的 4D 世界生成接口。', events: [
+        { priority:'P0', tag:'视频生成', title:'Beyond Pixels：从视频潜变量直接生成 4D 世界', happened:'在共享同一 VAE 的两类文生视频和一类图生视频模型间复用最终潜变量，并直接交给 4D 解码器。', importance:'可能缩短从视频生成到 3D/4D 资产生产的链路。', source:'arXiv 原文', url:'https://arxiv.org/abs/2608.10744' }
+      ]},
+      '08.12': { summary:'完成检查，暂无达到阈值的事件；8 条重点信号已完成二轮原文核验。', events:[] }
+    };
     const nodes = [...document.querySelectorAll('.day-node')];
-    const tag = document.getElementById('eventTag');
-    const title = document.getElementById('eventTitle');
-    const copy = document.getElementById('eventCopy');
+    const detail = document.getElementById('eventDetail');
+    const escapeHtml = value => value.replace(/[&<>'"]/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#039;','"':'&quot;'}[char]));
+    const renderTimelineDay = date => {
+      const day = timelineData[date];
+      const cards = day.events.map(event => `<article class="timeline-event-card">
+        <div class="event-card-meta"><span>${escapeHtml(event.priority)}</span><em>${escapeHtml(event.tag)}</em></div>
+        <h3><a href="${escapeHtml(event.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(event.title)}</a></h3>
+        <p><b>发生了什么</b>${escapeHtml(event.happened)}</p>
+        <p><b>为什么重要</b>${escapeHtml(event.importance)}</p>
+        <a class="source-link" href="${escapeHtml(event.url)}" target="_blank" rel="noopener noreferrer">查看原文 · ${escapeHtml(event.source)} ↗</a>
+      </article>`).join('');
+      detail.innerHTML = `<div class="timeline-detail-head"><span class="event-tag">${date}</span><div><strong>${day.events.length ? `当日 ${day.events.length} 条重点事件` : '来源检查完成'}</strong><p>${escapeHtml(day.summary)}</p></div></div>` +
+        (cards ? `<div class="timeline-event-list">${cards}</div>` : '<div class="timeline-empty"><span>✓</span><div><strong>完成检查，暂无达到阈值的事件</strong><p>固定关注来源已完成检查，本日没有需要进入重点周报的新增动态。</p></div></div>');
+    };
     nodes.forEach(node => node.addEventListener('click', () => {
       nodes.forEach(item => item.classList.remove('selected'));
       node.classList.add('selected');
-      tag.textContent = node.dataset.tag;
-      title.textContent = node.dataset.title;
-      copy.textContent = Number(node.dataset.count) ? `当日共收录 ${node.dataset.count} 项有效动态，当前展示优先级最高事件。` : '固定关注来源已检查，本日暂未发现显著更新。';
+      detail.className = `timeline-detail ${[...node.classList].find(name => ['purple','blue','cyan','muted','orange','pink','green'].includes(name))}`;
+      renderTimelineDay(node.dataset.date);
     }));
+    renderTimelineDay('08.10');
     document.querySelectorAll('.nav-item').forEach(item => item.addEventListener('click', () => {
       document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
       item.classList.add('active');
