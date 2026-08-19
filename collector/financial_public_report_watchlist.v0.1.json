@@ -1,0 +1,33 @@
+{
+  "schema_version": "0.1",
+  "record_type": "financial_public_report_watchlist",
+  "evidence_policy": "official_ir_or_regulatory_filing_first",
+  "companies": [
+    {"name": "Alibaba Group", "relevance": ["Qwen", "Wan", "云与AI收入", "AI资本开支"], "priority": "P0", "discovery_routes": ["official_ir", "hkex", "sec"]},
+    {"name": "Tencent", "relevance": ["混元", "广告", "游戏与内容", "AI资本开支"], "priority": "P0", "discovery_routes": ["official_ir", "hkex"]},
+    {"name": "Kuaishou", "relevance": ["可灵", "AI商业化", "内容生态"], "priority": "P0", "discovery_routes": ["official_ir", "hkex"]},
+    {"name": "Alphabet", "relevance": ["Gemini", "Veo", "云与广告"], "priority": "P0", "discovery_routes": ["official_ir", "sec"]},
+    {"name": "Meta", "relevance": ["生成式AI", "广告素材", "开源模型"], "priority": "P1", "discovery_routes": ["official_ir", "sec"]},
+    {"name": "Adobe", "relevance": ["Firefly", "创意软件", "生成式AI商业化"], "priority": "P0", "discovery_routes": ["official_ir", "sec"]},
+    {"name": "NVIDIA", "relevance": ["视觉模型基础设施", "机器人", "推理成本"], "priority": "P1", "discovery_routes": ["official_ir", "sec"]}
+  ],
+  "private_company_signals": [
+    {"name": "ByteDance", "relevance": ["Seedance", "即梦", "内容与广告"], "sources": ["official_announcement", "reliable_media", "public_interview"]},
+    {"name": "Runway", "relevance": ["视频生成", "影视应用"], "sources": ["official_announcement", "funding_disclosure", "public_interview"]},
+    {"name": "Luma AI", "relevance": ["视频生成", "3D与世界模型"], "sources": ["official_announcement", "funding_disclosure", "public_interview"]}
+  ],
+  "public_reports": [
+    {"publisher": "Stanford HAI", "series": "AI Index Report", "priority": "P0"},
+    {"publisher": "OECD", "series": "AI policy and adoption reports", "priority": "P1"},
+    {"publisher": "WIPO", "series": "AI and generative AI landscape reports", "priority": "P1"},
+    {"publisher": "McKinsey", "series": "State of AI", "priority": "P1"}
+  ],
+  "active_adapters": {
+    "official_ir": ["Alibaba Group", "Tencent", "Kuaishou"],
+    "official_company_release": ["NVIDIA"],
+    "regulatory_filing_external_runtime": ["Alphabet", "Meta", "Adobe", "NVIDIA"],
+    "official_public_report_feed": ["WIPO", "Stanford HAI"],
+    "pending": ["OECD", "McKinsey"]
+  },
+  "status": "official_ir_and_public_report_indexes_active_pending_live_acceptance"
+}

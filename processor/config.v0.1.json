@@ -1,0 +1,220 @@
+{
+  "version": "0.2",
+  "llm": {
+    "enabled": false,
+    "max_candidates": 25,
+    "prompt_version": "structure.v0.2",
+    "mode": "enrich_after_deterministic_prefilter"
+  },
+  "target_count": 25,
+  "minimum_score": 7,
+  "intelligence_type_precedence": [
+    "type.industry_market",
+    "type.company_strategy",
+    "type.product_release",
+    "type.technology_breakthrough"
+  ],
+  "intelligence_type_minimums": {
+    "type.technology_breakthrough": 8,
+    "type.product_release": 4,
+    "type.industry_market": 4,
+    "type.company_strategy": 3
+  },
+  "intelligence_type_caps": {
+    "type.technology_breakthrough": 12,
+    "type.product_release": 6,
+    "type.industry_market": 6,
+    "type.company_strategy": 5
+  },
+  "intelligence_type_priority_boosts": {
+    "type.technology_breakthrough": 0,
+    "type.product_release": 5,
+    "type.industry_market": 5,
+    "type.company_strategy": 5
+  },
+  "minimum_candidate_count": 12,
+  "intelligence_type_source_boosts": {
+    "financial_report": {"type.industry_market": 8},
+    "public_report": {"type.industry_market": 8},
+    "professional_view": {"type.industry_market": 4},
+    "media": {"type.industry_market": 2},
+    "industry_media": {"type.industry_market": 4},
+    "company_news": {"type.company_strategy": 6, "type.product_release": 2},
+    "wechat_official_account": {"type.company_strategy": 2, "type.product_release": 2},
+    "official_announcement": {"type.product_release": 6, "type.company_strategy": 2},
+    "code_dataset": {"type.product_release": 5},
+    "product_test": {"type.product_release": 5},
+    "paper_report": {"type.technology_breakthrough": 5}
+  },
+  "intelligence_type_rules": {
+    "type.technology_breakthrough": [
+      "paper", "research", "method", "model", "benchmark", "dataset", "training",
+      "inference", "architecture", "framework", "evaluation", "metric", "diffusion",
+      "world model", "video generation", "image generation", "arxiv", "论文", "模型",
+      "方法", "评测", "数据集", "训练", "推理", "架构", "技术"
+    ],
+    "type.product_release": [
+      "launch", "release", "released", "announce", "available", "api", "pricing",
+      "subscription", "open source", "github", "product update", "feature", "partnership",
+      "roadmap", "model weights", "上线", "发布", "开放", "开源", "产品",
+      "function", "功能", "版本更新", "定价", "license", "licensing", "weights",
+      "download", "free-to-download", "access", "许可", "权重", "下载"
+    ],
+    "type.company_strategy": [
+      "company", "strategy", "partnership", "acquisition", "investment", "reorganization",
+      "leadership", "ipo", "listed", "ecosystem", "cloud capacity", "data center",
+      "合作", "收购", "投资", "战略", "组织调整", "高管", "上市", "大厂", "公司动态", "生态"
+    ],
+    "type.industry_market": [
+      "market", "industry", "revenue", "earnings", "financial", "annual report", "quarterly",
+      "funding", "investment", "roi", "adoption", "customers", "users", "commercial",
+      "business", "cost reduction", "short drama", "micro drama", "advertising", "marketing",
+      "e-commerce", "box office", "市场", "行业", "营收", "财报", "研报", "融资", "投资",
+      "商业化", "客户", "用户规模", "降本", "短剧", "漫剧", "广告", "营销", "电商", "出海"
+    ]
+  },
+  "route_caps": {
+    "visual_value.evaluation": 5,
+    "frontier.video_generation": 7,
+    "frontier.world_model": 7,
+    "frontier.embodied_ai": 5,
+    "frontier.image_asset": 3,
+    "visual_value.spatial_camera": 4,
+    "frontier.multimodal_agent": 2
+  },
+  "route_minimums": {
+    "visual_value.evaluation": 2,
+    "frontier.video_generation": 3,
+    "frontier.world_model": 3,
+    "frontier.embodied_ai": 3,
+    "frontier.image_asset": 1,
+    "visual_value.spatial_camera": 1,
+    "frontier.multimodal_agent": 0
+  },
+  "primary_route_precedence": [
+    "visual_value.evaluation",
+    "frontier.video_generation",
+    "frontier.image_asset",
+    "frontier.embodied_ai",
+    "visual_value.spatial_camera",
+    "frontier.world_model",
+    "frontier.multimodal_agent"
+  ],
+  "primary_route_markers": {
+    "visual_value.evaluation": ["benchmark", "evaluation", "evaluating", "eval:", "metric", "diagnosing", "auditing", "quality assessment", "rubric", "forensics"],
+    "frontier.video_generation": ["video generation", "video synthesis", "video diffusion", "text-to-video", "image-to-video", "long video", "long-form", "cross-shot", "sora", "runway", "kling", "可灵", "wan2", "wan 2", "dreamina", "即梦", "veo"],
+    "frontier.image_asset": ["image generation", "text-to-image", "text to image", "3d assets", "3d scene generation", "virtual try-on", "midjourney", "stable diffusion", "flux", "nano banana"],
+    "frontier.embodied_ai": ["embodied", "combodied", "robot", "robotic", "robotics", "vision-language-action", "vla", "manipulation", "humanoid", "unitree", "宇树"],
+    "visual_value.spatial_camera": ["camera motion", "camera control", "spatial reasoning", "spatial awareness", "geometric consistency"],
+    "frontier.world_model": ["world model", "world-model", "world modeling", "world-modeling", "world-action", "world action", "interactive world", "genie", "cosmos"],
+    "frontier.multimodal_agent": [
+      "multimodal agent", "multimodal enterprise agent", "enterprise agent",
+      "multimodal embedding", "gemini embedding", "agentic ai", "omni-modal"
+    ]
+  },
+  "hard_exclude_title_terms": [
+    "gis agents", "economic world model", "integrated sensing and communication",
+    "video anomaly detection", "detection transformers", "exposure correction",
+    "codec quality", "teaching monster"
+  ],
+  "soft_negative_terms": {
+    "surgical": -3,
+    "surgery": -3,
+    "endoscopic": -3,
+    "chest x-ray": -4,
+    "radiographic": -4,
+    "medical image": -3,
+    "scientific vision-language reasoning": -3,
+    "navigation": -2,
+    "mobile gui": -4,
+    "text-based world model": -4,
+    "llm agents": -3,
+    "scene graph": -2,
+    "segmentation": -3,
+    "object detection": -4,
+    "video captioning": -2,
+    "visual upscaling": -4,
+    "super-resolution": -4
+  },
+  "route_rules": {
+    "visual_value.evaluation": {
+      "benchmark": 7, "evaluation": 7, "eval": 5, "metric": 5,
+      "diagnosing": 5, "auditing": 5, "quality assessment": 4,
+      "physical fidelity": 5, "consistency metric": 5, "rubric": 4,
+      "forensics": 2
+    },
+    "frontier.video_generation": {
+      "video generation": 8, "video diffusion": 8, "video synthesis": 7,
+      "text-to-video": 7, "image-to-video": 7, "long video": 6,
+      "long-form": 5, "streaming video generation": 7, "cross-shot": 7,
+      "audio-visual generation": 5, "video editing": 5,
+      "identity replacement video": 5, "emotional video generation": 5,
+      "sora": 7, "runway": 7, "kling": 7, "可灵": 7, "wan2": 7,
+      "wan 2": 7, "dreamina": 7, "即梦": 7, "veo": 7
+    },
+    "frontier.image_asset": {
+      "image generation": 7, "text-to-image": 7, "text to image": 7,
+      "image-to-video": 3, "3d assets": 6, "3d scene generation": 6,
+      "virtual try-on": 5, "subject-driven": 5, "visual generative models": 3,
+      "midjourney": 7, "stable diffusion": 7, "flux": 6, "nano banana": 7
+    },
+    "frontier.world_model": {
+      "world model": 8, "world-model": 8, "world modeling": 8,
+      "world-modeling": 8, "world-action": 8, "world action": 8,
+      "interactive world": 7, "world foundation model": 6,
+      "predictive latents": 5, "latent dynamics": 4, "imagined dynamics": 4,
+      "genie": 7, "cosmos": 7
+    },
+    "frontier.embodied_ai": {
+      "embodied": 8, "combodied": 8, "robot": 7, "robotic": 7, "vision-language-action": 7,
+      "vla": 6, "manipulation": 5, "humanoid": 5, "loco-manipulation": 5,
+      "physical ai": 4, "robotics": 7, "unitree": 8, "宇树": 8
+    },
+    "visual_value.spatial_camera": {
+      "spatial reasoning": 7, "spatial grounding": 6, "spatial awareness": 6,
+      "camera motion": 7, "camera control": 7, "4d": 5,
+      "geometric consistency": 6, "geometry-aware": 5,
+      "physical reasoning": 6, "physical priors": 5, "physics": 4
+    },
+    "frontier.multimodal_agent": {
+      "multimodal agent": 7, "multimodal enterprise agent": 6,
+      "enterprise agent": 5, "multimodal embedding": 4, "gemini embedding": 4,
+      "agentic ai": 5, "evaluation agent": 4, "omni-modal": 5, "agentic rl": 4
+    }
+  },
+  "capability_rules": {
+    "cap.long_video": ["long video", "long-form", "streaming video"],
+    "cap.cross_shot_consistency": ["cross-shot", "multi-shot"],
+    "cap.camera_language": ["camera motion", "camera control"],
+    "cap.spatial_consistency": ["spatial", "4d", "geometric", "geometry-aware"],
+    "cap.physics": ["physical", "physics", "causal"],
+    "cap.world_state": ["world model", "world-model", "world modeling", "world-action"],
+    "cap.evaluation": ["benchmark", "evaluation", "eval", "metric", "auditing", "diagnosing"],
+    "cap.editability": ["editing", "editable", "controllable"],
+    "cap.reference_fidelity": ["subject-driven", "identity replacement", "artist-grounded"],
+    "cap.efficiency": ["efficient", "few-step", "two-step", "streaming", "early-exit"]
+  },
+  "task_rules": {
+    "task.t2v": ["text-to-video", "video generation", "video synthesis"],
+    "task.i2v": ["image-to-video"],
+    "task.t2i": ["text-to-image", "text to image", "image generation"],
+    "task.editing": ["video editing", "editable", "identity replacement"],
+    "task.camera_transfer": ["camera motion", "camera control"],
+    "task.r2v": ["subject-driven", "identity replacement", "artist-grounded"]
+  },
+  "priority_boosts": {
+    "open source": 2, "ready for open source": 5, "controllable": 2,
+    "consistent": 2, "consistency": 2, "efficient": 1,
+    "physical fidelity": 2, "long video": 2, "cross-shot": 2
+  },
+  "expected_fixture_titles": [
+    "Beyond Pixels: From Video Priors to 4D Worlds",
+    "RynnValue: Scaling Robotic Value Foundation Models with Temporal Distance",
+    "Sci-VBench: Evaluating Knowledge- and Reasoning-Intensive Video Generation in Science Domains",
+    "Ego-OSCAR: Egocentric Open source Stereo CAptuRe System",
+    "Evidence-RL: Towards Evidence-intensive Visual Reasoning",
+    "MirrorWorld: Taming Video Diffusion Models for Mirror Reflection Generation",
+    "Enfold: Folding World Model Imagination into Predictive Representations for Ultra-Efficient Embodied Control",
+    "Meta is back with Muse Glimmer: local, agentic, multimodal, and open source"
+  ]
+}

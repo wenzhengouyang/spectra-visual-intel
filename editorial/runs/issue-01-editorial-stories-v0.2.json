@@ -1,0 +1,1343 @@
+{
+  "schema_version": "0.2",
+  "record_type": "weekly_issue_editorial_bundle",
+  "issue": {
+    "issue_id": "issue_2026_w33",
+    "title": "本周视觉行业情报 · 2026年第33周",
+    "period_start": "2026-08-06",
+    "period_end": "2026-08-11",
+    "updated_at": "2026-08-13T11:30:30.716018Z",
+    "weekly_thesis": "本周视频模型优化开始同时推进长时生成、跨镜头一致性与显式物理建模；具身智能侧的关键变化，是评测与训练数据正在从视觉逼真转向可测量的物理正确性。",
+    "trend_one_line": "本周9条正式事件中，视频生成与世界模型各占3条，评测与标准占2条；长时生成、跨镜头一致性与物理正确性同步升温，预计下一阶段竞争将从单项画质转向可验证的时空与物理稳定性。",
+    "thesis_dek": "本周9个正式事件经过原文核验，形成4条值得持续观察的趋势判断。",
+    "lead_story_id": "story_202633_gauge",
+    "top_story_ids": [
+      "story_202633_gauge",
+      "story_202633_phys",
+      "story_202633_logishot",
+      "story_202633_scivbench",
+      "story_7da398ea9da9"
+    ],
+    "brief_story_ids": [
+      "story_d8313ef87045",
+      "story_202633_sekai2",
+      "story_1c27259887eb",
+      "story_202633_beyondpixels"
+    ],
+    "story_count": 9,
+    "deep_dive_count": 5,
+    "brief_count": 4,
+    "watchlist_count": 7
+  },
+  "presentation": {
+    "timeline_days": [
+      {
+        "day": "THU",
+        "date": "08.06",
+        "tone": "purple",
+        "summary": "评测与标准、视频生成出现值得关注的新信号。",
+        "event_ids": [
+          "evt_20260806_gauge",
+          "evt_20260806_diff_vf"
+        ],
+        "story_ids": [
+          "story_202633_gauge",
+          "story_d8313ef87045"
+        ]
+      },
+      {
+        "day": "FRI",
+        "date": "08.07",
+        "tone": "blue",
+        "summary": "完成检查，暂无达到阈值的事件。",
+        "event_ids": [],
+        "story_ids": []
+      },
+      {
+        "day": "SAT",
+        "date": "08.08",
+        "tone": "cyan",
+        "summary": "世界模型出现值得关注的新信号。",
+        "event_ids": [
+          "evt_20260808_phys"
+        ],
+        "story_ids": [
+          "story_202633_phys"
+        ]
+      },
+      {
+        "day": "SUN",
+        "date": "08.09",
+        "tone": "orange",
+        "summary": "视频生成出现值得关注的新信号。",
+        "event_ids": [
+          "evt_20260809_logishot"
+        ],
+        "story_ids": [
+          "story_202633_logishot"
+        ]
+      },
+      {
+        "day": "MON",
+        "date": "08.10",
+        "tone": "pink",
+        "summary": "评测与标准、世界模型出现值得关注的新信号。",
+        "event_ids": [
+          "evt_20260810_scivbench_auto",
+          "evt_20260810_sekai2",
+          "evt_20260810_ldr"
+        ],
+        "story_ids": [
+          "story_202633_scivbench",
+          "story_202633_sekai2",
+          "story_1c27259887eb"
+        ]
+      },
+      {
+        "day": "TUE",
+        "date": "08.11",
+        "tone": "green",
+        "summary": "空间与4D、视频生成出现值得关注的新信号。",
+        "event_ids": [
+          "evt_20260811_beyondpixels_auto",
+          "evt_20260811_stream_forcing"
+        ],
+        "story_ids": [
+          "story_202633_beyondpixels",
+          "story_7da398ea9da9"
+        ]
+      },
+      {
+        "day": "WED",
+        "date": "08.12",
+        "tone": "muted",
+        "summary": "完成检查，暂无达到阈值的事件。",
+        "event_ids": [],
+        "story_ids": []
+      }
+    ],
+    "trend_radar": [
+      {
+        "trend_id": "trend_294d2c10aa19",
+        "label": "视频生成",
+        "headline": "视频生成形成本周集中信号",
+        "summary": "Stream Forcing、Diff-VF、LogiShot共同构成视频生成方向的本周证据，需要继续观察独立复现与产品化表现。",
+        "status": "升温",
+        "score": 95,
+        "delta": "+18",
+        "maturity": 66,
+        "impact": 82,
+        "tone": "purple",
+        "event_ids": [
+          "evt_20260811_stream_forcing",
+          "evt_20260806_diff_vf",
+          "evt_20260809_logishot"
+        ]
+      },
+      {
+        "trend_id": "trend_6a98b3dfdaff",
+        "label": "世界模型",
+        "headline": "世界模型形成本周集中信号",
+        "summary": "Sekai2、PhyS、Latent Dynamics Reasoning共同构成世界模型方向的本周证据，需要继续观察独立复现与产品化表现。",
+        "status": "升温",
+        "score": 95,
+        "delta": "+18",
+        "maturity": 66,
+        "impact": 82,
+        "tone": "blue",
+        "event_ids": [
+          "evt_20260810_sekai2",
+          "evt_20260808_phys",
+          "evt_20260810_ldr"
+        ]
+      },
+      {
+        "trend_id": "trend_f23ed6382673",
+        "label": "评测与标准",
+        "headline": "评测与标准形成本周集中信号",
+        "summary": "Sci-VBench、GAUGE共同构成评测与标准方向的本周证据，需要继续观察独立复现与产品化表现。",
+        "status": "升温",
+        "score": 88,
+        "delta": "+14",
+        "maturity": 54,
+        "impact": 73,
+        "tone": "cyan",
+        "event_ids": [
+          "evt_20260810_scivbench_auto",
+          "evt_20260806_gauge"
+        ]
+      },
+      {
+        "trend_id": "trend_77d6de74e58f",
+        "label": "空间与4D",
+        "headline": "空间与4D形成本周集中信号",
+        "summary": "Latent-to-4D共同构成空间与4D方向的本周证据，需要继续观察独立复现与产品化表现。",
+        "status": "待验证",
+        "score": 81,
+        "delta": "+10",
+        "maturity": 42,
+        "impact": 64,
+        "tone": "orange",
+        "event_ids": [
+          "evt_20260811_beyondpixels_auto"
+        ]
+      }
+    ]
+  },
+  "editorial_stories": [
+    {
+      "schema_version": "0.2",
+      "record_type": "editorial_story",
+      "story_id": "story_202633_gauge",
+      "article_type": "deep_dive",
+      "headline": "世界模型“看起来对”，不等于物理量真的对",
+      "dek": "GAUGE把物理引擎和视频世界模型放进同一套真实测量框架。作者发现，一段轨迹即使视觉上合理，仍可能在加速度、动量传递或振荡时序上出现系统性错误。",
+      "one_line_takeaway": "物理一致性正在从视觉印象题，变成可以用真实测量和参数恢复诊断的工程问题。",
+      "category": "世界模型",
+      "related_event_ids": [
+        "evt_20260806_gauge"
+      ],
+      "primary_event_id": "evt_20260806_gauge",
+      "what_happened": {
+        "text": "GAUGE建立22个受控任务族，覆盖刚体、绳索、织物和体积可变形物体。论文评测三个物理引擎的14个任务族，以及六个图生视频模型的五个刚体任务；作者报告，部分视频轨迹看似遵循方程，却恢复出错误的加速度、动量传递和振荡时序。",
+        "claim_ids": [
+          "clm_3508479b14f81b90_01",
+          "clm_3508479b14f81b90_02",
+          "clm_3508479b14f81b90_03"
+        ],
+        "statement_type": "fact"
+      },
+      "why_it_matters": {
+        "text": "如果评测只看成片或依赖主观评分，物理错误很容易被画质掩盖。测量驱动的评测能把问题定位到具体参数和时间阶段，为世界模型训练、奖励设计及高风险仿真应用提供更可靠的诊断依据。",
+        "claim_ids": [
+          "clm_3508479b14f81b90_01",
+          "clm_3508479b14f81b90_02",
+          "clm_3508479b14f81b90_03"
+        ],
+        "statement_type": "judgment"
+      },
+      "our_take": {
+        "text": "团队可以优先选择与产品Bad Case最接近的少量任务建立内部测量切片，例如抛物、碰撞、液体和布料，而不必一开始复刻完整基准。关键是把“像不像”改成“哪一个物理量错了”。",
+        "claim_ids": [
+          "clm_3508479b14f81b90_01",
+          "clm_3508479b14f81b90_02",
+          "clm_3508479b14f81b90_03"
+        ],
+        "statement_type": "judgment"
+      },
+      "under_the_hood": {
+        "text": "GAUGE用真实世界测量作为参照，把视频中的运动轨迹恢复为可比较的物理参数，并对引擎模拟和生成模型使用统一诊断逻辑。",
+        "claim_ids": [
+          "clm_3508479b14f81b90_01",
+          "clm_3508479b14f81b90_02",
+          "clm_3508479b14f81b90_03"
+        ],
+        "statement_type": "fact"
+      },
+      "limitations": {
+        "text": "图生视频评测仅覆盖五个刚体任务；结论不能泛化到所有物理现象和生成场景。",
+        "claim_ids": [
+          "clm_3508479b14f81b90_01",
+          "clm_3508479b14f81b90_02",
+          "clm_3508479b14f81b90_03"
+        ],
+        "statement_type": "judgment"
+      },
+      "watch_next": [
+        "测量框架能否扩展到流体、材质和复杂接触？",
+        "视频模型的物理错误是否能被奖励模型或后训练直接修正？"
+      ],
+      "key_numbers": [
+        {
+          "label": "任务族",
+          "value": "22",
+          "claim_id": "clm_3508479b14f81b90_01"
+        },
+        {
+          "label": "物理引擎",
+          "value": "3",
+          "claim_id": "clm_3508479b14f81b90_02"
+        },
+        {
+          "label": "视频模型",
+          "value": "6",
+          "claim_id": "clm_3508479b14f81b90_02"
+        }
+      ],
+      "source_links": [
+        {
+          "source_id": "src_2cf80b0f79180c090001",
+          "label": "arXiv原文",
+          "url": "https://arxiv.org/abs/2608.05948",
+          "role": "primary"
+        }
+      ],
+      "primary_tags": [
+        "世界模型",
+        "物理评测",
+        "Bad Case"
+      ],
+      "confidence": "confidence.high",
+      "priority": "priority.p0",
+      "reading_time_minutes": 4,
+      "editorial_status": "fact_checked",
+      "drafted_by": "llm",
+      "reviewer": null,
+      "reviewed_at": null,
+      "revision_note": "一手来源已核验；编辑判断仍需发布者确认。",
+      "editorial_score": 90,
+      "published_at": "2026-08-06T12:19:38Z"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "editorial_story",
+      "story_id": "story_202633_phys",
+      "article_type": "deep_dive",
+      "headline": "1.3B流式模型开始承接14B教师的物理先验",
+      "dek": "PhyS把12万条真实物理交互视频、14B教师模型和1.3B因果DiT连接成一条蒸馏链路。目标不是只生成更真实的片段，而是在轻量流式推理中保留物理状态。",
+      "one_line_takeaway": "物理视频数据、时序奖励和教师蒸馏正在形成轻量流式世界模型的完整优化路径。",
+      "category": "世界模型",
+      "related_event_ids": [
+        "evt_20260808_phys"
+      ],
+      "primary_event_id": "evt_20260808_phys",
+      "what_happened": {
+        "text": "PhyS构建12万条真实物理交互视频，覆盖刚体、软体、流体和相变，并附带物体属性与因果状态转移描述。方法先向14B双向DiT教师注入物理先验，再蒸馏到1.3B因果DiT；作者报告其PhysicsIQ相对教师提升18.2%，相对三类流式基线分别提升23.7%、14.8%和31.4%。",
+        "claim_ids": [
+          "clm_b015385caa03b3b1_01",
+          "clm_b015385caa03b3b1_02",
+          "clm_b015385caa03b3b1_03"
+        ],
+        "statement_type": "fact"
+      },
+      "why_it_matters": {
+        "text": "流式世界模型必须同时面对长时误差累积、推理成本和物理状态漂移。PhyS把真实数据、物理奖励和小模型蒸馏放在同一流程中，提供了一条比单纯扩大模型更接近部署约束的路线。",
+        "claim_ids": [
+          "clm_b015385caa03b3b1_01",
+          "clm_b015385caa03b3b1_02",
+          "clm_b015385caa03b3b1_03"
+        ],
+        "statement_type": "judgment"
+      },
+      "our_take": {
+        "text": "这项工作对视频模型团队的价值，在于展示了物理能力可以被单独组织成数据和奖励，再向轻量模型迁移。下一步应验证PhysicsIQ提升是否对应开放域视频中可感知的稳定性收益。",
+        "claim_ids": [
+          "clm_b015385caa03b3b1_01",
+          "clm_b015385caa03b3b1_02",
+          "clm_b015385caa03b3b1_03"
+        ],
+        "statement_type": "judgment"
+      },
+      "under_the_hood": {
+        "text": "训练流程先让双向教师吸收带因果描述的真实物理视频，再通过时序奖励和蒸馏把知识迁移到少步生成的因果DiT，从而支持逐步延展的视频状态预测。",
+        "claim_ids": [
+          "clm_b015385caa03b3b1_01",
+          "clm_b015385caa03b3b1_02",
+          "clm_b015385caa03b3b1_03"
+        ],
+        "statement_type": "fact"
+      },
+      "limitations": {
+        "text": "提升来自作者评测；PhysicsIQ等分数与开放域视频产品中的真实物理正确性仍需关联验证。",
+        "claim_ids": [
+          "clm_b015385caa03b3b1_01",
+          "clm_b015385caa03b3b1_02",
+          "clm_b015385caa03b3b1_03"
+        ],
+        "statement_type": "judgment"
+      },
+      "watch_next": [
+        "长时间滚动生成时，物理优势能保持多久？",
+        "PhysicsIQ提升能否转化为真实产品Bad Case的下降？"
+      ],
+      "key_numbers": [
+        {
+          "label": "物理视频",
+          "value": "120K",
+          "claim_id": "clm_b015385caa03b3b1_01"
+        },
+        {
+          "label": "教师模型",
+          "value": "14B",
+          "claim_id": "clm_b015385caa03b3b1_02"
+        },
+        {
+          "label": "学生模型",
+          "value": "1.3B",
+          "claim_id": "clm_b015385caa03b3b1_02"
+        }
+      ],
+      "source_links": [
+        {
+          "source_id": "src_fa6617a0569d8dd02226",
+          "label": "arXiv原文",
+          "url": "https://arxiv.org/abs/2608.07981",
+          "role": "primary"
+        }
+      ],
+      "primary_tags": [
+        "世界模型",
+        "物理先验",
+        "模型蒸馏"
+      ],
+      "confidence": "confidence.high",
+      "priority": "priority.p0",
+      "reading_time_minutes": 4,
+      "editorial_status": "fact_checked",
+      "drafted_by": "llm",
+      "reviewer": null,
+      "reviewed_at": null,
+      "revision_note": "一手来源已核验；编辑判断仍需发布者确认。",
+      "editorial_score": 88,
+      "published_at": "2026-08-08T07:35:10Z"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "editorial_story",
+      "story_id": "story_202633_logishot",
+      "article_type": "deep_dive",
+      "headline": "跨镜头一致性开始从外观进入世界状态",
+      "dek": "LogiShot用上下文视频编码和视觉记忆处理跨镜头逻辑一致性，并构建11万样本的数据集。它瞄准的不是单镜头更好看，而是人物、物体和事件在下一镜里仍然说得通。",
+      "one_line_takeaway": "多镜头视频的核心问题正从角色长得像，转向跨镜头世界状态和叙事逻辑能否延续。",
+      "category": "视频生成",
+      "related_event_ids": [
+        "evt_20260809_logishot"
+      ],
+      "primary_event_id": "evt_20260809_logishot",
+      "what_happened": {
+        "text": "LogiShot联合编码上下文视频与其他生成条件，并在生成过程中保持上下文视频的视觉记忆。论文构建了11万样本的数据集和专用评测，作者报告其在多镜头逻辑一致性上持续优于现有基线。",
+        "claim_ids": [
+          "clm_b5303be4d7301f7c_01",
+          "clm_b5303be4d7301f7c_02",
+          "clm_b5303be4d7301f7c_03"
+        ],
+        "statement_type": "fact"
+      },
+      "why_it_matters": {
+        "text": "短剧和影视工作流真正需要的不是若干独立好看的镜头，而是服装、道具、空间关系、动作结果和人物状态能够跨镜头延续。视觉记忆把这类需求从提示词技巧推进到模型结构和训练数据问题。",
+        "claim_ids": [
+          "clm_b5303be4d7301f7c_01",
+          "clm_b5303be4d7301f7c_02",
+          "clm_b5303be4d7301f7c_03"
+        ],
+        "statement_type": "judgment"
+      },
+      "our_take": {
+        "text": "这条路线与视频产品最直接的结合点，是把上一镜的关键状态显式抽取成可检查的记忆，再分别评测外观连续、空间连续和事件连续，而不是只给一个笼统的一致性分数。",
+        "claim_ids": [
+          "clm_b5303be4d7301f7c_01",
+          "clm_b5303be4d7301f7c_02",
+          "clm_b5303be4d7301f7c_03"
+        ],
+        "statement_type": "judgment"
+      },
+      "under_the_hood": {
+        "text": "模型把上下文视频与当前条件共同编码，并在生成阶段保存可调用的视觉记忆，使后续镜头能够参考前序镜头中的人物、物体和情节状态。",
+        "claim_ids": [
+          "clm_b5303be4d7301f7c_01",
+          "clm_b5303be4d7301f7c_02",
+          "clm_b5303be4d7301f7c_03"
+        ],
+        "statement_type": "fact"
+      },
+      "limitations": {
+        "text": "摘要称模型和数据将公开，核验时不能视为已经开放；作者未在摘要中给出具体提升幅度。",
+        "claim_ids": [
+          "clm_b5303be4d7301f7c_01",
+          "clm_b5303be4d7301f7c_02",
+          "clm_b5303be4d7301f7c_03"
+        ],
+        "statement_type": "judgment"
+      },
+      "watch_next": [
+        "论文承诺的模型与数据何时真正开放？",
+        "11万样本对复杂人物关系和长叙事的覆盖范围有多大？"
+      ],
+      "key_numbers": [
+        {
+          "label": "训练样本",
+          "value": "110K",
+          "claim_id": "clm_b5303be4d7301f7c_02"
+        }
+      ],
+      "source_links": [
+        {
+          "source_id": "src_ece5c1f89fe6900c7fde",
+          "label": "arXiv原文",
+          "url": "https://arxiv.org/abs/2608.08820",
+          "role": "primary"
+        }
+      ],
+      "primary_tags": [
+        "视频生成",
+        "跨镜头一致性",
+        "短剧"
+      ],
+      "confidence": "confidence.medium",
+      "priority": "priority.p0",
+      "reading_time_minutes": 4,
+      "editorial_status": "fact_checked",
+      "drafted_by": "llm",
+      "reviewer": null,
+      "reviewed_at": null,
+      "revision_note": "一手来源已核验；编辑判断仍需发布者确认。",
+      "editorial_score": 92,
+      "published_at": "2026-08-09T17:11:57Z"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "editorial_story",
+      "story_id": "story_202633_scivbench",
+      "article_type": "deep_dive",
+      "headline": "视频评测的下一关：科学机制是否正确？",
+      "dek": "Sci-VBench用1,253项专家样例测试16个视频模型。结果指向一个正在扩大的缺口：画面可以足够逼真，但科学过程和因果链仍可能是错的。",
+      "one_line_takeaway": "视频生成的竞争正从画质和提示词对齐，进入机制正确性与可验证结构的评测阶段。",
+      "category": "评测与标准",
+      "related_event_ids": [
+        "evt_20260810_scivbench_auto"
+      ],
+      "primary_event_id": "evt_20260810_scivbench_auto",
+      "what_happened": {
+        "text": "Sci-VBench发布了一套面向科学知识与推理的视频生成评测：1,253个专家标注样例覆盖四大学科、60个主题，并用Rubric协议评估16个闭源和开源模型。作者报告，各模型的感知质量已经较为接近，但Prompt Grounding以及科学和因果正确性仍有明显差异。",
+        "claim_ids": [
+          "clm_511a07864a960f62_01",
+          "clm_511a07864a960f62_02",
+          "clm_511a07864a960f62_03"
+        ],
+        "statement_type": "fact"
+      },
+      "why_it_matters": {
+        "text": "高画质Demo会掩盖对象状态、过程顺序和因果关系上的结构性错误。把这些错误拆成可重复测试的任务，意味着模型团队可以建立机制层的Bad Case回归集，产品侧也能更准确地界定模型适用边界。",
+        "claim_ids": [
+          "clm_511a07864a960f62_01",
+          "clm_511a07864a960f62_02",
+          "clm_511a07864a960f62_03"
+        ],
+        "statement_type": "judgment"
+      },
+      "our_take": {
+        "text": "对视频模型产品策略而言，后续能力卖点不应只强调分辨率、时长和指令遵循，还要回答物理、因果和空间过程能否被稳定验证。科学评测可以先作为高难度切片，而不是直接替代通用审美评测。",
+        "claim_ids": [
+          "clm_511a07864a960f62_01",
+          "clm_511a07864a960f62_02",
+          "clm_511a07864a960f62_03"
+        ],
+        "statement_type": "judgment"
+      },
+      "under_the_hood": {
+        "text": "该基准以专家设计的科学任务为基本单元，通过细分Rubric检查生成结果中的知识、推理、时空连续和因果正确性，避免单一综合分数把机制失败平均掉。",
+        "claim_ids": [
+          "clm_511a07864a960f62_01",
+          "clm_511a07864a960f62_02",
+          "clm_511a07864a960f62_03"
+        ],
+        "statement_type": "fact"
+      },
+      "limitations": {
+        "text": "科学场景并不代表全部消费级视频任务；模型排名和差距仍需结合完整评测协议理解。",
+        "claim_ids": [
+          "clm_511a07864a960f62_01",
+          "clm_511a07864a960f62_02",
+          "clm_511a07864a960f62_03"
+        ],
+        "statement_type": "judgment"
+      },
+      "watch_next": [
+        "主流视频模型是否开始公开机制正确性的分项结果？",
+        "科学与因果Bad Case能否进入团队统一回归测试？"
+      ],
+      "key_numbers": [
+        {
+          "label": "专家样例",
+          "value": "1,253",
+          "claim_id": "clm_511a07864a960f62_01"
+        },
+        {
+          "label": "科学主题",
+          "value": "60",
+          "claim_id": "clm_511a07864a960f62_01"
+        },
+        {
+          "label": "评估模型",
+          "value": "16",
+          "claim_id": "clm_511a07864a960f62_02"
+        }
+      ],
+      "source_links": [
+        {
+          "source_id": "src_b7e1dafb5de1edf70063",
+          "label": "arXiv原文",
+          "url": "https://arxiv.org/abs/2608.09873",
+          "role": "primary"
+        }
+      ],
+      "primary_tags": [
+        "评测与标准",
+        "视频生成",
+        "机制正确性"
+      ],
+      "confidence": "confidence.high",
+      "priority": "priority.p0",
+      "reading_time_minutes": 4,
+      "editorial_status": "fact_checked",
+      "drafted_by": "llm",
+      "reviewer": null,
+      "reviewed_at": null,
+      "revision_note": "一手来源已核验；编辑判断仍需发布者确认。",
+      "editorial_score": 97,
+      "published_at": "2026-08-10T17:27:32Z"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "editorial_story",
+      "story_id": "story_7da398ea9da9",
+      "article_type": "deep_dive",
+      "headline": "Stream Forcing用统一训练轨迹缓解流式视频训练—推理失配",
+      "dek": "Stream Forcing把流式视频扩散采样重写为按帧索引的噪声随机过程，以缓解训练与推理失配。",
+      "one_line_takeaway": "统一流式训练轨迹直接回应长时生成的训练—推理失配问题。",
+      "category": "视频生成",
+      "related_event_ids": [
+        "evt_20260811_stream_forcing"
+      ],
+      "primary_event_id": "evt_20260811_stream_forcing",
+      "what_happened": {
+        "text": "Stream Forcing把流式视频扩散采样重写为按帧索引的噪声随机过程，以缓解训练与推理失配；作者报告在UCF-101上FVD改善36.6%，长时零样本外推的FVD改善27.9%。",
+        "claim_ids": [
+          "clm_82fdb9d008d79987_01",
+          "clm_82fdb9d008d79987_02"
+        ],
+        "statement_type": "fact"
+      },
+      "why_it_matters": {
+        "text": "统一流式训练轨迹直接回应长时生成的训练—推理失配问题。",
+        "claim_ids": [
+          "clm_82fdb9d008d79987_01",
+          "clm_82fdb9d008d79987_02"
+        ],
+        "statement_type": "judgment"
+      },
+      "our_take": {
+        "text": "这条信号值得围绕Stream Forcing的真实能力边界、成本与工作流适配继续验证。",
+        "claim_ids": [
+          "clm_82fdb9d008d79987_01",
+          "clm_82fdb9d008d79987_02"
+        ],
+        "statement_type": "judgment"
+      },
+      "under_the_hood": {
+        "text": "作者报告在UCF-101上FVD改善36.6%，长时零样本外推的FVD改善27.9%。",
+        "claim_ids": [
+          "clm_82fdb9d008d79987_01",
+          "clm_82fdb9d008d79987_02"
+        ],
+        "statement_type": "fact"
+      },
+      "limitations": {
+        "text": "主要数字来自UCF-101，不能直接证明复杂长视频、叙事或产品级流式生成质量。",
+        "claim_ids": [
+          "clm_82fdb9d008d79987_01",
+          "clm_82fdb9d008d79987_02"
+        ],
+        "statement_type": "judgment"
+      },
+      "watch_next": [
+        "是否出现独立复现或真实产品数据？",
+        "能力变化能否进入稳定工作流？"
+      ],
+      "key_numbers": [],
+      "source_links": [
+        {
+          "source_id": "src_588398d607f3620af867",
+          "label": "arXiv原文",
+          "url": "https://arxiv.org/abs/2608.10439",
+          "role": "primary"
+        }
+      ],
+      "primary_tags": [
+        "视频生成",
+        "Stream Forcing"
+      ],
+      "confidence": "confidence.medium",
+      "priority": "priority.p0",
+      "reading_time_minutes": 4,
+      "editorial_status": "fact_checked",
+      "drafted_by": "llm",
+      "reviewer": null,
+      "reviewed_at": null,
+      "revision_note": "一手来源已核验；编辑判断仍需发布者确认。",
+      "editorial_score": 84,
+      "published_at": "2026-08-11T03:39:05Z"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "editorial_story",
+      "story_id": "story_d8313ef87045",
+      "article_type": "brief",
+      "headline": "Diff-VF免训练扩展短视频扩散模型的长时生成能力",
+      "dek": "Diff-VF提出无需训练、可插拔的长视频生成框架，组合混合噪声初始化、加权窗口采样和时间扩展采样。",
+      "one_line_takeaway": "免训练长视频扩展具有较低验证成本，值得进入本期正式事件。",
+      "category": "视频生成",
+      "related_event_ids": [
+        "evt_20260806_diff_vf"
+      ],
+      "primary_event_id": "evt_20260806_diff_vf",
+      "what_happened": {
+        "text": "Diff-VF提出无需训练、可插拔的长视频生成框架，组合混合噪声初始化、加权窗口采样和时间扩展采样；作者报告该方法在两个不同视频扩散基座上相对多种免训练基线取得更好的时序连贯与运动多样性平衡。",
+        "claim_ids": [
+          "clm_3d98e42828f9a063_01",
+          "clm_3d98e42828f9a063_02"
+        ],
+        "statement_type": "fact"
+      },
+      "why_it_matters": {
+        "text": "免训练长视频扩展具有较低验证成本，值得进入本期正式事件。",
+        "claim_ids": [
+          "clm_3d98e42828f9a063_01",
+          "clm_3d98e42828f9a063_02"
+        ],
+        "statement_type": "judgment"
+      },
+      "our_take": null,
+      "under_the_hood": {
+        "text": "作者报告该方法在两个不同视频扩散基座上相对多种免训练基线取得更好的时序连贯与运动多样性平衡。",
+        "claim_ids": [
+          "clm_3d98e42828f9a063_01",
+          "clm_3d98e42828f9a063_02"
+        ],
+        "statement_type": "fact"
+      },
+      "limitations": {
+        "text": "摘要没有给出可直接比较的关键数字、具体时长与推理成本，产品收益仍需正文和实测确认。",
+        "claim_ids": [
+          "clm_3d98e42828f9a063_01",
+          "clm_3d98e42828f9a063_02"
+        ],
+        "statement_type": "judgment"
+      },
+      "watch_next": [
+        "是否出现独立复现或真实产品数据？",
+        "能力变化能否进入稳定工作流？"
+      ],
+      "key_numbers": [],
+      "source_links": [
+        {
+          "source_id": "src_6bbde377448f1f641f70",
+          "label": "arXiv原文",
+          "url": "https://arxiv.org/abs/2608.05976",
+          "role": "primary"
+        }
+      ],
+      "primary_tags": [
+        "视频生成",
+        "Diff-VF"
+      ],
+      "confidence": "confidence.medium",
+      "priority": "priority.p1",
+      "reading_time_minutes": 2,
+      "editorial_status": "fact_checked",
+      "drafted_by": "llm",
+      "reviewer": null,
+      "reviewed_at": null,
+      "revision_note": "一手来源已核验；编辑判断仍需发布者确认。",
+      "editorial_score": 81,
+      "published_at": "2026-08-06T12:53:46Z"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "editorial_story",
+      "story_id": "story_202633_sekai2",
+      "article_type": "brief",
+      "headline": "长视频世界数据开始同时记录轨迹与语义",
+      "dek": "Sekai2发布2,826小时长视频数据，为片段配套相机轨迹和分层时序标注，并补充具有回环与重访的全景序列。",
+      "one_line_takeaway": "世界模型数据正从大规模视频堆积，转向相机运动、时序语义和空间重访的联合记录。",
+      "category": "世界模型",
+      "related_event_ids": [
+        "evt_20260810_sekai2"
+      ],
+      "primary_event_id": "evt_20260810_sekai2",
+      "what_happened": {
+        "text": "Sekai2包含128,892个片段、总计2,826小时，来自10,428个源视频并覆盖113个国家或地区。每个片段带相机轨迹和分层时序标注，另含982段具有回环和重访的全景序列。",
+        "claim_ids": [
+          "clm_b3b40f2502fb6bce_01",
+          "clm_b3b40f2502fb6bce_02",
+          "clm_b3b40f2502fb6bce_03"
+        ],
+        "statement_type": "fact"
+      },
+      "why_it_matters": {
+        "text": "长视频与世界模型不仅需要更多画面，还需要知道相机如何移动、事件何时发生、空间是否被再次访问。这样的联合标注更接近训练世界状态和相机控制所需的数据结构。",
+        "claim_ids": [
+          "clm_b3b40f2502fb6bce_01",
+          "clm_b3b40f2502fb6bce_02",
+          "clm_b3b40f2502fb6bce_03"
+        ],
+        "statement_type": "judgment"
+      },
+      "our_take": null,
+      "under_the_hood": {
+        "text": "数据把长视频片段、相机轨迹、分层时序语义和全景探索序列组织到同一资源中。",
+        "claim_ids": [
+          "clm_b3b40f2502fb6bce_01",
+          "clm_b3b40f2502fb6bce_02",
+          "clm_b3b40f2502fb6bce_03"
+        ],
+        "statement_type": "fact"
+      },
+      "limitations": {
+        "text": "这是数据集技术报告；数据规模与覆盖不自动等价于模型能力提升，实际训练收益仍待验证。",
+        "claim_ids": [
+          "clm_b3b40f2502fb6bce_01",
+          "clm_b3b40f2502fb6bce_02",
+          "clm_b3b40f2502fb6bce_03"
+        ],
+        "statement_type": "judgment"
+      },
+      "watch_next": [
+        "数据开放范围与许可条件如何？",
+        "加入轨迹标注后，对相机控制和长时一致性的实际增益多大？"
+      ],
+      "key_numbers": [
+        {
+          "label": "视频片段",
+          "value": "128,892",
+          "claim_id": "clm_b3b40f2502fb6bce_01"
+        },
+        {
+          "label": "总时长",
+          "value": "2,826h",
+          "claim_id": "clm_b3b40f2502fb6bce_01"
+        },
+        {
+          "label": "国家/地区",
+          "value": "113",
+          "claim_id": "clm_b3b40f2502fb6bce_01"
+        }
+      ],
+      "source_links": [
+        {
+          "source_id": "src_a249f95e9bbdf2c4ef5e",
+          "label": "arXiv原文",
+          "url": "https://arxiv.org/abs/2608.09449",
+          "role": "primary"
+        }
+      ],
+      "primary_tags": [
+        "世界模型",
+        "长视频",
+        "相机轨迹"
+      ],
+      "confidence": "confidence.high",
+      "priority": "priority.p1",
+      "reading_time_minutes": 2,
+      "editorial_status": "fact_checked",
+      "drafted_by": "llm",
+      "reviewer": null,
+      "reviewed_at": null,
+      "revision_note": "一手来源已核验；编辑判断仍需发布者确认。",
+      "editorial_score": 77,
+      "published_at": "2026-08-10T11:23:01Z"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "editorial_story",
+      "story_id": "story_1c27259887eb",
+      "article_type": "brief",
+      "headline": "LDR用显式潜变量动力学提升视频世界模型外推能力",
+      "dek": "LDR把潜变量转移写成显式运动学积分，并只回归三阶及更高阶残差。",
+      "one_line_takeaway": "显式潜变量动力学提供不同于像素拟合的模型优化路线，受控实验结果值得正式跟踪。",
+      "category": "世界模型",
+      "related_event_ids": [
+        "evt_20260810_ldr"
+      ],
+      "primary_event_id": "evt_20260810_ldr",
+      "what_happened": {
+        "text": "LDR把潜变量转移写成显式运动学积分，并只回归三阶及更高阶残差；作者在五个白盒物理任务上报告分布内外误差差距缩小超过20倍、参数量减少26倍、速度提高143倍。",
+        "claim_ids": [
+          "clm_9ef9249e523ccd94_01",
+          "clm_9ef9249e523ccd94_02"
+        ],
+        "statement_type": "fact"
+      },
+      "why_it_matters": {
+        "text": "显式潜变量动力学提供不同于像素拟合的模型优化路线，受控实验结果值得正式跟踪。",
+        "claim_ids": [
+          "clm_9ef9249e523ccd94_01",
+          "clm_9ef9249e523ccd94_02"
+        ],
+        "statement_type": "judgment"
+      },
+      "our_take": null,
+      "under_the_hood": {
+        "text": "作者在五个白盒物理任务上报告分布内外误差差距缩小超过20倍、参数量减少26倍、速度提高143倍。",
+        "claim_ids": [
+          "clm_9ef9249e523ccd94_01",
+          "clm_9ef9249e523ccd94_02"
+        ],
+        "statement_type": "fact"
+      },
+      "limitations": {
+        "text": "实验是256平方分辨率的五类受控白盒任务，不能直接代表复杂真实视频或开放世界。",
+        "claim_ids": [
+          "clm_9ef9249e523ccd94_01",
+          "clm_9ef9249e523ccd94_02"
+        ],
+        "statement_type": "judgment"
+      },
+      "watch_next": [
+        "是否出现独立复现或真实产品数据？",
+        "能力变化能否进入稳定工作流？"
+      ],
+      "key_numbers": [],
+      "source_links": [
+        {
+          "source_id": "src_eb7de64ec193b4077ceb",
+          "label": "arXiv原文",
+          "url": "https://arxiv.org/abs/2608.09926",
+          "role": "primary"
+        }
+      ],
+      "primary_tags": [
+        "世界模型",
+        "Latent Dynamics Reasoning"
+      ],
+      "confidence": "confidence.medium",
+      "priority": "priority.p1",
+      "reading_time_minutes": 2,
+      "editorial_status": "fact_checked",
+      "drafted_by": "llm",
+      "reviewer": null,
+      "reviewed_at": null,
+      "revision_note": "一手来源已核验；编辑判断仍需发布者确认。",
+      "editorial_score": 75,
+      "published_at": "2026-08-10T17:59:19Z"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "editorial_story",
+      "story_id": "story_202633_beyondpixels",
+      "article_type": "brief",
+      "headline": "视频潜变量正在变成4D资产接口",
+      "dek": "Latent-to-4D尝试绕过“先生成视频、再重建3D”的串行流程，直接把共享VAE的视频模型潜变量映射为显式4D表示。",
+      "one_line_takeaway": "视频模型的内部表示，可能成为连接内容生成与4D资产生产的新接口。",
+      "category": "空间与4D",
+      "related_event_ids": [
+        "evt_20260811_beyondpixels_auto"
+      ],
+      "primary_event_id": "evt_20260811_beyondpixels_auto",
+      "what_happened": {
+        "text": "论文提出Latent-to-4D，把视频模型最终去噪潜变量直接映射到显式4D表示。作者报告，同一检查点可在共享VAE的多个视频扩散模型之间复用，并以约1,000条重建片段完成训练。",
+        "claim_ids": [
+          "clm_d2cd4cccc8535e3d_01",
+          "clm_d2cd4cccc8535e3d_02",
+          "clm_d2cd4cccc8535e3d_03"
+        ],
+        "statement_type": "fact"
+      },
+      "why_it_matters": {
+        "text": "如果潜变量能够跨模型复用，视频生成和4D资产生产之间就可能少一次像素级重建，降低工作流长度，并为虚拟场景、运镜和空间编辑提供统一接口。",
+        "claim_ids": [
+          "clm_d2cd4cccc8535e3d_01",
+          "clm_d2cd4cccc8535e3d_02",
+          "clm_d2cd4cccc8535e3d_03"
+        ],
+        "statement_type": "judgment"
+      },
+      "our_take": null,
+      "under_the_hood": {
+        "text": "方法依赖共享VAE，将最终潜变量送入4D解码器，而不是从生成视频重新估计空间结构。",
+        "claim_ids": [
+          "clm_d2cd4cccc8535e3d_01",
+          "clm_d2cd4cccc8535e3d_02",
+          "clm_d2cd4cccc8535e3d_03"
+        ],
+        "statement_type": "fact"
+      },
+      "limitations": {
+        "text": "跨模型复用依赖共享VAE；投影指标和人类偏好不能直接证明真实4D精度或物理正确性。",
+        "claim_ids": [
+          "clm_d2cd4cccc8535e3d_01",
+          "clm_d2cd4cccc8535e3d_02",
+          "clm_d2cd4cccc8535e3d_03"
+        ],
+        "statement_type": "judgment"
+      },
+      "watch_next": [
+        "跨不同VAE家族能否迁移？",
+        "投影指标提升是否对应真实4D几何质量？"
+      ],
+      "key_numbers": [
+        {
+          "label": "训练片段",
+          "value": "≈1K",
+          "claim_id": "clm_d2cd4cccc8535e3d_03"
+        },
+        {
+          "label": "DINO-F1提升",
+          "value": "+2.88—5.81",
+          "claim_id": "clm_d2cd4cccc8535e3d_03"
+        }
+      ],
+      "source_links": [
+        {
+          "source_id": "src_3fda07685369000ba6af",
+          "label": "arXiv原文",
+          "url": "https://arxiv.org/abs/2608.10744",
+          "role": "primary"
+        }
+      ],
+      "primary_tags": [
+        "视频生成",
+        "4D资产",
+        "空间表征"
+      ],
+      "confidence": "confidence.high",
+      "priority": "priority.p1",
+      "reading_time_minutes": 2,
+      "editorial_status": "fact_checked",
+      "drafted_by": "llm",
+      "reviewer": null,
+      "reviewed_at": null,
+      "revision_note": "一手来源已核验；编辑判断仍需发布者确认。",
+      "editorial_score": 84,
+      "published_at": "2026-08-11T10:02:41Z"
+    }
+  ],
+  "evidence_claims": [
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_3508479b14f81b90_01",
+      "claim_text": "GAUGE包含22个受控任务族，覆盖刚体、绳索、织物与体积可变形物体。",
+      "claim_kind": "metric",
+      "source_id": "src_2cf80b0f79180c090001",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "user editorial selection + Codex primary-source verification",
+      "verified_at": "2026-08-13T11:30:30.716018Z"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_3508479b14f81b90_02",
+      "claim_text": "论文评测三个物理引擎的14个任务族，以及六个图生视频模型的五个刚体任务。",
+      "claim_kind": "metric",
+      "source_id": "src_2cf80b0f79180c090001",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "user editorial selection + Codex primary-source verification",
+      "verified_at": "2026-08-13T11:30:30.716018Z"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_3508479b14f81b90_03",
+      "claim_text": "作者报告视频世界模型可能生成方程形式看似合理的轨迹，却恢复出错误的加速度、动量传递和振荡时序。",
+      "claim_kind": "result",
+      "source_id": "src_2cf80b0f79180c090001",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "user editorial selection + Codex primary-source verification",
+      "verified_at": "2026-08-13T11:30:30.716018Z"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_b015385caa03b3b1_01",
+      "claim_text": "PhyS构建12万条真实物理交互视频，覆盖刚体、软体、流体与相变，并带物体属性和因果状态转移描述。",
+      "claim_kind": "metric",
+      "source_id": "src_fa6617a0569d8dd02226",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "user editorial selection + Codex primary-source verification",
+      "verified_at": "2026-08-13T11:30:30.716018Z"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_b015385caa03b3b1_02",
+      "claim_text": "方法把物理先验注入14B双向DiT教师，再蒸馏到1.3B因果DiT用于少步流式生成。",
+      "claim_kind": "specification",
+      "source_id": "src_fa6617a0569d8dd02226",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "user editorial selection + Codex primary-source verification",
+      "verified_at": "2026-08-13T11:30:30.716018Z"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_b015385caa03b3b1_03",
+      "claim_text": "作者报告在PhysicsIQ上相对Wan2.1-14B教师提升18.2%，相对三类流式基线分别提升23.7%、14.8%和31.4%。",
+      "claim_kind": "metric",
+      "source_id": "src_fa6617a0569d8dd02226",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "user editorial selection + Codex primary-source verification",
+      "verified_at": "2026-08-13T11:30:30.716018Z"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_b5303be4d7301f7c_01",
+      "claim_text": "LogiShot联合编码上下文视频与其他条件，并在生成过程中保持上下文视频的视觉记忆。",
+      "claim_kind": "result",
+      "source_id": "src_ece5c1f89fe6900c7fde",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "user editorial selection + Codex primary-source verification",
+      "verified_at": "2026-08-13T11:30:30.716018Z"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_b5303be4d7301f7c_02",
+      "claim_text": "论文构建11万样本的数据集和跨镜头逻辑一致性专用评测。",
+      "claim_kind": "metric",
+      "source_id": "src_ece5c1f89fe6900c7fde",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "user editorial selection + Codex primary-source verification",
+      "verified_at": "2026-08-13T11:30:30.716018Z"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_b5303be4d7301f7c_03",
+      "claim_text": "作者报告LogiShot在多镜头逻辑一致性上持续优于现有基线。",
+      "claim_kind": "result",
+      "source_id": "src_ece5c1f89fe6900c7fde",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "user editorial selection + Codex primary-source verification",
+      "verified_at": "2026-08-13T11:30:30.716018Z"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_511a07864a960f62_01",
+      "claim_text": "Sci-VBench包含1,253个专家标注样例，覆盖四大学科的60个主题。",
+      "claim_kind": "metric",
+      "source_id": "src_b7e1dafb5de1edf70063",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "user editorial selection + Codex primary-source verification",
+      "verified_at": "2026-08-13T11:30:30.716018Z"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_511a07864a960f62_02",
+      "claim_text": "论文使用基于Rubric的协议评测16个闭源和开源视频生成模型。",
+      "claim_kind": "metric",
+      "source_id": "src_b7e1dafb5de1edf70063",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "user editorial selection + Codex primary-source verification",
+      "verified_at": "2026-08-13T11:30:30.716018Z"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_511a07864a960f62_03",
+      "claim_text": "作者报告感知质量分数较接近，但Prompt Grounding以及科学和因果正确性差异明显。",
+      "claim_kind": "result",
+      "source_id": "src_b7e1dafb5de1edf70063",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "user editorial selection + Codex primary-source verification",
+      "verified_at": "2026-08-13T11:30:30.716018Z"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_82fdb9d008d79987_01",
+      "claim_text": "Stream Forcing把流式视频扩散采样重写为按帧索引的噪声随机过程，以缓解训练与推理失配。",
+      "claim_kind": "result",
+      "source_id": "src_588398d607f3620af867",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "user editorial selection + Codex primary-source verification",
+      "verified_at": "2026-08-13T11:30:30.716018Z"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_82fdb9d008d79987_02",
+      "claim_text": "作者报告在UCF-101上FVD改善36.6%，长时零样本外推的FVD改善27.9%。",
+      "claim_kind": "metric",
+      "source_id": "src_588398d607f3620af867",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "user editorial selection + Codex primary-source verification",
+      "verified_at": "2026-08-13T11:30:30.716018Z"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_3d98e42828f9a063_01",
+      "claim_text": "Diff-VF提出无需训练、可插拔的长视频生成框架，组合混合噪声初始化、加权窗口采样和时间扩展采样。",
+      "claim_kind": "result",
+      "source_id": "src_6bbde377448f1f641f70",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "user editorial selection + Codex primary-source verification",
+      "verified_at": "2026-08-13T11:30:30.716018Z"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_3d98e42828f9a063_02",
+      "claim_text": "作者报告该方法在两个不同视频扩散基座上相对多种免训练基线取得更好的时序连贯与运动多样性平衡。",
+      "claim_kind": "result",
+      "source_id": "src_6bbde377448f1f641f70",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "user editorial selection + Codex primary-source verification",
+      "verified_at": "2026-08-13T11:30:30.716018Z"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_b3b40f2502fb6bce_01",
+      "claim_text": "Sekai2发布128,892个视频片段、总计2,826小时，来自10,428个源视频并覆盖113个国家或地区。",
+      "claim_kind": "metric",
+      "source_id": "src_a249f95e9bbdf2c4ef5e",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "user editorial selection + Codex primary-source verification",
+      "verified_at": "2026-08-13T11:30:30.716018Z"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_b3b40f2502fb6bce_02",
+      "claim_text": "数据为每个片段提供相机轨迹和分层时序标注，共形成649,597个时间定位片段。",
+      "claim_kind": "metric",
+      "source_id": "src_a249f95e9bbdf2c4ef5e",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "user editorial selection + Codex primary-source verification",
+      "verified_at": "2026-08-13T11:30:30.716018Z"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_b3b40f2502fb6bce_03",
+      "claim_text": "数据额外包含982段沿非线性路径采集、具有回环和重访的全景序列。",
+      "claim_kind": "metric",
+      "source_id": "src_a249f95e9bbdf2c4ef5e",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "user editorial selection + Codex primary-source verification",
+      "verified_at": "2026-08-13T11:30:30.716018Z"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_9ef9249e523ccd94_01",
+      "claim_text": "LDR把潜变量转移写成显式运动学积分，并只回归三阶及更高阶残差。",
+      "claim_kind": "result",
+      "source_id": "src_eb7de64ec193b4077ceb",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "user editorial selection + Codex primary-source verification",
+      "verified_at": "2026-08-13T11:30:30.716018Z"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_9ef9249e523ccd94_02",
+      "claim_text": "作者在五个白盒物理任务上报告分布内外误差差距缩小超过20倍、参数量减少26倍、速度提高143倍。",
+      "claim_kind": "metric",
+      "source_id": "src_eb7de64ec193b4077ceb",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "user editorial selection + Codex primary-source verification",
+      "verified_at": "2026-08-13T11:30:30.716018Z"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_d2cd4cccc8535e3d_01",
+      "claim_text": "论文提出Latent-to-4D，直接把共享VAE的视频模型最终去噪潜变量映射到显式4D表示。",
+      "claim_kind": "result",
+      "source_id": "src_3fda07685369000ba6af",
+      "source_locator": "arXiv abstract / method",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "user editorial selection + Codex primary-source verification",
+      "verified_at": "2026-08-13T11:30:30.716018Z"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_d2cd4cccc8535e3d_02",
+      "claim_text": "作者报告单一检查点可在共享同一VAE家族的多个视频扩散模型之间复用。",
+      "claim_kind": "result",
+      "source_id": "src_3fda07685369000ba6af",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "user editorial selection + Codex primary-source verification",
+      "verified_at": "2026-08-13T11:30:30.716018Z"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_d2cd4cccc8535e3d_03",
+      "claim_text": "作者报告该方法约用1,000条重建片段训练，并在Text4D-200与I4D-200上将投影DINO-F1分别提高2.88—3.45点和5.81点。",
+      "claim_kind": "metric",
+      "source_id": "src_3fda07685369000ba6af",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "user editorial selection + Codex primary-source verification",
+      "verified_at": "2026-08-13T11:30:30.716018Z"
+    }
+  ]
+}
