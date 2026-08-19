@@ -1,0 +1,1995 @@
+{
+  "schema_version": "0.2",
+  "record_type": "verified_event_bundle",
+  "verified_at": "2026-08-12T16:11:45+08:00",
+  "summary": {
+    "p1_reviewed": 16,
+    "verified_primary": 16,
+    "included_events": 9,
+    "watchlist_events": 7
+  },
+  "editorial_selection": {
+    "weekly_thesis": "本周视觉智能信号正在从单点能力更新，转向可验证、可控制、可进入工作流的系统变化。",
+    "top_event_ids": [
+      "evt_20260806_gauge",
+      "evt_20260807_wananimate2",
+      "evt_20260808_phys",
+      "evt_20260809_logishot",
+      "evt_20260810_scivbench_auto"
+    ],
+    "timeline_event_ids": [
+      "evt_20260806_robustwam",
+      "evt_20260806_gauge",
+      "evt_20260806_emoworld",
+      "evt_20260807_wananimate2",
+      "evt_20260808_phys",
+      "evt_20260809_logishot",
+      "evt_20260810_sekai2",
+      "evt_20260810_scivbench_auto",
+      "evt_20260811_beyondpixels_auto"
+    ],
+    "watch_candidate_ids": [
+      "cand_e2a4089659ab07b3",
+      "cand_82fdb9d008d79987",
+      "cand_3d98e42828f9a063",
+      "cand_a8b78b0fc3775328",
+      "cand_1bdfbd667c63007c",
+      "cand_9ef9249e523ccd94",
+      "cand_4c2e4b3f93ac881e"
+    ]
+  },
+  "additional_source_records": [
+    {
+      "schema_version": "0.2",
+      "record_type": "source_record",
+      "source_id": "src_20260812_wananimate2_readme",
+      "registry_id": "reg_github_wananimate2_commits",
+      "source_type": "code_dataset",
+      "source_name": "Wan-Animate-2 official GitHub",
+      "publisher": "Wan-Video",
+      "author": [],
+      "source_url": "https://github.com/Wan-Video/Wan-Animate-2",
+      "canonical_url": "https://github.com/Wan-Video/Wan-Animate-2",
+      "raw_title": "Wan-Animate-2: Pushing the Application Boundaries of Character Animation Models",
+      "raw_text": null,
+      "raw_excerpt": "官方README记录2026年8月7日发布推理脚本、基础权重和蒸馏权重，并给出14B模型与Diffusers推理说明。",
+      "published_at": "2026-08-07T00:00:00Z",
+      "collected_at": "2026-08-12T16:11:45+08:00",
+      "language": "en",
+      "content_hash": "verification:wan-animate-2-readme-20260812",
+      "access_status": "success",
+      "http_status": 200,
+      "failure_reason": null,
+      "discovered_by": "registry",
+      "discovery_context": "GitHub connector second-pass verification",
+      "rights_scope": "excerpt",
+      "processing_status": "fact_checked"
+    }
+  ],
+  "evidence_claims": [
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_d2cd4cccc8535e3d_01",
+      "claim_text": "论文提出Latent-to-4D，直接把共享VAE的视频模型最终去噪潜变量映射到显式4D表示。",
+      "claim_kind": "result",
+      "source_id": "src_3fda07685369000ba6af",
+      "source_locator": "arXiv abstract / method",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "human_reviewed_fixture",
+      "verified_at": "2026-08-12T16:11:45+08:00"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_d2cd4cccc8535e3d_02",
+      "claim_text": "作者报告单一检查点可在共享同一VAE家族的多个视频扩散模型之间复用。",
+      "claim_kind": "result",
+      "source_id": "src_3fda07685369000ba6af",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "human_reviewed_fixture",
+      "verified_at": "2026-08-12T16:11:45+08:00"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_d2cd4cccc8535e3d_03",
+      "claim_text": "作者报告该方法约用1,000条重建片段训练，并在Text4D-200与I4D-200上将投影DINO-F1分别提高2.88—3.45点和5.81点。",
+      "claim_kind": "metric",
+      "source_id": "src_3fda07685369000ba6af",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "human_reviewed_fixture",
+      "verified_at": "2026-08-12T16:11:45+08:00"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_511a07864a960f62_01",
+      "claim_text": "Sci-VBench包含1,253个专家标注样例，覆盖四大学科的60个主题。",
+      "claim_kind": "metric",
+      "source_id": "src_b7e1dafb5de1edf70063",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "human_reviewed_fixture",
+      "verified_at": "2026-08-12T16:11:45+08:00"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_511a07864a960f62_02",
+      "claim_text": "论文使用基于Rubric的协议评测16个闭源和开源视频生成模型。",
+      "claim_kind": "metric",
+      "source_id": "src_b7e1dafb5de1edf70063",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "human_reviewed_fixture",
+      "verified_at": "2026-08-12T16:11:45+08:00"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_511a07864a960f62_03",
+      "claim_text": "作者报告感知质量分数较接近，但Prompt Grounding以及科学和因果正确性差异明显。",
+      "claim_kind": "result",
+      "source_id": "src_b7e1dafb5de1edf70063",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "human_reviewed_fixture",
+      "verified_at": "2026-08-12T16:11:45+08:00"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_e2a4089659ab07b3_01",
+      "claim_text": "GeoCon-Bench使用跨帧背景对应关系、单应或基础矩阵拟合来度量生成视频的几何一致性。",
+      "claim_kind": "result",
+      "source_id": "src_b390c56265f9a32d1f0b",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "human_reviewed_fixture",
+      "verified_at": "2026-08-12T16:11:45+08:00"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_e2a4089659ab07b3_02",
+      "claim_text": "论文发布的数据集包含20个场景和六类运动。",
+      "claim_kind": "metric",
+      "source_id": "src_b390c56265f9a32d1f0b",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "human_reviewed_fixture",
+      "verified_at": "2026-08-12T16:11:45+08:00"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_3508479b14f81b90_01",
+      "claim_text": "GAUGE包含22个受控任务族，覆盖刚体、绳索、织物与体积可变形物体。",
+      "claim_kind": "metric",
+      "source_id": "src_2cf80b0f79180c090001",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "human_reviewed_fixture",
+      "verified_at": "2026-08-12T16:11:45+08:00"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_3508479b14f81b90_02",
+      "claim_text": "论文评测三个物理引擎的14个任务族，以及六个图生视频模型的五个刚体任务。",
+      "claim_kind": "metric",
+      "source_id": "src_2cf80b0f79180c090001",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "human_reviewed_fixture",
+      "verified_at": "2026-08-12T16:11:45+08:00"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_3508479b14f81b90_03",
+      "claim_text": "作者报告视频世界模型可能生成方程形式看似合理的轨迹，却恢复出错误的加速度、动量传递和振荡时序。",
+      "claim_kind": "result",
+      "source_id": "src_2cf80b0f79180c090001",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "human_reviewed_fixture",
+      "verified_at": "2026-08-12T16:11:45+08:00"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_3ad5af8666d7cbcf_01",
+      "claim_text": "Wan官方仓库记录其于2026年8月7日发布Wan-Animate-2推理脚本、基础模型权重和蒸馏模型权重。",
+      "claim_kind": "release",
+      "source_id": "src_20260812_wananimate2_readme",
+      "source_locator": "official GitHub README / Release Notes",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "human_reviewed_fixture",
+      "verified_at": "2026-08-12T16:11:45+08:00"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_3ad5af8666d7cbcf_02",
+      "claim_text": "官方README将Wan-Animate-2描述为直接消费驱动视频的端到端角色动画框架，并加入文本驱动的视角控制。",
+      "claim_kind": "specification",
+      "source_id": "src_20260812_wananimate2_readme",
+      "source_locator": "official GitHub README / Introduction",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "human_reviewed_fixture",
+      "verified_at": "2026-08-12T16:11:45+08:00"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_3ad5af8666d7cbcf_03",
+      "claim_text": "公开模型为14B；官方示例显示蒸馏版本使用10步且不使用CFG。",
+      "claim_kind": "specification",
+      "source_id": "src_20260812_wananimate2_readme",
+      "source_locator": "official GitHub README / Model Download and Diffusers Inference",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "human_reviewed_fixture",
+      "verified_at": "2026-08-12T16:11:45+08:00"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_ff497f03b9771811_01",
+      "claim_text": "EmoWorld在冻结的Video DiT中分离氛围、情绪语义线索和时间变化三个控制维度。",
+      "claim_kind": "result",
+      "source_id": "src_ba63750d20512cdcf4d4",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "human_reviewed_fixture",
+      "verified_at": "2026-08-12T16:11:45+08:00"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_ff497f03b9771811_02",
+      "claim_text": "作者报告在Wan2.2上，三种模块分别带来19%情绪对齐提升与48%波动下降、37%情绪对齐提升与36%线索增加、以及15%过渡单调性提升。",
+      "claim_kind": "metric",
+      "source_id": "src_ba63750d20512cdcf4d4",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "human_reviewed_fixture",
+      "verified_at": "2026-08-12T16:11:45+08:00"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_ff497f03b9771811_03",
+      "claim_text": "论文覆盖27类情绪、文生视频和图生视频设置，并称无需更新生成器参数。",
+      "claim_kind": "specification",
+      "source_id": "src_ba63750d20512cdcf4d4",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "human_reviewed_fixture",
+      "verified_at": "2026-08-12T16:11:45+08:00"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_82fdb9d008d79987_01",
+      "claim_text": "Stream Forcing把流式视频扩散采样重写为按帧索引的噪声随机过程，以缓解训练与推理失配。",
+      "claim_kind": "result",
+      "source_id": "src_588398d607f3620af867",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "human_reviewed_fixture",
+      "verified_at": "2026-08-12T16:11:45+08:00"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_82fdb9d008d79987_02",
+      "claim_text": "作者报告在UCF-101上FVD改善36.6%，长时零样本外推的FVD改善27.9%。",
+      "claim_kind": "metric",
+      "source_id": "src_588398d607f3620af867",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "human_reviewed_fixture",
+      "verified_at": "2026-08-12T16:11:45+08:00"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_3d98e42828f9a063_01",
+      "claim_text": "Diff-VF提出无需训练、可插拔的长视频生成框架，组合混合噪声初始化、加权窗口采样和时间扩展采样。",
+      "claim_kind": "result",
+      "source_id": "src_6bbde377448f1f641f70",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "human_reviewed_fixture",
+      "verified_at": "2026-08-12T16:11:45+08:00"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_3d98e42828f9a063_02",
+      "claim_text": "作者报告该方法在两个不同视频扩散基座上相对多种免训练基线取得更好的时序连贯与运动多样性平衡。",
+      "claim_kind": "result",
+      "source_id": "src_6bbde377448f1f641f70",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "human_reviewed_fixture",
+      "verified_at": "2026-08-12T16:11:45+08:00"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_b5303be4d7301f7c_01",
+      "claim_text": "LogiShot联合编码上下文视频与其他条件，并在生成过程中保持上下文视频的视觉记忆。",
+      "claim_kind": "result",
+      "source_id": "src_ece5c1f89fe6900c7fde",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "human_reviewed_fixture",
+      "verified_at": "2026-08-12T16:11:45+08:00"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_b5303be4d7301f7c_02",
+      "claim_text": "论文构建11万样本的数据集和跨镜头逻辑一致性专用评测。",
+      "claim_kind": "metric",
+      "source_id": "src_ece5c1f89fe6900c7fde",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "human_reviewed_fixture",
+      "verified_at": "2026-08-12T16:11:45+08:00"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_b5303be4d7301f7c_03",
+      "claim_text": "作者报告LogiShot在多镜头逻辑一致性上持续优于现有基线。",
+      "claim_kind": "result",
+      "source_id": "src_ece5c1f89fe6900c7fde",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "human_reviewed_fixture",
+      "verified_at": "2026-08-12T16:11:45+08:00"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_b3b40f2502fb6bce_01",
+      "claim_text": "Sekai2发布128,892个视频片段、总计2,826小时，来自10,428个源视频并覆盖113个国家或地区。",
+      "claim_kind": "metric",
+      "source_id": "src_a249f95e9bbdf2c4ef5e",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "human_reviewed_fixture",
+      "verified_at": "2026-08-12T16:11:45+08:00"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_b3b40f2502fb6bce_02",
+      "claim_text": "数据为每个片段提供相机轨迹和分层时序标注，共形成649,597个时间定位片段。",
+      "claim_kind": "metric",
+      "source_id": "src_a249f95e9bbdf2c4ef5e",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "human_reviewed_fixture",
+      "verified_at": "2026-08-12T16:11:45+08:00"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_b3b40f2502fb6bce_03",
+      "claim_text": "数据额外包含982段沿非线性路径采集、具有回环和重访的全景序列。",
+      "claim_kind": "metric",
+      "source_id": "src_a249f95e9bbdf2c4ef5e",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "human_reviewed_fixture",
+      "verified_at": "2026-08-12T16:11:45+08:00"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_a8b78b0fc3775328_01",
+      "claim_text": "4D-WAM在训练阶段用几何基础模型的响应构造4D一致性损失，推理阶段不增加额外成本。",
+      "claim_kind": "result",
+      "source_id": "src_fb6c167bf2da6b85244b",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "human_reviewed_fixture",
+      "verified_at": "2026-08-12T16:11:45+08:00"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_a8b78b0fc3775328_02",
+      "claim_text": "作者报告其在NAVSIM-v1和NAVSIM-v2上达到最优表现。",
+      "claim_kind": "result",
+      "source_id": "src_fb6c167bf2da6b85244b",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "human_reviewed_fixture",
+      "verified_at": "2026-08-12T16:11:45+08:00"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_3285da87a331e384_01",
+      "claim_text": "Robust-WAM保留视频生成模型的VAE生成路径，并在动作流上增加轻量语义前视对齐目标。",
+      "claim_kind": "result",
+      "source_id": "src_4cb3a35ef6e427798b0c",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "human_reviewed_fixture",
+      "verified_at": "2026-08-12T16:11:45+08:00"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_3285da87a331e384_02",
+      "claim_text": "作者报告该方法在分布外仿真和真实机器人设置中提高多个WAM基线的成功率，同时不牺牲分布内表现。",
+      "claim_kind": "result",
+      "source_id": "src_4cb3a35ef6e427798b0c",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "human_reviewed_fixture",
+      "verified_at": "2026-08-12T16:11:45+08:00"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_b015385caa03b3b1_01",
+      "claim_text": "PhyS构建12万条真实物理交互视频，覆盖刚体、软体、流体与相变，并带物体属性和因果状态转移描述。",
+      "claim_kind": "metric",
+      "source_id": "src_fa6617a0569d8dd02226",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "human_reviewed_fixture",
+      "verified_at": "2026-08-12T16:11:45+08:00"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_b015385caa03b3b1_02",
+      "claim_text": "方法把物理先验注入14B双向DiT教师，再蒸馏到1.3B因果DiT用于少步流式生成。",
+      "claim_kind": "specification",
+      "source_id": "src_fa6617a0569d8dd02226",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "human_reviewed_fixture",
+      "verified_at": "2026-08-12T16:11:45+08:00"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_b015385caa03b3b1_03",
+      "claim_text": "作者报告在PhysicsIQ上相对Wan2.1-14B教师提升18.2%，相对三类流式基线分别提升23.7%、14.8%和31.4%。",
+      "claim_kind": "metric",
+      "source_id": "src_fa6617a0569d8dd02226",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "human_reviewed_fixture",
+      "verified_at": "2026-08-12T16:11:45+08:00"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_1bdfbd667c63007c_01",
+      "claim_text": "PSG-JEPA用机器人本体状态和多时域关节角变化监督潜变量，仅在训练期增加目标。",
+      "claim_kind": "result",
+      "source_id": "src_93b17972244660b826e3",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "human_reviewed_fixture",
+      "verified_at": "2026-08-12T16:11:45+08:00"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_1bdfbd667c63007c_02",
+      "claim_text": "作者在潜变量探针、冻结表征规划、仿真和真实机器人策略三个层级报告优于基线。",
+      "claim_kind": "result",
+      "source_id": "src_93b17972244660b826e3",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "human_reviewed_fixture",
+      "verified_at": "2026-08-12T16:11:45+08:00"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_9ef9249e523ccd94_01",
+      "claim_text": "LDR把潜变量转移写成显式运动学积分，并只回归三阶及更高阶残差。",
+      "claim_kind": "result",
+      "source_id": "src_eb7de64ec193b4077ceb",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "human_reviewed_fixture",
+      "verified_at": "2026-08-12T16:11:45+08:00"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_9ef9249e523ccd94_02",
+      "claim_text": "作者在五个白盒物理任务上报告分布内外误差差距缩小超过20倍、参数量减少26倍、速度提高143倍。",
+      "claim_kind": "metric",
+      "source_id": "src_eb7de64ec193b4077ceb",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "human_reviewed_fixture",
+      "verified_at": "2026-08-12T16:11:45+08:00"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_4c2e4b3f93ac881e_01",
+      "claim_text": "UniJEPA在同一潜空间中联合学习图像级光度变换预测和视频级下一状态预测。",
+      "claim_kind": "result",
+      "source_id": "src_993da43eff57e7457b58",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "human_reviewed_fixture",
+      "verified_at": "2026-08-12T16:11:45+08:00"
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "evidence_claim",
+      "claim_id": "clm_4c2e4b3f93ac881e_02",
+      "claim_text": "作者报告其在图像、视频和控制任务上匹配或超过专项JEPA，并在相近准确率下比生成式世界模型快数十倍。",
+      "claim_kind": "result",
+      "source_id": "src_993da43eff57e7457b58",
+      "source_locator": "arXiv abstract",
+      "quote_excerpt": null,
+      "is_direct": true,
+      "verification_status": "verified",
+      "verified_by": "human_reviewed_fixture",
+      "verified_at": "2026-08-12T16:11:45+08:00"
+    }
+  ],
+  "intelligence_events": [
+    {
+      "schema_version": "0.2",
+      "record_type": "intelligence_event",
+      "event_id": "evt_20260811_beyondpixels_auto",
+      "event_type": "event.research",
+      "canonical_title": "视频模型潜变量被直接复用为4D生成接口",
+      "event_at": "2026-08-11T10:02:41Z",
+      "event_time_basis": "published_at",
+      "primary_entity": {
+        "entity_type": "research_or_product",
+        "name": "Latent-to-4D"
+      },
+      "entities": [
+        {
+          "entity_type": "research_or_product",
+          "name": "Latent-to-4D"
+        }
+      ],
+      "source_ids": [
+        "src_3fda07685369000ba6af"
+      ],
+      "primary_source_id": "src_3fda07685369000ba6af",
+      "claim_ids": [
+        "clm_d2cd4cccc8535e3d_01",
+        "clm_d2cd4cccc8535e3d_02",
+        "clm_d2cd4cccc8535e3d_03"
+      ],
+      "fact_summary": "论文提出Latent-to-4D，直接把共享VAE的视频模型最终去噪潜变量映射到显式4D表示；作者报告单一检查点可在共享同一VAE家族的多个视频扩散模型之间复用；作者报告该方法约用1,000条重建片段训练，并在Text4D-200与I4D-200上将投影DINO-F1分别提高2.88—3.45点和5.81点。",
+      "limitations": "跨模型复用依赖共享VAE；投影指标和人类偏好不能直接证明真实4D精度或物理正确性。",
+      "primary_route": "visual_value.spatial_camera",
+      "secondary_routes": [
+        "frontier.video_generation",
+        "frontier.world_model"
+      ],
+      "tags": {
+        "tech": [
+          "tech.video_generation",
+          "tech.world_model"
+        ],
+        "task": [
+          "task.t2v",
+          "task.i2v"
+        ],
+        "capability": [
+          "cap.spatial_consistency"
+        ],
+        "scene": [
+          "scene.virtual_environment"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "track": "track.emerging",
+      "evidence_level": "evidence.a",
+      "confidence": "confidence.high",
+      "priority": "priority.p1",
+      "independent_source_count": 1,
+      "dedupe_key": "latent_to_4d|event.research|2026-08-11",
+      "status": "approved",
+      "needs_review_reasons": []
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "intelligence_event",
+      "event_id": "evt_20260810_scivbench_auto",
+      "event_type": "event.benchmark",
+      "canonical_title": "Sci-VBench用科学与因果正确性评测视频模型",
+      "event_at": "2026-08-10T17:27:32Z",
+      "event_time_basis": "published_at",
+      "primary_entity": {
+        "entity_type": "research_or_product",
+        "name": "Sci-VBench"
+      },
+      "entities": [
+        {
+          "entity_type": "research_or_product",
+          "name": "Sci-VBench"
+        }
+      ],
+      "source_ids": [
+        "src_b7e1dafb5de1edf70063"
+      ],
+      "primary_source_id": "src_b7e1dafb5de1edf70063",
+      "claim_ids": [
+        "clm_511a07864a960f62_01",
+        "clm_511a07864a960f62_02",
+        "clm_511a07864a960f62_03"
+      ],
+      "fact_summary": "Sci-VBench包含1,253个专家标注样例，覆盖四大学科的60个主题；论文使用基于Rubric的协议评测16个闭源和开源视频生成模型；作者报告感知质量分数较接近，但Prompt Grounding以及科学和因果正确性差异明显。",
+      "limitations": "科学场景并不代表全部消费级视频任务；模型排名和差距仍需结合完整评测协议理解。",
+      "primary_route": "visual_value.evaluation",
+      "secondary_routes": [
+        "frontier.video_generation",
+        "frontier.world_model"
+      ],
+      "tags": {
+        "tech": [
+          "tech.video_generation"
+        ],
+        "task": [
+          "task.t2v"
+        ],
+        "capability": [
+          "cap.physics",
+          "cap.instruction_following"
+        ],
+        "scene": [
+          "scene.education",
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.benchmark"
+        ]
+      },
+      "track": "track.emerging",
+      "evidence_level": "evidence.a",
+      "confidence": "confidence.high",
+      "priority": "priority.p0",
+      "independent_source_count": 1,
+      "dedupe_key": "sci_vbench|event.benchmark|2026-08-10",
+      "status": "approved",
+      "needs_review_reasons": []
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "intelligence_event",
+      "event_id": "evt_20260806_gauge",
+      "event_type": "event.benchmark",
+      "canonical_title": "GAUGE用真实测量共同诊断物理引擎与视频世界模型",
+      "event_at": "2026-08-06T12:19:38Z",
+      "event_time_basis": "published_at",
+      "primary_entity": {
+        "entity_type": "research_or_product",
+        "name": "GAUGE"
+      },
+      "entities": [
+        {
+          "entity_type": "research_or_product",
+          "name": "GAUGE"
+        }
+      ],
+      "source_ids": [
+        "src_2cf80b0f79180c090001"
+      ],
+      "primary_source_id": "src_2cf80b0f79180c090001",
+      "claim_ids": [
+        "clm_3508479b14f81b90_01",
+        "clm_3508479b14f81b90_02",
+        "clm_3508479b14f81b90_03"
+      ],
+      "fact_summary": "GAUGE包含22个受控任务族，覆盖刚体、绳索、织物与体积可变形物体；论文评测三个物理引擎的14个任务族，以及六个图生视频模型的五个刚体任务；作者报告视频世界模型可能生成方程形式看似合理的轨迹，却恢复出错误的加速度、动量传递和振荡时序。",
+      "limitations": "图生视频评测仅覆盖五个刚体任务；结论不能泛化到所有物理现象和生成场景。",
+      "primary_route": "visual_value.evaluation",
+      "secondary_routes": [
+        "frontier.world_model",
+        "frontier.embodied_ai"
+      ],
+      "tags": {
+        "tech": [
+          "tech.video_generation",
+          "tech.world_model",
+          "tech.embodied_ai"
+        ],
+        "task": [
+          "task.i2v"
+        ],
+        "capability": [
+          "cap.physics",
+          "cap.temporal_consistency"
+        ],
+        "scene": [
+          "scene.robotics",
+          "scene.virtual_environment"
+        ],
+        "event": [
+          "event.benchmark"
+        ]
+      },
+      "track": "track.emerging",
+      "evidence_level": "evidence.a",
+      "confidence": "confidence.high",
+      "priority": "priority.p0",
+      "independent_source_count": 1,
+      "dedupe_key": "gauge|event.benchmark|2026-08-06",
+      "status": "approved",
+      "needs_review_reasons": []
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "intelligence_event",
+      "event_id": "evt_20260807_wananimate2",
+      "event_type": "event.model_release",
+      "canonical_title": "Wan-Animate-2开放推理代码与基础、蒸馏权重",
+      "event_at": "2026-08-07T00:00:00Z",
+      "event_time_basis": "published_at",
+      "primary_entity": {
+        "entity_type": "research_or_product",
+        "name": "Wan-Animate-2"
+      },
+      "entities": [
+        {
+          "entity_type": "research_or_product",
+          "name": "Wan-Animate-2"
+        }
+      ],
+      "source_ids": [
+        "src_20260812_wananimate2_readme",
+        "src_f126c08d4377e6d51269",
+        "src_7261f4892bfd5d348b0f",
+        "src_f39a034cdfd977c5e56d",
+        "src_2c8b193c0e563ed9c1ac",
+        "src_868839fdc1a6ccaf0053",
+        "src_e06e1c48a18e44135569",
+        "src_a4211e22e0c05f468a47",
+        "src_3468aa0c0be7b16f1ad2",
+        "src_264453dfbb5e917ec875",
+        "src_d6944e4423c99d3185f2",
+        "src_b538b1ad551f09210f4c",
+        "src_b0868c27237728aeec81",
+        "src_efb05edd7f62fcd10516"
+      ],
+      "primary_source_id": "src_20260812_wananimate2_readme",
+      "claim_ids": [
+        "clm_3ad5af8666d7cbcf_01",
+        "clm_3ad5af8666d7cbcf_02",
+        "clm_3ad5af8666d7cbcf_03"
+      ],
+      "fact_summary": "Wan官方仓库记录其于2026年8月7日发布Wan-Animate-2推理脚本、基础模型权重和蒸馏模型权重；官方README将Wan-Animate-2描述为直接消费驱动视频的端到端角色动画框架，并加入文本驱动的视角控制；公开模型为14B；官方示例显示蒸馏版本使用10步且不使用CFG。",
+      "limitations": "官方README中的实时Lite版本未在同一发布说明里确认开放；质量和实时性尚未经过独立评测，硬件门槛较高。",
+      "primary_route": "frontier.video_generation",
+      "secondary_routes": [
+        "visual_value.spatial_camera",
+        "visual_value.product_workflow"
+      ],
+      "tags": {
+        "tech": [
+          "tech.video_generation"
+        ],
+        "task": [
+          "task.r2v",
+          "task.motion_transfer"
+        ],
+        "capability": [
+          "cap.reference_fidelity",
+          "cap.camera_language",
+          "cap.efficiency"
+        ],
+        "scene": [
+          "scene.creator_tool",
+          "scene.short_drama"
+        ],
+        "event": [
+          "event.model_release",
+          "event.open_source"
+        ]
+      },
+      "track": "track.fixed",
+      "evidence_level": "evidence.a",
+      "confidence": "confidence.high",
+      "priority": "priority.p0",
+      "independent_source_count": 14,
+      "dedupe_key": "wan_animate_2|event.model_release|2026-08-07",
+      "status": "approved",
+      "needs_review_reasons": []
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "intelligence_event",
+      "event_id": "evt_20260806_emoworld",
+      "event_type": "event.research",
+      "canonical_title": "EmoWorld在冻结视频模型中拆分氛围、线索与情绪时序控制",
+      "event_at": "2026-08-06T16:20:23Z",
+      "event_time_basis": "published_at",
+      "primary_entity": {
+        "entity_type": "research_or_product",
+        "name": "EmoWorld"
+      },
+      "entities": [
+        {
+          "entity_type": "research_or_product",
+          "name": "EmoWorld"
+        }
+      ],
+      "source_ids": [
+        "src_ba63750d20512cdcf4d4"
+      ],
+      "primary_source_id": "src_ba63750d20512cdcf4d4",
+      "claim_ids": [
+        "clm_ff497f03b9771811_01",
+        "clm_ff497f03b9771811_02",
+        "clm_ff497f03b9771811_03"
+      ],
+      "fact_summary": "EmoWorld在冻结的Video DiT中分离氛围、情绪语义线索和时间变化三个控制维度；作者报告在Wan2.2上，三种模块分别带来19%情绪对齐提升与48%波动下降、37%情绪对齐提升与36%线索增加、以及15%过渡单调性提升；论文覆盖27类情绪、文生视频和图生视频设置，并称无需更新生成器参数。",
+      "limitations": "指标由作者定义和报告，尚无独立复现；情绪代理分数不等价于真实内容偏好或叙事效果。",
+      "primary_route": "frontier.video_generation",
+      "secondary_routes": [
+        "visual_value.product_workflow"
+      ],
+      "tags": {
+        "tech": [
+          "tech.video_generation"
+        ],
+        "task": [
+          "task.t2v",
+          "task.i2v"
+        ],
+        "capability": [
+          "cap.controllability",
+          "cap.performance"
+        ],
+        "scene": [
+          "scene.short_drama",
+          "scene.mv"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "track": "track.emerging",
+      "evidence_level": "evidence.a",
+      "confidence": "confidence.medium",
+      "priority": "priority.p1",
+      "independent_source_count": 1,
+      "dedupe_key": "emoworld|event.research|2026-08-06",
+      "status": "approved",
+      "needs_review_reasons": []
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "intelligence_event",
+      "event_id": "evt_20260809_logishot",
+      "event_type": "event.research",
+      "canonical_title": "LogiShot用上下文视觉记忆提升跨镜头逻辑一致性",
+      "event_at": "2026-08-09T17:11:57Z",
+      "event_time_basis": "published_at",
+      "primary_entity": {
+        "entity_type": "research_or_product",
+        "name": "LogiShot"
+      },
+      "entities": [
+        {
+          "entity_type": "research_or_product",
+          "name": "LogiShot"
+        }
+      ],
+      "source_ids": [
+        "src_ece5c1f89fe6900c7fde"
+      ],
+      "primary_source_id": "src_ece5c1f89fe6900c7fde",
+      "claim_ids": [
+        "clm_b5303be4d7301f7c_01",
+        "clm_b5303be4d7301f7c_02",
+        "clm_b5303be4d7301f7c_03"
+      ],
+      "fact_summary": "LogiShot联合编码上下文视频与其他条件，并在生成过程中保持上下文视频的视觉记忆；论文构建11万样本的数据集和跨镜头逻辑一致性专用评测；作者报告LogiShot在多镜头逻辑一致性上持续优于现有基线。",
+      "limitations": "摘要称模型和数据将公开，核验时不能视为已经开放；作者未在摘要中给出具体提升幅度。",
+      "primary_route": "frontier.video_generation",
+      "secondary_routes": [
+        "industry.short_drama",
+        "visual_value.spatial_camera"
+      ],
+      "tags": {
+        "tech": [
+          "tech.video_generation"
+        ],
+        "task": [
+          "task.continuation",
+          "task.reference"
+        ],
+        "capability": [
+          "cap.cross_shot_consistency",
+          "cap.narrative",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.short_drama",
+          "scene.film"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "track": "track.emerging",
+      "evidence_level": "evidence.a",
+      "confidence": "confidence.medium",
+      "priority": "priority.p0",
+      "independent_source_count": 1,
+      "dedupe_key": "logishot|event.research|2026-08-09",
+      "status": "approved",
+      "needs_review_reasons": []
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "intelligence_event",
+      "event_id": "evt_20260810_sekai2",
+      "event_type": "event.dataset_release",
+      "canonical_title": "Sekai2发布带相机轨迹和时序语义的长视频世界数据集",
+      "event_at": "2026-08-10T11:23:01Z",
+      "event_time_basis": "published_at",
+      "primary_entity": {
+        "entity_type": "research_or_product",
+        "name": "Sekai2"
+      },
+      "entities": [
+        {
+          "entity_type": "research_or_product",
+          "name": "Sekai2"
+        }
+      ],
+      "source_ids": [
+        "src_a249f95e9bbdf2c4ef5e"
+      ],
+      "primary_source_id": "src_a249f95e9bbdf2c4ef5e",
+      "claim_ids": [
+        "clm_b3b40f2502fb6bce_01",
+        "clm_b3b40f2502fb6bce_02",
+        "clm_b3b40f2502fb6bce_03"
+      ],
+      "fact_summary": "Sekai2发布128,892个视频片段、总计2,826小时，来自10,428个源视频并覆盖113个国家或地区；数据为每个片段提供相机轨迹和分层时序标注，共形成649,597个时间定位片段；数据额外包含982段沿非线性路径采集、具有回环和重访的全景序列。",
+      "limitations": "这是数据集技术报告；数据规模与覆盖不自动等价于模型能力提升，实际训练收益仍待验证。",
+      "primary_route": "frontier.world_model",
+      "secondary_routes": [
+        "frontier.video_generation",
+        "visual_value.data_caption"
+      ],
+      "tags": {
+        "tech": [
+          "tech.video_generation",
+          "tech.world_model"
+        ],
+        "task": [
+          "task.camera_transfer"
+        ],
+        "capability": [
+          "cap.long_video",
+          "cap.camera_language",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.virtual_environment",
+          "scene.creator_tool"
+        ],
+        "event": [
+          "event.dataset_release"
+        ]
+      },
+      "track": "track.emerging",
+      "evidence_level": "evidence.a",
+      "confidence": "confidence.high",
+      "priority": "priority.p1",
+      "independent_source_count": 1,
+      "dedupe_key": "sekai2|event.dataset_release|2026-08-10",
+      "status": "approved",
+      "needs_review_reasons": []
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "intelligence_event",
+      "event_id": "evt_20260806_robustwam",
+      "event_type": "event.research",
+      "canonical_title": "Robust-WAM把视频生成先验与语义动作表征结合用于机器人控制",
+      "event_at": "2026-08-06T11:31:56Z",
+      "event_time_basis": "published_at",
+      "primary_entity": {
+        "entity_type": "research_or_product",
+        "name": "Robust-WAM"
+      },
+      "entities": [
+        {
+          "entity_type": "research_or_product",
+          "name": "Robust-WAM"
+        }
+      ],
+      "source_ids": [
+        "src_4cb3a35ef6e427798b0c"
+      ],
+      "primary_source_id": "src_4cb3a35ef6e427798b0c",
+      "claim_ids": [
+        "clm_3285da87a331e384_01",
+        "clm_3285da87a331e384_02"
+      ],
+      "fact_summary": "Robust-WAM保留视频生成模型的VAE生成路径，并在动作流上增加轻量语义前视对齐目标；作者报告该方法在分布外仿真和真实机器人设置中提高多个WAM基线的成功率，同时不牺牲分布内表现。",
+      "limitations": "摘要没有披露具体成功率与真实机器人任务规模，仍需正文和独立复现判断收益大小。",
+      "primary_route": "frontier.embodied_ai",
+      "secondary_routes": [
+        "frontier.world_model",
+        "industry.embodied_application"
+      ],
+      "tags": {
+        "tech": [
+          "tech.video_generation",
+          "tech.world_model",
+          "tech.embodied_ai"
+        ],
+        "task": [],
+        "capability": [
+          "cap.world_state",
+          "cap.stability"
+        ],
+        "scene": [
+          "scene.robotics"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "track": "track.emerging",
+      "evidence_level": "evidence.a",
+      "confidence": "confidence.medium",
+      "priority": "priority.p1",
+      "independent_source_count": 1,
+      "dedupe_key": "robust_wam|event.research|2026-08-06",
+      "status": "approved",
+      "needs_review_reasons": []
+    },
+    {
+      "schema_version": "0.2",
+      "record_type": "intelligence_event",
+      "event_id": "evt_20260808_phys",
+      "event_type": "event.research",
+      "canonical_title": "PhyS用真实物理视频与时序奖励蒸馏轻量流式世界模型",
+      "event_at": "2026-08-08T07:35:10Z",
+      "event_time_basis": "published_at",
+      "primary_entity": {
+        "entity_type": "research_or_product",
+        "name": "PhyS"
+      },
+      "entities": [
+        {
+          "entity_type": "research_or_product",
+          "name": "PhyS"
+        }
+      ],
+      "source_ids": [
+        "src_fa6617a0569d8dd02226"
+      ],
+      "primary_source_id": "src_fa6617a0569d8dd02226",
+      "claim_ids": [
+        "clm_b015385caa03b3b1_01",
+        "clm_b015385caa03b3b1_02",
+        "clm_b015385caa03b3b1_03"
+      ],
+      "fact_summary": "PhyS构建12万条真实物理交互视频，覆盖刚体、软体、流体与相变，并带物体属性和因果状态转移描述；方法把物理先验注入14B双向DiT教师，再蒸馏到1.3B因果DiT用于少步流式生成；作者报告在PhysicsIQ上相对Wan2.1-14B教师提升18.2%，相对三类流式基线分别提升23.7%、14.8%和31.4%。",
+      "limitations": "提升来自作者评测；PhysicsIQ等分数与开放域视频产品中的真实物理正确性仍需关联验证。",
+      "primary_route": "frontier.world_model",
+      "secondary_routes": [
+        "frontier.video_generation",
+        "visual_value.data_caption"
+      ],
+      "tags": {
+        "tech": [
+          "tech.video_generation",
+          "tech.world_model"
+        ],
+        "task": [
+          "task.continuation"
+        ],
+        "capability": [
+          "cap.physics",
+          "cap.long_video",
+          "cap.efficiency"
+        ],
+        "scene": [
+          "scene.virtual_environment",
+          "scene.robotics"
+        ],
+        "event": [
+          "event.research",
+          "event.dataset_release"
+        ]
+      },
+      "track": "track.emerging",
+      "evidence_level": "evidence.a",
+      "confidence": "confidence.high",
+      "priority": "priority.p0",
+      "independent_source_count": 1,
+      "dedupe_key": "phys|event.research|2026-08-08",
+      "status": "approved",
+      "needs_review_reasons": []
+    }
+  ],
+  "verification_records": [
+    {
+      "candidate_id": "cand_d2cd4cccc8535e3d",
+      "source_id": "src_3fda07685369000ba6af",
+      "title": "Beyond Pixels: From Video Priors to 4D Worlds",
+      "url": "https://arxiv.org/abs/2608.10744",
+      "published_at": "2026-08-11T10:02:41Z",
+      "verification_status": "verified_primary",
+      "claims": [
+        {
+          "text": "论文提出Latent-to-4D，直接把共享VAE的视频模型最终去噪潜变量映射到显式4D表示。",
+          "kind": "result",
+          "locator": "arXiv abstract / method"
+        },
+        {
+          "text": "作者报告单一检查点可在共享同一VAE家族的多个视频扩散模型之间复用。",
+          "kind": "result",
+          "locator": "arXiv abstract"
+        },
+        {
+          "text": "作者报告该方法约用1,000条重建片段训练，并在Text4D-200与I4D-200上将投影DINO-F1分别提高2.88—3.45点和5.81点。",
+          "kind": "metric",
+          "locator": "arXiv abstract"
+        }
+      ],
+      "limitation": "跨模型复用依赖共享VAE；投影指标和人类偏好不能直接证明真实4D精度或物理正确性。",
+      "decision": "include",
+      "decision_reason": "把视频生成内部潜变量变成4D资产接口，连接视频、空间和资产生产，产品策略价值高。",
+      "event": {
+        "event_id": "evt_20260811_beyondpixels_auto",
+        "canonical_title": "视频模型潜变量被直接复用为4D生成接口",
+        "event_type": "event.research",
+        "primary_route": "visual_value.spatial_camera",
+        "secondary_routes": [
+          "frontier.video_generation",
+          "frontier.world_model"
+        ],
+        "priority": "priority.p1",
+        "confidence": "confidence.high",
+        "entity_name": "Latent-to-4D",
+        "tags": {
+          "tech": [
+            "tech.video_generation",
+            "tech.world_model"
+          ],
+          "task": [
+            "task.t2v",
+            "task.i2v"
+          ],
+          "capability": [
+            "cap.spatial_consistency"
+          ],
+          "scene": [
+            "scene.virtual_environment"
+          ],
+          "event": [
+            "event.research"
+          ]
+        }
+      },
+      "claim_ids": [
+        "clm_d2cd4cccc8535e3d_01",
+        "clm_d2cd4cccc8535e3d_02",
+        "clm_d2cd4cccc8535e3d_03"
+      ]
+    },
+    {
+      "candidate_id": "cand_511a07864a960f62",
+      "source_id": "src_b7e1dafb5de1edf70063",
+      "title": "Sci-VBench: Evaluating Knowledge- and Reasoning-Intensive Video Generation in Science Domains",
+      "url": "https://arxiv.org/abs/2608.09873",
+      "published_at": "2026-08-10T17:27:32Z",
+      "verification_status": "verified_primary",
+      "claims": [
+        {
+          "text": "Sci-VBench包含1,253个专家标注样例，覆盖四大学科的60个主题。",
+          "kind": "metric",
+          "locator": "arXiv abstract"
+        },
+        {
+          "text": "论文使用基于Rubric的协议评测16个闭源和开源视频生成模型。",
+          "kind": "metric",
+          "locator": "arXiv abstract"
+        },
+        {
+          "text": "作者报告感知质量分数较接近，但Prompt Grounding以及科学和因果正确性差异明显。",
+          "kind": "result",
+          "locator": "arXiv abstract"
+        }
+      ],
+      "limitation": "科学场景并不代表全部消费级视频任务；模型排名和差距仍需结合完整评测协议理解。",
+      "decision": "include",
+      "decision_reason": "直接补足视频模型从视觉逼真度走向知识、因果和任务正确性的评测缺口。",
+      "event": {
+        "event_id": "evt_20260810_scivbench_auto",
+        "canonical_title": "Sci-VBench用科学与因果正确性评测视频模型",
+        "event_type": "event.benchmark",
+        "primary_route": "visual_value.evaluation",
+        "secondary_routes": [
+          "frontier.video_generation",
+          "frontier.world_model"
+        ],
+        "priority": "priority.p0",
+        "confidence": "confidence.high",
+        "entity_name": "Sci-VBench",
+        "tags": {
+          "tech": [
+            "tech.video_generation"
+          ],
+          "task": [
+            "task.t2v"
+          ],
+          "capability": [
+            "cap.physics",
+            "cap.instruction_following"
+          ],
+          "scene": [
+            "scene.education",
+            "scene.general_visual_ai"
+          ],
+          "event": [
+            "event.benchmark"
+          ]
+        }
+      },
+      "claim_ids": [
+        "clm_511a07864a960f62_01",
+        "clm_511a07864a960f62_02",
+        "clm_511a07864a960f62_03"
+      ]
+    },
+    {
+      "candidate_id": "cand_e2a4089659ab07b3",
+      "source_id": "src_b390c56265f9a32d1f0b",
+      "title": "Illusion or Integrity? Geometrical Consistency Metric for AIGC Video Quality Evaluation",
+      "url": "https://arxiv.org/abs/2608.09594",
+      "published_at": "2026-08-10T13:28:07Z",
+      "verification_status": "verified_primary",
+      "claims": [
+        {
+          "text": "GeoCon-Bench使用跨帧背景对应关系、单应或基础矩阵拟合来度量生成视频的几何一致性。",
+          "kind": "result",
+          "locator": "arXiv abstract"
+        },
+        {
+          "text": "论文发布的数据集包含20个场景和六类运动。",
+          "kind": "metric",
+          "locator": "arXiv abstract"
+        }
+      ],
+      "limitation": "样本规模较小；几何一致性只是物理合理性的代理指标，不能覆盖材质、碰撞和因果。",
+      "decision": "watch",
+      "decision_reason": "方向有价值，但与GAUGE的物理评测主题重叠，且覆盖面更窄，本期放入观察池。",
+      "claim_ids": [
+        "clm_e2a4089659ab07b3_01",
+        "clm_e2a4089659ab07b3_02"
+      ]
+    },
+    {
+      "candidate_id": "cand_3508479b14f81b90",
+      "source_id": "src_2cf80b0f79180c090001",
+      "title": "GAUGE: A Measurement-Grounded Benchmark for Physical Fidelity in Simulation Engines and Video World Models",
+      "url": "https://arxiv.org/abs/2608.05948",
+      "published_at": "2026-08-06T12:19:38Z",
+      "verification_status": "verified_primary",
+      "claims": [
+        {
+          "text": "GAUGE包含22个受控任务族，覆盖刚体、绳索、织物与体积可变形物体。",
+          "kind": "metric",
+          "locator": "arXiv abstract"
+        },
+        {
+          "text": "论文评测三个物理引擎的14个任务族，以及六个图生视频模型的五个刚体任务。",
+          "kind": "metric",
+          "locator": "arXiv abstract"
+        },
+        {
+          "text": "作者报告视频世界模型可能生成方程形式看似合理的轨迹，却恢复出错误的加速度、动量传递和振荡时序。",
+          "kind": "result",
+          "locator": "arXiv abstract"
+        }
+      ],
+      "limitation": "图生视频评测仅覆盖五个刚体任务；结论不能泛化到所有物理现象和生成场景。",
+      "decision": "include",
+      "decision_reason": "将视频世界模型与数值模拟器放在共同的真实测量框架下，能直接支持物理Bad Case与评测设计。",
+      "event": {
+        "event_id": "evt_20260806_gauge",
+        "canonical_title": "GAUGE用真实测量共同诊断物理引擎与视频世界模型",
+        "event_type": "event.benchmark",
+        "primary_route": "visual_value.evaluation",
+        "secondary_routes": [
+          "frontier.world_model",
+          "frontier.embodied_ai"
+        ],
+        "priority": "priority.p0",
+        "confidence": "confidence.high",
+        "entity_name": "GAUGE",
+        "tags": {
+          "tech": [
+            "tech.video_generation",
+            "tech.world_model",
+            "tech.embodied_ai"
+          ],
+          "task": [
+            "task.i2v"
+          ],
+          "capability": [
+            "cap.physics",
+            "cap.temporal_consistency"
+          ],
+          "scene": [
+            "scene.robotics",
+            "scene.virtual_environment"
+          ],
+          "event": [
+            "event.benchmark"
+          ]
+        }
+      },
+      "claim_ids": [
+        "clm_3508479b14f81b90_01",
+        "clm_3508479b14f81b90_02",
+        "clm_3508479b14f81b90_03"
+      ]
+    },
+    {
+      "candidate_id": "cand_3ad5af8666d7cbcf",
+      "source_id": "src_20260812_wananimate2_readme",
+      "title": "Wan-Animate-2 official release",
+      "url": "https://github.com/Wan-Video/Wan-Animate-2",
+      "published_at": "2026-08-07T00:00:00Z",
+      "verification_status": "verified_primary",
+      "claims": [
+        {
+          "text": "Wan官方仓库记录其于2026年8月7日发布Wan-Animate-2推理脚本、基础模型权重和蒸馏模型权重。",
+          "kind": "release",
+          "locator": "official GitHub README / Release Notes"
+        },
+        {
+          "text": "官方README将Wan-Animate-2描述为直接消费驱动视频的端到端角色动画框架，并加入文本驱动的视角控制。",
+          "kind": "specification",
+          "locator": "official GitHub README / Introduction"
+        },
+        {
+          "text": "公开模型为14B；官方示例显示蒸馏版本使用10步且不使用CFG。",
+          "kind": "specification",
+          "locator": "official GitHub README / Model Download and Diffusers Inference"
+        }
+      ],
+      "limitation": "官方README中的实时Lite版本未在同一发布说明里确认开放；质量和实时性尚未经过独立评测，硬件门槛较高。",
+      "decision": "include",
+      "decision_reason": "属于固定关注对象的真实产品与开源事件，且视角控制、身份保持和蒸馏直接关联当前视频策略。",
+      "event": {
+        "event_id": "evt_20260807_wananimate2",
+        "canonical_title": "Wan-Animate-2开放推理代码与基础、蒸馏权重",
+        "event_type": "event.model_release",
+        "primary_route": "frontier.video_generation",
+        "secondary_routes": [
+          "visual_value.spatial_camera",
+          "visual_value.product_workflow"
+        ],
+        "priority": "priority.p0",
+        "confidence": "confidence.high",
+        "entity_name": "Wan-Animate-2",
+        "tags": {
+          "tech": [
+            "tech.video_generation"
+          ],
+          "task": [
+            "task.r2v",
+            "task.motion_transfer"
+          ],
+          "capability": [
+            "cap.reference_fidelity",
+            "cap.camera_language",
+            "cap.efficiency"
+          ],
+          "scene": [
+            "scene.creator_tool",
+            "scene.short_drama"
+          ],
+          "event": [
+            "event.model_release",
+            "event.open_source"
+          ]
+        }
+      },
+      "claim_ids": [
+        "clm_3ad5af8666d7cbcf_01",
+        "clm_3ad5af8666d7cbcf_02",
+        "clm_3ad5af8666d7cbcf_03"
+      ]
+    },
+    {
+      "candidate_id": "cand_ff497f03b9771811",
+      "source_id": "src_ba63750d20512cdcf4d4",
+      "title": "EmoWorld: A Decoupled Affective Field for Controllable Emotional Video Generation",
+      "url": "https://arxiv.org/abs/2608.06231",
+      "published_at": "2026-08-06T16:20:23Z",
+      "verification_status": "verified_primary",
+      "claims": [
+        {
+          "text": "EmoWorld在冻结的Video DiT中分离氛围、情绪语义线索和时间变化三个控制维度。",
+          "kind": "result",
+          "locator": "arXiv abstract"
+        },
+        {
+          "text": "作者报告在Wan2.2上，三种模块分别带来19%情绪对齐提升与48%波动下降、37%情绪对齐提升与36%线索增加、以及15%过渡单调性提升。",
+          "kind": "metric",
+          "locator": "arXiv abstract"
+        },
+        {
+          "text": "论文覆盖27类情绪、文生视频和图生视频设置，并称无需更新生成器参数。",
+          "kind": "specification",
+          "locator": "arXiv abstract"
+        }
+      ],
+      "limitation": "指标由作者定义和报告，尚无独立复现；情绪代理分数不等价于真实内容偏好或叙事效果。",
+      "decision": "include",
+      "decision_reason": "在Wan2.2上的免训练细粒度情绪控制直接对应内容创意、表演和产品控制能力。",
+      "event": {
+        "event_id": "evt_20260806_emoworld",
+        "canonical_title": "EmoWorld在冻结视频模型中拆分氛围、线索与情绪时序控制",
+        "event_type": "event.research",
+        "primary_route": "frontier.video_generation",
+        "secondary_routes": [
+          "visual_value.product_workflow"
+        ],
+        "priority": "priority.p1",
+        "confidence": "confidence.medium",
+        "entity_name": "EmoWorld",
+        "tags": {
+          "tech": [
+            "tech.video_generation"
+          ],
+          "task": [
+            "task.t2v",
+            "task.i2v"
+          ],
+          "capability": [
+            "cap.controllability",
+            "cap.performance"
+          ],
+          "scene": [
+            "scene.short_drama",
+            "scene.mv"
+          ],
+          "event": [
+            "event.research"
+          ]
+        }
+      },
+      "claim_ids": [
+        "clm_ff497f03b9771811_01",
+        "clm_ff497f03b9771811_02",
+        "clm_ff497f03b9771811_03"
+      ]
+    },
+    {
+      "candidate_id": "cand_82fdb9d008d79987",
+      "source_id": "src_588398d607f3620af867",
+      "title": "Stream Forcing: Constructing Unified Training Trajectory for Robust Streaming Video Generation",
+      "url": "https://arxiv.org/abs/2608.10439",
+      "published_at": "2026-08-11T03:39:05Z",
+      "verification_status": "verified_primary",
+      "claims": [
+        {
+          "text": "Stream Forcing把流式视频扩散采样重写为按帧索引的噪声随机过程，以缓解训练与推理失配。",
+          "kind": "result",
+          "locator": "arXiv abstract"
+        },
+        {
+          "text": "作者报告在UCF-101上FVD改善36.6%，长时零样本外推的FVD改善27.9%。",
+          "kind": "metric",
+          "locator": "arXiv abstract"
+        }
+      ],
+      "limitation": "主要数字来自UCF-101，不能直接证明复杂长视频、叙事或产品级流式生成质量。",
+      "decision": "watch",
+      "decision_reason": "方法值得跟踪，但本期已有更贴近长视频数据、跨镜头和物理一致性的事件，避免技术稿过密。",
+      "claim_ids": [
+        "clm_82fdb9d008d79987_01",
+        "clm_82fdb9d008d79987_02"
+      ]
+    },
+    {
+      "candidate_id": "cand_3d98e42828f9a063",
+      "source_id": "src_6bbde377448f1f641f70",
+      "title": "Diff-VF: Training-free High-quality Long Video Generation via Diffusion Model",
+      "url": "https://arxiv.org/abs/2608.05976",
+      "published_at": "2026-08-06T12:53:46Z",
+      "verification_status": "verified_primary",
+      "claims": [
+        {
+          "text": "Diff-VF提出无需训练、可插拔的长视频生成框架，组合混合噪声初始化、加权窗口采样和时间扩展采样。",
+          "kind": "result",
+          "locator": "arXiv abstract"
+        },
+        {
+          "text": "作者报告该方法在两个不同视频扩散基座上相对多种免训练基线取得更好的时序连贯与运动多样性平衡。",
+          "kind": "result",
+          "locator": "arXiv abstract"
+        }
+      ],
+      "limitation": "摘要没有给出可直接比较的关键数字、具体时长与推理成本，产品收益仍需正文和实测确认。",
+      "decision": "watch",
+      "decision_reason": "长视频方向重要，但当前证据不足以在本周有限版面中高于LogiShot和Sekai2。",
+      "claim_ids": [
+        "clm_3d98e42828f9a063_01",
+        "clm_3d98e42828f9a063_02"
+      ]
+    },
+    {
+      "candidate_id": "cand_b5303be4d7301f7c",
+      "source_id": "src_ece5c1f89fe6900c7fde",
+      "title": "LogiShot: Logically Coherent Cross-Shot Video Generation",
+      "url": "https://arxiv.org/abs/2608.08820",
+      "published_at": "2026-08-09T17:11:57Z",
+      "verification_status": "verified_primary",
+      "claims": [
+        {
+          "text": "LogiShot联合编码上下文视频与其他条件，并在生成过程中保持上下文视频的视觉记忆。",
+          "kind": "result",
+          "locator": "arXiv abstract"
+        },
+        {
+          "text": "论文构建11万样本的数据集和跨镜头逻辑一致性专用评测。",
+          "kind": "metric",
+          "locator": "arXiv abstract"
+        },
+        {
+          "text": "作者报告LogiShot在多镜头逻辑一致性上持续优于现有基线。",
+          "kind": "result",
+          "locator": "arXiv abstract"
+        }
+      ],
+      "limitation": "摘要称模型和数据将公开，核验时不能视为已经开放；作者未在摘要中给出具体提升幅度。",
+      "decision": "include",
+      "decision_reason": "直接命中短剧、多镜头叙事和跨镜头状态连续，是本项目最具产品相关性的研究之一。",
+      "event": {
+        "event_id": "evt_20260809_logishot",
+        "canonical_title": "LogiShot用上下文视觉记忆提升跨镜头逻辑一致性",
+        "event_type": "event.research",
+        "primary_route": "frontier.video_generation",
+        "secondary_routes": [
+          "industry.short_drama",
+          "visual_value.spatial_camera"
+        ],
+        "priority": "priority.p0",
+        "confidence": "confidence.medium",
+        "entity_name": "LogiShot",
+        "tags": {
+          "tech": [
+            "tech.video_generation"
+          ],
+          "task": [
+            "task.continuation",
+            "task.reference"
+          ],
+          "capability": [
+            "cap.cross_shot_consistency",
+            "cap.narrative",
+            "cap.world_state"
+          ],
+          "scene": [
+            "scene.short_drama",
+            "scene.film"
+          ],
+          "event": [
+            "event.research"
+          ]
+        }
+      },
+      "claim_ids": [
+        "clm_b5303be4d7301f7c_01",
+        "clm_b5303be4d7301f7c_02",
+        "clm_b5303be4d7301f7c_03"
+      ]
+    },
+    {
+      "candidate_id": "cand_b3b40f2502fb6bce",
+      "source_id": "src_a249f95e9bbdf2c4ef5e",
+      "title": "Sekai2: From World Exploration to Interactive World Modeling",
+      "url": "https://arxiv.org/abs/2608.09449",
+      "published_at": "2026-08-10T11:23:01Z",
+      "verification_status": "verified_primary",
+      "claims": [
+        {
+          "text": "Sekai2发布128,892个视频片段、总计2,826小时，来自10,428个源视频并覆盖113个国家或地区。",
+          "kind": "metric",
+          "locator": "arXiv abstract"
+        },
+        {
+          "text": "数据为每个片段提供相机轨迹和分层时序标注，共形成649,597个时间定位片段。",
+          "kind": "metric",
+          "locator": "arXiv abstract"
+        },
+        {
+          "text": "数据额外包含982段沿非线性路径采集、具有回环和重访的全景序列。",
+          "kind": "metric",
+          "locator": "arXiv abstract"
+        }
+      ],
+      "limitation": "这是数据集技术报告；数据规模与覆盖不自动等价于模型能力提升，实际训练收益仍待验证。",
+      "decision": "include",
+      "decision_reason": "把长视频、相机轨迹和时序语义放在同一数据资产中，直接对应长视频、运镜控制和世界记忆。",
+      "event": {
+        "event_id": "evt_20260810_sekai2",
+        "canonical_title": "Sekai2发布带相机轨迹和时序语义的长视频世界数据集",
+        "event_type": "event.dataset_release",
+        "primary_route": "frontier.world_model",
+        "secondary_routes": [
+          "frontier.video_generation",
+          "visual_value.data_caption"
+        ],
+        "priority": "priority.p1",
+        "confidence": "confidence.high",
+        "entity_name": "Sekai2",
+        "tags": {
+          "tech": [
+            "tech.video_generation",
+            "tech.world_model"
+          ],
+          "task": [
+            "task.camera_transfer"
+          ],
+          "capability": [
+            "cap.long_video",
+            "cap.camera_language",
+            "cap.world_state"
+          ],
+          "scene": [
+            "scene.virtual_environment",
+            "scene.creator_tool"
+          ],
+          "event": [
+            "event.dataset_release"
+          ]
+        }
+      },
+      "claim_ids": [
+        "clm_b3b40f2502fb6bce_01",
+        "clm_b3b40f2502fb6bce_02",
+        "clm_b3b40f2502fb6bce_03"
+      ]
+    },
+    {
+      "candidate_id": "cand_a8b78b0fc3775328",
+      "source_id": "src_fb6c167bf2da6b85244b",
+      "title": "4D-WAM: 4D Consistent World Modeling for Autonomous Driving",
+      "url": "https://arxiv.org/abs/2608.10107",
+      "published_at": "2026-08-10T18:14:52Z",
+      "verification_status": "verified_primary",
+      "claims": [
+        {
+          "text": "4D-WAM在训练阶段用几何基础模型的响应构造4D一致性损失，推理阶段不增加额外成本。",
+          "kind": "result",
+          "locator": "arXiv abstract"
+        },
+        {
+          "text": "作者报告其在NAVSIM-v1和NAVSIM-v2上达到最优表现。",
+          "kind": "result",
+          "locator": "arXiv abstract"
+        }
+      ],
+      "limitation": "结论集中在自动驾驶规划，摘要没有披露具体提升数字，难以直接外推至通用视频生成。",
+      "decision": "watch",
+      "decision_reason": "保留为具身应用信号，但本期由覆盖更广的GAUGE和Robust-WAM代表同类方向。",
+      "claim_ids": [
+        "clm_a8b78b0fc3775328_01",
+        "clm_a8b78b0fc3775328_02"
+      ]
+    },
+    {
+      "candidate_id": "cand_3285da87a331e384",
+      "source_id": "src_4cb3a35ef6e427798b0c",
+      "title": "Robust-WAM: Bridging Generative Pretraining and Semantic Foresight in World-Action Models",
+      "url": "https://arxiv.org/abs/2608.05903",
+      "published_at": "2026-08-06T11:31:56Z",
+      "verification_status": "verified_primary",
+      "claims": [
+        {
+          "text": "Robust-WAM保留视频生成模型的VAE生成路径，并在动作流上增加轻量语义前视对齐目标。",
+          "kind": "result",
+          "locator": "arXiv abstract"
+        },
+        {
+          "text": "作者报告该方法在分布外仿真和真实机器人设置中提高多个WAM基线的成功率，同时不牺牲分布内表现。",
+          "kind": "result",
+          "locator": "arXiv abstract"
+        }
+      ],
+      "limitation": "摘要没有披露具体成功率与真实机器人任务规模，仍需正文和独立复现判断收益大小。",
+      "decision": "include",
+      "decision_reason": "清晰展示视频生成预训练如何迁移到机器人控制，并同时覆盖仿真和真实机器人。",
+      "event": {
+        "event_id": "evt_20260806_robustwam",
+        "canonical_title": "Robust-WAM把视频生成先验与语义动作表征结合用于机器人控制",
+        "event_type": "event.research",
+        "primary_route": "frontier.embodied_ai",
+        "secondary_routes": [
+          "frontier.world_model",
+          "industry.embodied_application"
+        ],
+        "priority": "priority.p1",
+        "confidence": "confidence.medium",
+        "entity_name": "Robust-WAM",
+        "tags": {
+          "tech": [
+            "tech.video_generation",
+            "tech.world_model",
+            "tech.embodied_ai"
+          ],
+          "task": [],
+          "capability": [
+            "cap.world_state",
+            "cap.stability"
+          ],
+          "scene": [
+            "scene.robotics"
+          ],
+          "event": [
+            "event.research"
+          ]
+        }
+      },
+      "claim_ids": [
+        "clm_3285da87a331e384_01",
+        "clm_3285da87a331e384_02"
+      ]
+    },
+    {
+      "candidate_id": "cand_b015385caa03b3b1",
+      "source_id": "src_fa6617a0569d8dd02226",
+      "title": "Distilling Physical Priors into Streaming World Models",
+      "url": "https://arxiv.org/abs/2608.07981",
+      "published_at": "2026-08-08T07:35:10Z",
+      "verification_status": "verified_primary",
+      "claims": [
+        {
+          "text": "PhyS构建12万条真实物理交互视频，覆盖刚体、软体、流体与相变，并带物体属性和因果状态转移描述。",
+          "kind": "metric",
+          "locator": "arXiv abstract"
+        },
+        {
+          "text": "方法把物理先验注入14B双向DiT教师，再蒸馏到1.3B因果DiT用于少步流式生成。",
+          "kind": "specification",
+          "locator": "arXiv abstract"
+        },
+        {
+          "text": "作者报告在PhysicsIQ上相对Wan2.1-14B教师提升18.2%，相对三类流式基线分别提升23.7%、14.8%和31.4%。",
+          "kind": "metric",
+          "locator": "arXiv abstract"
+        }
+      ],
+      "limitation": "提升来自作者评测；PhysicsIQ等分数与开放域视频产品中的真实物理正确性仍需关联验证。",
+      "decision": "include",
+      "decision_reason": "数据、教师蒸馏、流式推理和物理奖励形成完整优化链路，且直接以Wan2.1为教师，团队相关性很高。",
+      "event": {
+        "event_id": "evt_20260808_phys",
+        "canonical_title": "PhyS用真实物理视频与时序奖励蒸馏轻量流式世界模型",
+        "event_type": "event.research",
+        "primary_route": "frontier.world_model",
+        "secondary_routes": [
+          "frontier.video_generation",
+          "visual_value.data_caption"
+        ],
+        "priority": "priority.p0",
+        "confidence": "confidence.high",
+        "entity_name": "PhyS",
+        "tags": {
+          "tech": [
+            "tech.video_generation",
+            "tech.world_model"
+          ],
+          "task": [
+            "task.continuation"
+          ],
+          "capability": [
+            "cap.physics",
+            "cap.long_video",
+            "cap.efficiency"
+          ],
+          "scene": [
+            "scene.virtual_environment",
+            "scene.robotics"
+          ],
+          "event": [
+            "event.research",
+            "event.dataset_release"
+          ]
+        }
+      },
+      "claim_ids": [
+        "clm_b015385caa03b3b1_01",
+        "clm_b015385caa03b3b1_02",
+        "clm_b015385caa03b3b1_03"
+      ]
+    },
+    {
+      "candidate_id": "cand_1bdfbd667c63007c",
+      "source_id": "src_93b17972244660b826e3",
+      "title": "Is Forward Prediction Enough? Physical State Grounding for JEPA World Models",
+      "url": "https://arxiv.org/abs/2608.06799",
+      "published_at": "2026-08-07T04:44:16Z",
+      "verification_status": "verified_primary",
+      "claims": [
+        {
+          "text": "PSG-JEPA用机器人本体状态和多时域关节角变化监督潜变量，仅在训练期增加目标。",
+          "kind": "result",
+          "locator": "arXiv abstract"
+        },
+        {
+          "text": "作者在潜变量探针、冻结表征规划、仿真和真实机器人策略三个层级报告优于基线。",
+          "kind": "result",
+          "locator": "arXiv abstract"
+        }
+      ],
+      "limitation": "摘要缺少具体任务、样本和提升幅度；与Robust-WAM同属机器人潜表征优化，周报版面价值重复。",
+      "decision": "watch",
+      "decision_reason": "进入具身研究观察池，等待正文数字或独立验证后再升级。",
+      "claim_ids": [
+        "clm_1bdfbd667c63007c_01",
+        "clm_1bdfbd667c63007c_02"
+      ]
+    },
+    {
+      "candidate_id": "cand_9ef9249e523ccd94",
+      "source_id": "src_eb7de64ec193b4077ceb",
+      "title": "Learning How the World Evolves: Extrapolative Video World Models via Latent Dynamics Reasoning",
+      "url": "https://arxiv.org/abs/2608.09926",
+      "published_at": "2026-08-10T17:59:19Z",
+      "verification_status": "verified_primary",
+      "claims": [
+        {
+          "text": "LDR把潜变量转移写成显式运动学积分，并只回归三阶及更高阶残差。",
+          "kind": "result",
+          "locator": "arXiv abstract"
+        },
+        {
+          "text": "作者在五个白盒物理任务上报告分布内外误差差距缩小超过20倍、参数量减少26倍、速度提高143倍。",
+          "kind": "metric",
+          "locator": "arXiv abstract"
+        }
+      ],
+      "limitation": "实验是256平方分辨率的五类受控白盒任务，不能直接代表复杂真实视频或开放世界。",
+      "decision": "watch",
+      "decision_reason": "结果醒目但验证范围过于受控，本期作为方法观察而非正式周报事件。",
+      "claim_ids": [
+        "clm_9ef9249e523ccd94_01",
+        "clm_9ef9249e523ccd94_02"
+      ]
+    },
+    {
+      "candidate_id": "cand_4c2e4b3f93ac881e",
+      "source_id": "src_993da43eff57e7457b58",
+      "title": "UniJEPA: A Unified Joint-Embedding Predictive Architecture for Task-Agnostic Visual World Modeling",
+      "url": "https://arxiv.org/abs/2608.07409",
+      "published_at": "2026-08-07T16:55:58Z",
+      "verification_status": "verified_primary",
+      "claims": [
+        {
+          "text": "UniJEPA在同一潜空间中联合学习图像级光度变换预测和视频级下一状态预测。",
+          "kind": "result",
+          "locator": "arXiv abstract"
+        },
+        {
+          "text": "作者报告其在图像、视频和控制任务上匹配或超过专项JEPA，并在相近准确率下比生成式世界模型快数十倍。",
+          "kind": "result",
+          "locator": "arXiv abstract"
+        }
+      ],
+      "limitation": "数十倍速度缺少摘要中的具体任务和数值；统一表征对视频生成产品的直接收益尚不明确。",
+      "decision": "watch",
+      "decision_reason": "保留为基础表征研究，本期优先报道具有更明确数据、评测或产品接口的事件。",
+      "claim_ids": [
+        "clm_4c2e4b3f93ac881e_01",
+        "clm_4c2e4b3f93ac881e_02"
+      ]
+    }
+  ]
+}

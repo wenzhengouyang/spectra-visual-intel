@@ -1,0 +1,181 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spectra.local/schemas/intelligence-record.v0.2.schema.json",
+  "title": "SPECTRA Intelligence Records v0.2",
+  "oneOf": [
+    { "$ref": "#/$defs/source_record" },
+    { "$ref": "#/$defs/evidence_claim" },
+    { "$ref": "#/$defs/intelligence_event" },
+    { "$ref": "#/$defs/editorial_story" }
+  ],
+  "$defs": {
+    "base": {
+      "type": "object",
+      "required": ["schema_version", "record_type"],
+      "properties": {
+        "schema_version": { "const": "0.2" },
+        "record_type": { "type": "string" }
+      }
+    },
+    "section": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text", "claim_ids", "statement_type"],
+      "properties": {
+        "text": { "type": "string", "minLength": 1 },
+        "claim_ids": { "type": "array", "items": { "type": "string", "pattern": "^clm_" }, "uniqueItems": true },
+        "statement_type": { "enum": ["fact", "judgment", "hypothesis"] }
+      }
+    },
+    "source_link": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_id", "label", "url", "role"],
+      "properties": {
+        "source_id": { "type": "string", "pattern": "^src_" },
+        "label": { "type": "string", "minLength": 1 },
+        "url": { "type": "string", "format": "uri" },
+        "role": { "enum": ["primary", "verification", "context", "counter_evidence"] }
+      }
+    },
+    "source_record": {
+      "allOf": [
+        { "$ref": "#/$defs/base" },
+        {
+          "type": "object",
+          "required": ["source_id", "source_name", "source_type", "source_url", "canonical_url", "raw_title", "collected_at", "language", "content_hash", "access_status", "discovered_by", "rights_scope", "processing_status"],
+          "properties": {
+            "record_type": { "const": "source_record" },
+            "source_id": { "type": "string", "pattern": "^src_" },
+            "registry_id": { "type": ["string", "null"] },
+            "source_name": { "type": "string", "minLength": 1 },
+            "source_type": { "enum": ["official_announcement", "paper_report", "code_dataset", "financial_report", "media", "professional_view", "social_post", "product_test", "other"] },
+            "publisher": { "type": ["string", "null"] },
+            "author": { "type": "array", "items": { "type": "string" } },
+            "source_url": { "type": "string", "format": "uri" },
+            "canonical_url": { "type": "string", "format": "uri" },
+            "raw_title": { "type": "string", "minLength": 1 },
+            "raw_text": { "type": ["string", "null"] },
+            "raw_excerpt": { "type": ["string", "null"] },
+            "published_at": { "type": ["string", "null"], "format": "date-time" },
+            "collected_at": { "type": "string", "format": "date-time" },
+            "language": { "type": "string" },
+            "content_hash": { "type": "string", "minLength": 8 },
+            "access_status": { "enum": ["success", "partial", "blocked", "failed"] },
+            "http_status": { "type": ["integer", "null"] },
+            "failure_reason": { "type": ["string", "null"] },
+            "discovered_by": { "enum": ["registry", "search", "manual", "referral"] },
+            "discovery_context": { "type": ["string", "null"] },
+            "rights_scope": { "enum": ["metadata_only", "excerpt", "full_text"] },
+            "processing_status": { "type": "string" }
+          }
+        }
+      ]
+    },
+    "evidence_claim": {
+      "allOf": [
+        { "$ref": "#/$defs/base" },
+        {
+          "type": "object",
+          "required": ["claim_id", "claim_text", "claim_kind", "source_id", "is_direct", "verification_status"],
+          "properties": {
+            "record_type": { "const": "evidence_claim" },
+            "claim_id": { "type": "string", "pattern": "^clm_" },
+            "claim_text": { "type": "string", "minLength": 1 },
+            "claim_kind": { "enum": ["release", "specification", "metric", "result", "quote", "business", "observation"] },
+            "source_id": { "type": "string", "pattern": "^src_" },
+            "source_locator": { "type": ["string", "null"] },
+            "quote_excerpt": { "type": ["string", "null"] },
+            "is_direct": { "type": "boolean" },
+            "verification_status": { "enum": ["unverified", "verified", "conflicted", "rejected"] },
+            "verified_by": { "enum": ["rule", "llm", "human", null] },
+            "verified_at": { "type": ["string", "null"], "format": "date-time" }
+          }
+        }
+      ]
+    },
+    "intelligence_event": {
+      "allOf": [
+        { "$ref": "#/$defs/base" },
+        {
+          "type": "object",
+          "required": ["event_id", "event_type", "canonical_title", "event_at", "event_time_basis", "entities", "source_ids", "primary_source_id", "claim_ids", "fact_summary", "primary_route", "secondary_routes", "tags", "track", "evidence_level", "confidence", "priority", "independent_source_count", "dedupe_key", "status", "needs_review_reasons"],
+          "properties": {
+            "record_type": { "const": "intelligence_event" },
+            "event_id": { "type": "string", "pattern": "^evt_" },
+            "event_type": { "type": "string" },
+            "canonical_title": { "type": "string", "minLength": 6 },
+            "event_at": { "type": "string", "format": "date-time" },
+            "event_time_basis": { "enum": ["confirmed", "published_at", "estimated"] },
+            "primary_entity": { "type": ["object", "null"] },
+            "entities": { "type": "array", "items": { "type": "object" } },
+            "source_ids": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "pattern": "^src_" } },
+            "primary_source_id": { "type": "string", "pattern": "^src_" },
+            "claim_ids": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "pattern": "^clm_" } },
+            "fact_summary": { "type": "string", "minLength": 20 },
+            "limitations": { "type": ["string", "null"] },
+            "primary_route": { "type": "string" },
+            "secondary_routes": { "type": "array", "maxItems": 3, "items": { "type": "string" } },
+            "tags": { "type": "object" },
+            "track": { "enum": ["track.fixed", "track.emerging"] },
+            "evidence_level": { "enum": ["evidence.a", "evidence.b", "evidence.c", "evidence.d"] },
+            "confidence": { "enum": ["confidence.high", "confidence.medium", "confidence.low"] },
+            "priority": { "enum": ["priority.p0", "priority.p1", "priority.p2", "priority.p3"] },
+            "independent_source_count": { "type": "integer", "minimum": 1 },
+            "dedupe_key": { "type": "string", "minLength": 1 },
+            "status": { "enum": ["candidate", "needs_review", "approved", "rejected"] },
+            "needs_review_reasons": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+      ]
+    },
+    "editorial_story": {
+      "allOf": [
+        { "$ref": "#/$defs/base" },
+        {
+          "type": "object",
+          "required": ["story_id", "article_type", "headline", "dek", "one_line_takeaway", "category", "related_event_ids", "primary_event_id", "what_happened", "why_it_matters", "limitations", "watch_next", "key_numbers", "source_links", "primary_tags", "confidence", "priority", "reading_time_minutes", "editorial_status", "drafted_by"],
+          "properties": {
+            "record_type": { "const": "editorial_story" },
+            "story_id": { "type": "string", "pattern": "^story_" },
+            "article_type": { "enum": ["brief", "deep_dive", "data_point", "field_signal"] },
+            "headline": { "type": "string", "minLength": 6, "maxLength": 64 },
+            "dek": { "type": "string", "minLength": 20, "maxLength": 220 },
+            "one_line_takeaway": { "type": "string", "minLength": 15, "maxLength": 140 },
+            "category": { "type": "string" },
+            "related_event_ids": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "pattern": "^evt_" } },
+            "primary_event_id": { "type": "string", "pattern": "^evt_" },
+            "what_happened": { "$ref": "#/$defs/section" },
+            "why_it_matters": { "$ref": "#/$defs/section" },
+            "our_take": { "oneOf": [{ "$ref": "#/$defs/section" }, { "type": "null" }] },
+            "under_the_hood": { "oneOf": [{ "$ref": "#/$defs/section" }, { "type": "null" }] },
+            "limitations": { "$ref": "#/$defs/section" },
+            "watch_next": { "type": "array", "items": { "type": "string" } },
+            "key_numbers": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["label", "value", "claim_id"],
+                "properties": {
+                  "label": { "type": "string" },
+                  "value": { "type": "string" },
+                  "claim_id": { "type": "string", "pattern": "^clm_" }
+                }
+              }
+            },
+            "source_links": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/source_link" } },
+            "primary_tags": { "type": "array", "minItems": 1, "maxItems": 3, "items": { "type": "string" } },
+            "confidence": { "enum": ["confidence.high", "confidence.medium", "confidence.low"] },
+            "priority": { "enum": ["priority.p0", "priority.p1", "priority.p2", "priority.p3"] },
+            "reading_time_minutes": { "type": "integer", "minimum": 1, "maximum": 15 },
+            "editorial_status": { "enum": ["draft", "fact_checked", "approved", "published", "archived"] },
+            "drafted_by": { "enum": ["llm", "human", "hybrid"] },
+            "reviewer": { "type": ["string", "null"] },
+            "reviewed_at": { "type": ["string", "null"], "format": "date-time" },
+            "revision_note": { "type": ["string", "null"] }
+          }
+        }
+      ]
+    }
+  }
+}

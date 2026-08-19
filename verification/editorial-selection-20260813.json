@@ -1,0 +1,95 @@
+{
+  "weekly_thesis": "本周视频模型优化开始同时推进长时生成、跨镜头一致性与显式物理建模；具身智能侧的关键变化，是评测与训练数据正在从视觉逼真转向可测量的物理正确性。",
+  "verified_by": "user editorial selection + Codex primary-source verification",
+  "include_candidate_ids": [
+    "cand_d2cd4cccc8535e3d",
+    "cand_511a07864a960f62",
+    "cand_3508479b14f81b90",
+    "cand_82fdb9d008d79987",
+    "cand_3d98e42828f9a063",
+    "cand_b5303be4d7301f7c",
+    "cand_b3b40f2502fb6bce",
+    "cand_b015385caa03b3b1",
+    "cand_9ef9249e523ccd94"
+  ],
+  "watch_candidate_ids": [
+    "cand_e2a4089659ab07b3",
+    "cand_3ad5af8666d7cbcf",
+    "cand_ff497f03b9771811",
+    "cand_a8b78b0fc3775328",
+    "cand_3285da87a331e384",
+    "cand_1bdfbd667c63007c",
+    "cand_4c2e4b3f93ac881e"
+  ],
+  "decision_reasons": {
+    "cand_d2cd4cccc8535e3d": "视频潜变量直接连接4D生成，兼具视频模型优化与空间资产价值。",
+    "cand_511a07864a960f62": "科学与因果正确性评测揭示仅看感知质量的不足，直接影响视频模型评测策略。",
+    "cand_3508479b14f81b90": "同时测量模拟器与视频世界模型的物理偏差，是具身智能应用的重要基础设施。",
+    "cand_82fdb9d008d79987": "统一流式训练轨迹直接回应长时生成的训练—推理失配问题。",
+    "cand_3d98e42828f9a063": "免训练长视频扩展具有较低验证成本，值得进入本期正式事件。",
+    "cand_b5303be4d7301f7c": "跨镜头逻辑与视觉一致性直接对应短剧和叙事内容生产。",
+    "cand_b3b40f2502fb6bce": "长视频、轨迹和分层语义组合成世界模型与相机控制的数据基础。",
+    "cand_b015385caa03b3b1": "物理先验蒸馏同时连接视频生成优化和具身世界模型，是本期核心信号。",
+    "cand_9ef9249e523ccd94": "显式潜变量动力学提供不同于像素拟合的模型优化路线，受控实验结果值得正式跟踪。",
+    "cand_e2a4089659ab07b3": "几何一致性评测有价值，但与本期GAUGE主题重叠，保留观察。",
+    "cand_3ad5af8666d7cbcf": "仓库开放值得跟踪，但本期优先呈现方法与评测突破。",
+    "cand_ff497f03b9771811": "情绪可控方向有内容价值，但不属于本期两个特别关注方向。",
+    "cand_a8b78b0fc3775328": "自动驾驶应用较专门，暂不高于通用具身物理评测信号。",
+    "cand_3285da87a331e384": "具身应用相关，但摘要缺少具体成功率和任务规模，先观察。",
+    "cand_1bdfbd667c63007c": "训练目标设计值得跟踪，但本期已有更直接的物理建模事件。",
+    "cand_4c2e4b3f93ac881e": "统一视觉世界建模范围较广，但与本期视频优化主线关联不够直接。"
+  },
+  "event_overrides": {
+    "cand_82fdb9d008d79987": {
+      "event_id": "evt_20260811_stream_forcing",
+      "canonical_title": "Stream Forcing用统一训练轨迹缓解流式视频训练—推理失配",
+      "event_type": "event.research",
+      "primary_route": "frontier.video_generation",
+      "secondary_routes": ["frontier.world_model"],
+      "priority": "priority.p0",
+      "confidence": "confidence.medium",
+      "entity_name": "Stream Forcing",
+      "tags": {
+        "tech": ["tech.video_generation", "tech.world_model"],
+        "task": ["task.long_video"],
+        "capability": ["cap.temporal_consistency", "cap.efficiency"],
+        "scene": ["scene.virtual_environment"],
+        "event": ["event.research"]
+      }
+    },
+    "cand_3d98e42828f9a063": {
+      "event_id": "evt_20260806_diff_vf",
+      "canonical_title": "Diff-VF免训练扩展短视频扩散模型的长时生成能力",
+      "event_type": "event.research",
+      "primary_route": "frontier.video_generation",
+      "secondary_routes": ["visual_value.product_workflow"],
+      "priority": "priority.p1",
+      "confidence": "confidence.medium",
+      "entity_name": "Diff-VF",
+      "tags": {
+        "tech": ["tech.video_generation"],
+        "task": ["task.long_video"],
+        "capability": ["cap.temporal_consistency", "cap.efficiency"],
+        "scene": ["scene.creator_tool"],
+        "event": ["event.research"]
+      }
+    },
+    "cand_9ef9249e523ccd94": {
+      "event_id": "evt_20260810_ldr",
+      "canonical_title": "LDR用显式潜变量动力学提升视频世界模型外推能力",
+      "event_type": "event.research",
+      "primary_route": "frontier.world_model",
+      "secondary_routes": ["frontier.video_generation", "frontier.embodied_ai"],
+      "priority": "priority.p1",
+      "confidence": "confidence.medium",
+      "entity_name": "Latent Dynamics Reasoning",
+      "tags": {
+        "tech": ["tech.world_model", "tech.video_generation"],
+        "task": ["task.future_prediction"],
+        "capability": ["cap.physical_consistency", "cap.generalization"],
+        "scene": ["scene.virtual_environment"],
+        "event": ["event.research"]
+      }
+    }
+  }
+}

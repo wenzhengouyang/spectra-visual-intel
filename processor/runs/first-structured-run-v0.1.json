@@ -1,0 +1,5775 @@
+{
+  "version": "0.1",
+  "record_type": "structured_candidate_run",
+  "input_run_id": "run_20260812T074417Z",
+  "window_start": "2026-08-05T15:59:59Z",
+  "window_end": "2026-08-12T15:59:59Z",
+  "rules": {
+    "minimum_score": 7,
+    "target_count": 25,
+    "near_duplicate_threshold": 0.9,
+    "same_event_rule": "fixed repository + same week; otherwise conservative"
+  },
+  "summary": {
+    "input_records": 143,
+    "successful_input_records": 141,
+    "hard_excluded": 8,
+    "soft_demoted": 24,
+    "unrouted": 1,
+    "routed_before_aggregation": 132,
+    "candidate_events_after_aggregation": 120,
+    "near_duplicate_records_collapsed": 0,
+    "same_event_records_collapsed": 12,
+    "selected_for_verification": 25,
+    "selected_by_route": {
+      "visual_value.spatial_camera": 2,
+      "visual_value.evaluation": 5,
+      "frontier.video_generation": 5,
+      "frontier.world_model": 7,
+      "frontier.embodied_ai": 4,
+      "frontier.image_asset": 2
+    },
+    "fixture_recall_in_input": 2,
+    "fixture_recall_selected": 2
+  },
+  "fixture_recall": [
+    {
+      "title": "Beyond Pixels: From Video Priors to 4D Worlds",
+      "present_in_input": true,
+      "selected": true
+    },
+    {
+      "title": "RynnValue: Scaling Robotic Value Foundation Models with Temporal Distance",
+      "present_in_input": false,
+      "selected": false
+    },
+    {
+      "title": "Sci-VBench: Evaluating Knowledge- and Reasoning-Intensive Video Generation in Science Domains",
+      "present_in_input": true,
+      "selected": true
+    },
+    {
+      "title": "Ego-OSCAR: Egocentric Open source Stereo CAptuRe System",
+      "present_in_input": false,
+      "selected": false
+    },
+    {
+      "title": "Evidence-RL: Towards Evidence-intensive Visual Reasoning",
+      "present_in_input": false,
+      "selected": false
+    },
+    {
+      "title": "MirrorWorld: Taming Video Diffusion Models for Mirror Reflection Generation",
+      "present_in_input": false,
+      "selected": false
+    },
+    {
+      "title": "Enfold: Folding World Model Imagination into Predictive Representations for Ultra-Efficient Embodied Control",
+      "present_in_input": false,
+      "selected": false
+    },
+    {
+      "title": "Meta is back with Muse Glimmer: local, agentic, multimodal, and open source",
+      "present_in_input": false,
+      "selected": false
+    }
+  ],
+  "selected_candidates": [
+    {
+      "candidate_id": "cand_d2cd4cccc8535e3d",
+      "status": "needs_verification",
+      "canonical_title": "Beyond Pixels: From Video Priors to 4D Worlds",
+      "primary_route": "visual_value.spatial_camera",
+      "secondary_routes": [
+        "frontier.video_generation"
+      ],
+      "score": 9,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.video_generation"
+        ],
+        "task": [],
+        "capability": [
+          "cap.spatial_consistency"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_3fda07685369000ba6af",
+      "source_ids": [
+        "src_3fda07685369000ba6af"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.10744"
+      ],
+      "published_at": "2026-08-11T10:02:41Z",
+      "matched_signals": [
+        "4d",
+        "video diffusion"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？"
+      ],
+      "selection_reason": "previously_verified_regression_sample",
+      "verification_priority": "priority.p1",
+      "why_candidate": "该信号已在真实样刊中完成二轮核验，本轮用于检验自动链路能否稳定召回。"
+    },
+    {
+      "candidate_id": "cand_511a07864a960f62",
+      "status": "needs_verification",
+      "canonical_title": "Sci-VBench: Evaluating Knowledge- and Reasoning-Intensive Video Generation in Science Domains",
+      "primary_route": "visual_value.evaluation",
+      "secondary_routes": [
+        "frontier.video_generation"
+      ],
+      "score": 9,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.multimodal",
+          "tech.video_generation"
+        ],
+        "task": [
+          "task.t2v"
+        ],
+        "capability": [
+          "cap.evaluation",
+          "cap.physics"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_b7e1dafb5de1edf70063",
+      "source_ids": [
+        "src_b7e1dafb5de1edf70063"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.09873"
+      ],
+      "published_at": "2026-08-10T17:27:32Z",
+      "matched_signals": [
+        "benchmark",
+        "eval",
+        "evaluation",
+        "rubric",
+        "video generation"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "评测任务和指标能否对应真实视频/图像产品任务？"
+      ],
+      "selection_reason": "previously_verified_regression_sample",
+      "verification_priority": "priority.p1",
+      "why_candidate": "该信号已在真实样刊中完成二轮核验，本轮用于检验自动链路能否稳定召回。"
+    },
+    {
+      "candidate_id": "cand_e2a4089659ab07b3",
+      "status": "needs_verification",
+      "canonical_title": "Illusion or Integrity? Geometrical Consistency Metric for AIGC Video Quality Evaluation",
+      "primary_route": "visual_value.evaluation",
+      "secondary_routes": [
+        "frontier.video_generation",
+        "visual_value.spatial_camera"
+      ],
+      "score": 17,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.multimodal",
+          "tech.video_generation"
+        ],
+        "task": [
+          "task.t2v"
+        ],
+        "capability": [
+          "cap.evaluation",
+          "cap.physics",
+          "cap.spatial_consistency"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_b390c56265f9a32d1f0b",
+      "source_ids": [
+        "src_b390c56265f9a32d1f0b"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.09594"
+      ],
+      "published_at": "2026-08-10T13:28:07Z",
+      "matched_signals": [
+        "benchmark",
+        "consistency metric",
+        "eval",
+        "evaluation",
+        "geometric consistency",
+        "metric",
+        "quality assessment",
+        "video generation"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "评测任务和指标能否对应真实视频/图像产品任务？"
+      ],
+      "selection_reason": "route_minimum_quota",
+      "verification_priority": "priority.p1",
+      "why_candidate": "可能补充视频/图像模型的评测维度、指标或诊断方法；命中信号：benchmark、consistency metric、eval、evaluation。"
+    },
+    {
+      "candidate_id": "cand_3508479b14f81b90",
+      "status": "needs_verification",
+      "canonical_title": "GAUGE: A Measurement-Grounded Benchmark for Physical Fidelity in Simulation Engines and Video World Models",
+      "primary_route": "visual_value.evaluation",
+      "secondary_routes": [
+        "frontier.world_model",
+        "frontier.embodied_ai",
+        "frontier.video_generation"
+      ],
+      "score": 16,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.embodied_ai",
+          "tech.multimodal",
+          "tech.video_generation",
+          "tech.world_model"
+        ],
+        "task": [
+          "task.i2v"
+        ],
+        "capability": [
+          "cap.evaluation",
+          "cap.physics",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.robotics"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_2cf80b0f79180c090001",
+      "source_ids": [
+        "src_2cf80b0f79180c090001"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.05948"
+      ],
+      "published_at": "2026-08-06T12:19:38Z",
+      "matched_signals": [
+        "benchmark",
+        "embodied",
+        "eval",
+        "evaluation",
+        "image-to-video",
+        "metric",
+        "physical fidelity",
+        "physics",
+        "world model"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "评测任务和指标能否对应真实视频/图像产品任务？"
+      ],
+      "selection_reason": "route_minimum_quota",
+      "verification_priority": "priority.p1",
+      "why_candidate": "可能补充视频/图像模型的评测维度、指标或诊断方法；命中信号：benchmark、embodied、eval、evaluation。"
+    },
+    {
+      "candidate_id": "cand_760ae3b82e2f3761",
+      "status": "needs_verification",
+      "canonical_title": "Open Evaluation Agent: Efficient and Promptable Evaluation of Visual Generative Models",
+      "primary_route": "visual_value.evaluation",
+      "secondary_routes": [
+        "frontier.multimodal_agent",
+        "frontier.image_asset",
+        "frontier.video_generation"
+      ],
+      "score": 15,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.multimodal",
+          "tech.video_generation"
+        ],
+        "task": [
+          "task.t2v"
+        ],
+        "capability": [
+          "cap.efficiency",
+          "cap.evaluation"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_92b6c52595644b4f12ee",
+      "source_ids": [
+        "src_92b6c52595644b4f12ee"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.09666"
+      ],
+      "published_at": "2026-08-10T14:42:10Z",
+      "matched_signals": [
+        "benchmark",
+        "eval",
+        "evaluation",
+        "evaluation agent",
+        "video generation",
+        "visual generative models"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "评测任务和指标能否对应真实视频/图像产品任务？"
+      ],
+      "selection_reason": "route_minimum_quota",
+      "verification_priority": "priority.p2",
+      "why_candidate": "可能补充视频/图像模型的评测维度、指标或诊断方法；命中信号：benchmark、eval、evaluation、evaluation agent。"
+    },
+    {
+      "candidate_id": "cand_3ad5af8666d7cbcf",
+      "status": "needs_verification",
+      "canonical_title": "Wan-Animate-2 repository opened and documented",
+      "primary_route": "frontier.video_generation",
+      "secondary_routes": [],
+      "score": 18,
+      "track": "track.fixed",
+      "tags": {
+        "tech": [
+          "tech.video_generation"
+        ],
+        "task": [],
+        "capability": [],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_f126c08d4377e6d51269",
+      "source_ids": [
+        "src_f126c08d4377e6d51269",
+        "src_7261f4892bfd5d348b0f",
+        "src_f39a034cdfd977c5e56d",
+        "src_2c8b193c0e563ed9c1ac",
+        "src_868839fdc1a6ccaf0053",
+        "src_e06e1c48a18e44135569",
+        "src_a4211e22e0c05f468a47",
+        "src_3468aa0c0be7b16f1ad2",
+        "src_264453dfbb5e917ec875",
+        "src_d6944e4423c99d3185f2",
+        "src_b538b1ad551f09210f4c",
+        "src_b0868c27237728aeec81",
+        "src_efb05edd7f62fcd10516"
+      ],
+      "source_urls": [
+        "https://github.com/Wan-Video/Wan-Animate-2/commit/823e7b83ab15dcf56bde694aa345f8a01d2ee683",
+        "https://github.com/Wan-Video/Wan-Animate-2/commit/4e82cd0b2e35ef9e9310fb3e594b9e71d138343c",
+        "https://github.com/Wan-Video/Wan-Animate-2/commit/bad0f77eb6cbb762a6bd861d58d3478249de18a1",
+        "https://github.com/Wan-Video/Wan-Animate-2/commit/6309051bc32b0e44c1289467396a00b8943a7b48",
+        "https://github.com/Wan-Video/Wan-Animate-2/commit/0f73140a0bcabe876b21229be179c6837c3d622c",
+        "https://github.com/Wan-Video/Wan-Animate-2/commit/2a0a1f9559d9b0e5009ce4711cdebee669ea23e7",
+        "https://github.com/Wan-Video/Wan-Animate-2/commit/bacf815fcbc696c198c44541b00a0bda0d8a0f4d",
+        "https://github.com/Wan-Video/Wan-Animate-2/commit/c3f9a67ad5047806e5d2c6b8ae5e9d2c4d30c381",
+        "https://github.com/Wan-Video/Wan-Animate-2/commit/8108d0a36ee69869f54347174e97f61d9ffcd355",
+        "https://github.com/Wan-Video/Wan-Animate-2/commit/43e040b1d3ad39860cf7b078d33257e416ad2211",
+        "https://github.com/Wan-Video/Wan-Animate-2/commit/0fc74e16beacc798ccb8767dc7f56dfb7165e6bd",
+        "https://github.com/Wan-Video/Wan-Animate-2/commit/4bd12c90b6aef98a4b59f928a00f368a418c7e23",
+        "https://github.com/Wan-Video/Wan-Animate-2/commit/3ad2fef7d61d6200c9c653e0fe47be7616b323f3"
+      ],
+      "published_at": "2026-08-06T07:34:25Z",
+      "matched_signals": [
+        "fixed_watchlist:Wan"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 13,
+        "method": "fixed_repository_weekly_cluster",
+        "note": "多个提交仅构成一个仓库动态候选，不按多条新闻计数。"
+      },
+      "verification_questions": [
+        "仓库是否在本周正式首次开源？",
+        "哪些提交属于能力或代码变化，而非文档维护？",
+        "是否存在官方发布说明或模型权重？"
+      ],
+      "selection_reason": "route_minimum_quota",
+      "verification_priority": "priority.p1",
+      "why_candidate": "固定关注仓库在本周出现集中更新，需要确认是否构成正式开源、模型发布或能力变化。"
+    },
+    {
+      "candidate_id": "cand_ff497f03b9771811",
+      "status": "needs_verification",
+      "canonical_title": "EmoWorld: A Decoupled Affective Field for Controllable Emotional Video Generation",
+      "primary_route": "frontier.video_generation",
+      "secondary_routes": [
+        "visual_value.evaluation",
+        "frontier.image_asset"
+      ],
+      "score": 17,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.video_generation"
+        ],
+        "task": [
+          "task.i2v",
+          "task.t2v"
+        ],
+        "capability": [
+          "cap.editability",
+          "cap.evaluation"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_ba63750d20512cdcf4d4",
+      "source_ids": [
+        "src_ba63750d20512cdcf4d4"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.06231"
+      ],
+      "published_at": "2026-08-06T16:20:23Z",
+      "matched_signals": [
+        "emotional video generation",
+        "eval",
+        "image-to-video",
+        "text-to-video",
+        "video diffusion",
+        "video generation"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "对时长、一致性、镜头或控制的提升是否有可比实验？"
+      ],
+      "selection_reason": "route_minimum_quota",
+      "verification_priority": "priority.p1",
+      "why_candidate": "可能改变视频生成在时长、一致性、控制或生产效率上的能力边界；命中信号：emotional video generation、eval、image-to-video、text-to-video。"
+    },
+    {
+      "candidate_id": "cand_82fdb9d008d79987",
+      "status": "needs_verification",
+      "canonical_title": "Stream Forcing: Constructing Unified Training Trajectory for Robust Streaming Video Generation",
+      "primary_route": "frontier.video_generation",
+      "secondary_routes": [
+        "frontier.world_model",
+        "visual_value.evaluation"
+      ],
+      "score": 17,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.video_generation",
+          "tech.world_model"
+        ],
+        "task": [
+          "task.t2v"
+        ],
+        "capability": [
+          "cap.efficiency",
+          "cap.evaluation",
+          "cap.long_video",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_588398d607f3620af867",
+      "source_ids": [
+        "src_588398d607f3620af867"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.10439"
+      ],
+      "published_at": "2026-08-11T03:39:05Z",
+      "matched_signals": [
+        "benchmark",
+        "streaming video generation",
+        "video diffusion",
+        "video generation",
+        "world model",
+        "world modeling"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "对时长、一致性、镜头或控制的提升是否有可比实验？"
+      ],
+      "selection_reason": "route_minimum_quota",
+      "verification_priority": "priority.p1",
+      "why_candidate": "可能改变视频生成在时长、一致性、控制或生产效率上的能力边界；命中信号：benchmark、streaming video generation、video diffusion、video generation。"
+    },
+    {
+      "candidate_id": "cand_3d98e42828f9a063",
+      "status": "needs_verification",
+      "canonical_title": "Diff-VF: Training-free High-quality Long Video Generation via Diffusion Model",
+      "primary_route": "frontier.video_generation",
+      "secondary_routes": [
+        "visual_value.evaluation"
+      ],
+      "score": 16,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.video_generation"
+        ],
+        "task": [
+          "task.t2v"
+        ],
+        "capability": [
+          "cap.evaluation",
+          "cap.long_video",
+          "cap.spatial_consistency"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_6bbde377448f1f641f70",
+      "source_ids": [
+        "src_6bbde377448f1f641f70"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.05976"
+      ],
+      "published_at": "2026-08-06T12:53:46Z",
+      "matched_signals": [
+        "eval",
+        "evaluation",
+        "long video",
+        "video diffusion",
+        "video generation"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "对时长、一致性、镜头或控制的提升是否有可比实验？"
+      ],
+      "selection_reason": "route_minimum_quota",
+      "verification_priority": "priority.p1",
+      "why_candidate": "可能改变视频生成在时长、一致性、控制或生产效率上的能力边界；命中信号：eval、evaluation、long video、video diffusion。"
+    },
+    {
+      "candidate_id": "cand_b5303be4d7301f7c",
+      "status": "needs_verification",
+      "canonical_title": "LogiShot: Logically Coherent Cross-Shot Video Generation",
+      "primary_route": "frontier.video_generation",
+      "secondary_routes": [
+        "visual_value.evaluation"
+      ],
+      "score": 16,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.video_generation"
+        ],
+        "task": [
+          "task.t2v"
+        ],
+        "capability": [
+          "cap.cross_shot_consistency",
+          "cap.evaluation"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_ece5c1f89fe6900c7fde",
+      "source_ids": [
+        "src_ece5c1f89fe6900c7fde"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.08820"
+      ],
+      "published_at": "2026-08-09T17:11:57Z",
+      "matched_signals": [
+        "benchmark",
+        "cross-shot",
+        "eval",
+        "video generation"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "对时长、一致性、镜头或控制的提升是否有可比实验？"
+      ],
+      "selection_reason": "route_minimum_quota",
+      "verification_priority": "priority.p1",
+      "why_candidate": "可能改变视频生成在时长、一致性、控制或生产效率上的能力边界；命中信号：benchmark、cross-shot、eval、video generation。"
+    },
+    {
+      "candidate_id": "cand_b3b40f2502fb6bce",
+      "status": "needs_verification",
+      "canonical_title": "Sekai2: From World Exploration to Interactive World Modeling",
+      "primary_route": "frontier.world_model",
+      "secondary_routes": [
+        "frontier.video_generation",
+        "visual_value.evaluation",
+        "visual_value.spatial_camera"
+      ],
+      "score": 19,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.video_generation",
+          "tech.world_model"
+        ],
+        "task": [
+          "task.camera_transfer",
+          "task.t2v"
+        ],
+        "capability": [
+          "cap.camera_language",
+          "cap.editability",
+          "cap.evaluation",
+          "cap.long_video",
+          "cap.spatial_consistency",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.virtual_environment"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_a249f95e9bbdf2c4ef5e",
+      "source_ids": [
+        "src_a249f95e9bbdf2c4ef5e"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.09449"
+      ],
+      "published_at": "2026-08-10T11:23:01Z",
+      "matched_signals": [
+        "camera control",
+        "interactive world",
+        "long video",
+        "metric",
+        "video generation",
+        "world model",
+        "world modeling",
+        "world-model"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "是否真正建模空间、时间、物理或交互，而非泛化使用“世界模型”概念？"
+      ],
+      "selection_reason": "route_minimum_quota",
+      "verification_priority": "priority.p1",
+      "why_candidate": "可能提供空间、时间、物理或交互世界建模的新方法；命中信号：camera control、interactive world、long video、metric。"
+    },
+    {
+      "candidate_id": "cand_a8b78b0fc3775328",
+      "status": "needs_verification",
+      "canonical_title": "4D-WAM: 4D Consistent World Modeling for Autonomous Driving",
+      "primary_route": "frontier.world_model",
+      "secondary_routes": [
+        "visual_value.spatial_camera",
+        "visual_value.evaluation"
+      ],
+      "score": 17,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.video_generation",
+          "tech.world_model"
+        ],
+        "task": [],
+        "capability": [
+          "cap.evaluation",
+          "cap.physics",
+          "cap.spatial_consistency",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_fb6c167bf2da6b85244b",
+      "source_ids": [
+        "src_fb6c167bf2da6b85244b"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.10107"
+      ],
+      "published_at": "2026-08-10T18:14:52Z",
+      "matched_signals": [
+        "4d",
+        "benchmark",
+        "metric",
+        "world model",
+        "world modeling",
+        "world-action"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "是否真正建模空间、时间、物理或交互，而非泛化使用“世界模型”概念？"
+      ],
+      "selection_reason": "route_minimum_quota",
+      "verification_priority": "priority.p1",
+      "why_candidate": "可能提供空间、时间、物理或交互世界建模的新方法；命中信号：4d、benchmark、metric、world model。"
+    },
+    {
+      "candidate_id": "cand_3285da87a331e384",
+      "status": "needs_verification",
+      "canonical_title": "Robust-WAM: Bridging Generative Pretraining and Semantic Foresight in World-Action Models",
+      "primary_route": "frontier.world_model",
+      "secondary_routes": [
+        "frontier.video_generation",
+        "visual_value.evaluation",
+        "frontier.embodied_ai"
+      ],
+      "score": 17,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.embodied_ai",
+          "tech.video_generation",
+          "tech.world_model"
+        ],
+        "task": [
+          "task.t2v"
+        ],
+        "capability": [
+          "cap.evaluation",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.robotics"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_4cb3a35ef6e427798b0c",
+      "source_ids": [
+        "src_4cb3a35ef6e427798b0c"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.05903"
+      ],
+      "published_at": "2026-08-06T11:31:56Z",
+      "matched_signals": [
+        "benchmark",
+        "robot",
+        "video generation",
+        "world-action"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "是否真正建模空间、时间、物理或交互，而非泛化使用“世界模型”概念？"
+      ],
+      "selection_reason": "route_minimum_quota",
+      "verification_priority": "priority.p1",
+      "why_candidate": "可能提供空间、时间、物理或交互世界建模的新方法；命中信号：benchmark、robot、video generation、world-action。"
+    },
+    {
+      "candidate_id": "cand_b015385caa03b3b1",
+      "status": "needs_verification",
+      "canonical_title": "Distilling Physical Priors into Streaming World Models",
+      "primary_route": "frontier.world_model",
+      "secondary_routes": [
+        "visual_value.spatial_camera",
+        "visual_value.evaluation"
+      ],
+      "score": 16,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.video_generation",
+          "tech.world_model"
+        ],
+        "task": [],
+        "capability": [
+          "cap.efficiency",
+          "cap.evaluation",
+          "cap.physics",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_fa6617a0569d8dd02226",
+      "source_ids": [
+        "src_fa6617a0569d8dd02226"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.07981"
+      ],
+      "published_at": "2026-08-08T07:35:10Z",
+      "matched_signals": [
+        "benchmark",
+        "eval",
+        "physical priors",
+        "physics",
+        "world model"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "是否真正建模空间、时间、物理或交互，而非泛化使用“世界模型”概念？"
+      ],
+      "selection_reason": "route_minimum_quota",
+      "verification_priority": "priority.p1",
+      "why_candidate": "可能提供空间、时间、物理或交互世界建模的新方法；命中信号：benchmark、eval、physical priors、physics。"
+    },
+    {
+      "candidate_id": "cand_1bdfbd667c63007c",
+      "status": "needs_verification",
+      "canonical_title": "Is Forward Prediction Enough? Physical State Grounding for JEPA World Models",
+      "primary_route": "frontier.world_model",
+      "secondary_routes": [
+        "visual_value.evaluation",
+        "frontier.embodied_ai"
+      ],
+      "score": 16,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.embodied_ai",
+          "tech.world_model"
+        ],
+        "task": [],
+        "capability": [
+          "cap.evaluation",
+          "cap.physics",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.robotics"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_93b17972244660b826e3",
+      "source_ids": [
+        "src_93b17972244660b826e3"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.06799"
+      ],
+      "published_at": "2026-08-07T04:44:16Z",
+      "matched_signals": [
+        "eval",
+        "latent dynamics",
+        "robot",
+        "world model",
+        "world-model"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "是否真正建模空间、时间、物理或交互，而非泛化使用“世界模型”概念？"
+      ],
+      "selection_reason": "route_minimum_quota",
+      "verification_priority": "priority.p1",
+      "why_candidate": "可能提供空间、时间、物理或交互世界建模的新方法；命中信号：eval、latent dynamics、robot、world model。"
+    },
+    {
+      "candidate_id": "cand_02eace1e5db3b010",
+      "status": "needs_verification",
+      "canonical_title": "ComBodied Agents: a New Paradigm of Human-Centric Agentic AI",
+      "primary_route": "frontier.embodied_ai",
+      "secondary_routes": [
+        "frontier.multimodal_agent",
+        "frontier.world_model",
+        "visual_value.evaluation"
+      ],
+      "score": 15,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.embodied_ai",
+          "tech.world_model"
+        ],
+        "task": [],
+        "capability": [
+          "cap.evaluation",
+          "cap.physics",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.robotics"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_f0fb6df4766b2e1e6d78",
+      "source_ids": [
+        "src_f0fb6df4766b2e1e6d78"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.10915"
+      ],
+      "published_at": "2026-08-11T13:35:58Z",
+      "matched_signals": [
+        "agentic ai",
+        "benchmark",
+        "combodied",
+        "embodied",
+        "eval",
+        "evaluation",
+        "metric",
+        "robot",
+        "world model"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "结果来自真实机器人、仿真还是离线数据？"
+      ],
+      "selection_reason": "route_minimum_quota",
+      "verification_priority": "priority.p2",
+      "why_candidate": "可能影响视觉模型到机器人感知、规划与操作的落地链路；命中信号：agentic ai、benchmark、combodied、embodied。"
+    },
+    {
+      "candidate_id": "cand_6e726986cafefed0",
+      "status": "needs_verification",
+      "canonical_title": "JoyAI-RA 0.5: Scaling Robot Manipulation Learning via Dual Action Alignment",
+      "primary_route": "frontier.embodied_ai",
+      "secondary_routes": [
+        "frontier.world_model",
+        "visual_value.evaluation"
+      ],
+      "score": 15,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.embodied_ai",
+          "tech.video_generation",
+          "tech.world_model"
+        ],
+        "task": [],
+        "capability": [
+          "cap.efficiency",
+          "cap.evaluation",
+          "cap.physics",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.robotics"
+        ],
+        "event": [
+          "event.repo_update"
+        ]
+      },
+      "primary_source_id": "src_12a41acc5c89b0d69e93",
+      "source_ids": [
+        "src_12a41acc5c89b0d69e93"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.05674"
+      ],
+      "published_at": "2026-08-06T07:14:55Z",
+      "matched_signals": [
+        "benchmark",
+        "manipulation",
+        "robot",
+        "world model",
+        "world-action"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "结果来自真实机器人、仿真还是离线数据？"
+      ],
+      "selection_reason": "route_minimum_quota",
+      "verification_priority": "priority.p2",
+      "why_candidate": "可能影响视觉模型到机器人感知、规划与操作的落地链路；命中信号：benchmark、manipulation、robot、world model。"
+    },
+    {
+      "candidate_id": "cand_e2ffd46ccd2b4a3a",
+      "status": "needs_verification",
+      "canonical_title": "LAWM-3D: Learning 3D-Aware Latent Actions from Human Videos for Generalizable Robot World Models",
+      "primary_route": "frontier.embodied_ai",
+      "secondary_routes": [
+        "frontier.world_model",
+        "visual_value.evaluation"
+      ],
+      "score": 15,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.embodied_ai",
+          "tech.video_generation",
+          "tech.world_model"
+        ],
+        "task": [],
+        "capability": [
+          "cap.evaluation",
+          "cap.physics",
+          "cap.spatial_consistency",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.robotics"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_6dcaa79f21863fa55818",
+      "source_ids": [
+        "src_6dcaa79f21863fa55818"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.05706"
+      ],
+      "published_at": "2026-08-06T07:47:01Z",
+      "matched_signals": [
+        "embodied",
+        "metric",
+        "robot",
+        "world model"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "结果来自真实机器人、仿真还是离线数据？"
+      ],
+      "selection_reason": "route_minimum_quota",
+      "verification_priority": "priority.p2",
+      "why_candidate": "可能影响视觉模型到机器人感知、规划与操作的落地链路；命中信号：embodied、metric、robot、world model。"
+    },
+    {
+      "candidate_id": "cand_24a7cba1959bb7c4",
+      "status": "needs_verification",
+      "canonical_title": "AtlasVLA: Persistent World-Ego State Modeling for Vision-Language-Action Models",
+      "primary_route": "frontier.embodied_ai",
+      "secondary_routes": [
+        "visual_value.evaluation",
+        "visual_value.spatial_camera"
+      ],
+      "score": 14,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.embodied_ai"
+        ],
+        "task": [],
+        "capability": [
+          "cap.evaluation",
+          "cap.spatial_consistency"
+        ],
+        "scene": [
+          "scene.robotics"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_fd07c4b3df29bf751d1c",
+      "source_ids": [
+        "src_fd07c4b3df29bf751d1c"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.06729"
+      ],
+      "published_at": "2026-08-07T02:49:39Z",
+      "matched_signals": [
+        "4d",
+        "benchmark",
+        "embodied",
+        "eval",
+        "evaluation",
+        "manipulation",
+        "spatial reasoning",
+        "vision-language-action",
+        "vla"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "结果来自真实机器人、仿真还是离线数据？"
+      ],
+      "selection_reason": "route_minimum_quota",
+      "verification_priority": "priority.p2",
+      "why_candidate": "可能影响视觉模型到机器人感知、规划与操作的落地链路；命中信号：4d、benchmark、embodied、eval。"
+    },
+    {
+      "candidate_id": "cand_55a9f80cbd5afc78",
+      "status": "needs_verification",
+      "canonical_title": "In-Loop Model Adaptation with Coupled Latent-Noise Guidance for High-Fidelity Subject-Driven Text-to-Image Generation",
+      "primary_route": "frontier.image_asset",
+      "secondary_routes": [],
+      "score": 14,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.image_generation"
+        ],
+        "task": [
+          "task.r2v",
+          "task.t2i"
+        ],
+        "capability": [
+          "cap.efficiency",
+          "cap.reference_fidelity"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_29d81fd46d9c23edcdc5",
+      "source_ids": [
+        "src_29d81fd46d9c23edcdc5"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.09244"
+      ],
+      "published_at": "2026-08-10T08:07:28Z",
+      "matched_signals": [
+        "image generation",
+        "subject-driven",
+        "text-to-image"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？"
+      ],
+      "selection_reason": "route_minimum_quota",
+      "verification_priority": "priority.p2",
+      "why_candidate": "可能影响图像生成、参考保持或可编辑资产生产；命中信号：image generation、subject-driven、text-to-image。"
+    },
+    {
+      "candidate_id": "cand_4aae710a0f601d10",
+      "status": "needs_verification",
+      "canonical_title": "On the Limitations of Cross-Lingual Consistency in Multilingual Text-to-image Generation",
+      "primary_route": "frontier.image_asset",
+      "secondary_routes": [
+        "visual_value.evaluation"
+      ],
+      "score": 14,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.image_generation"
+        ],
+        "task": [
+          "task.t2i"
+        ],
+        "capability": [
+          "cap.evaluation"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.repo_update"
+        ]
+      },
+      "primary_source_id": "src_ff304604facfb272e8f7",
+      "source_ids": [
+        "src_ff304604facfb272e8f7"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.11002"
+      ],
+      "published_at": "2026-08-11T14:49:23Z",
+      "matched_signals": [
+        "benchmark",
+        "eval",
+        "evaluation",
+        "image generation",
+        "text-to-image"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？"
+      ],
+      "selection_reason": "route_minimum_quota",
+      "verification_priority": "priority.p2",
+      "why_candidate": "可能影响图像生成、参考保持或可编辑资产生产；命中信号：benchmark、eval、evaluation、image generation。"
+    },
+    {
+      "candidate_id": "cand_caeec8cdb2a65e37",
+      "status": "needs_verification",
+      "canonical_title": "GST-Bench: Can VLMs Develop Global Spatial Awareness from Video?",
+      "primary_route": "visual_value.spatial_camera",
+      "secondary_routes": [
+        "frontier.embodied_ai",
+        "visual_value.evaluation"
+      ],
+      "score": 13,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.embodied_ai",
+          "tech.video_generation"
+        ],
+        "task": [],
+        "capability": [
+          "cap.evaluation",
+          "cap.spatial_consistency"
+        ],
+        "scene": [
+          "scene.robotics"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_3fb3851a62e751df3f05",
+      "source_ids": [
+        "src_3fb3851a62e751df3f05"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.05747"
+      ],
+      "published_at": "2026-08-06T08:33:13Z",
+      "matched_signals": [
+        "benchmark",
+        "embodied",
+        "eval",
+        "evaluation",
+        "spatial awareness",
+        "spatial reasoning"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？"
+      ],
+      "selection_reason": "route_minimum_quota",
+      "verification_priority": "priority.p2",
+      "why_candidate": "可能改善空间一致性、4D表达、运镜理解或镜头控制；命中信号：benchmark、embodied、eval、evaluation。"
+    },
+    {
+      "candidate_id": "cand_9ef9249e523ccd94",
+      "status": "needs_verification",
+      "canonical_title": "Learning How the World Evolves: Extrapolative Video World Models via Latent Dynamics Reasoning",
+      "primary_route": "frontier.world_model",
+      "secondary_routes": [
+        "frontier.video_generation",
+        "visual_value.evaluation",
+        "visual_value.spatial_camera"
+      ],
+      "score": 16,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.video_generation",
+          "tech.world_model"
+        ],
+        "task": [],
+        "capability": [
+          "cap.evaluation",
+          "cap.physics",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.repo_update"
+        ]
+      },
+      "primary_source_id": "src_eb7de64ec193b4077ceb",
+      "source_ids": [
+        "src_eb7de64ec193b4077ceb"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.09926"
+      ],
+      "published_at": "2026-08-10T17:59:19Z",
+      "matched_signals": [
+        "benchmark",
+        "latent dynamics",
+        "physics",
+        "video diffusion",
+        "world model"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "是否真正建模空间、时间、物理或交互，而非泛化使用“世界模型”概念？"
+      ],
+      "selection_reason": "score_and_route_quota",
+      "verification_priority": "priority.p1",
+      "why_candidate": "可能提供空间、时间、物理或交互世界建模的新方法；命中信号：benchmark、latent dynamics、physics、video diffusion。"
+    },
+    {
+      "candidate_id": "cand_4c2e4b3f93ac881e",
+      "status": "needs_verification",
+      "canonical_title": "UniJEPA: A Unified Joint-Embedding Predictive Architecture for Task-Agnostic Visual World Modeling",
+      "primary_route": "frontier.world_model",
+      "secondary_routes": [
+        "visual_value.evaluation"
+      ],
+      "score": 16,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.video_generation",
+          "tech.world_model"
+        ],
+        "task": [],
+        "capability": [
+          "cap.editability",
+          "cap.evaluation",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_993da43eff57e7457b58",
+      "source_ids": [
+        "src_993da43eff57e7457b58"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.07409"
+      ],
+      "published_at": "2026-08-07T16:55:58Z",
+      "matched_signals": [
+        "benchmark",
+        "metric",
+        "world model",
+        "world modeling"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "是否真正建模空间、时间、物理或交互，而非泛化使用“世界模型”概念？"
+      ],
+      "selection_reason": "score_and_route_quota",
+      "verification_priority": "priority.p1",
+      "why_candidate": "可能提供空间、时间、物理或交互世界建模的新方法；命中信号：benchmark、metric、world model、world modeling。"
+    },
+    {
+      "candidate_id": "cand_f4d11a71d1e2617b",
+      "status": "needs_verification",
+      "canonical_title": "VideoArgus: Agentic Rubric-Grounded Unified Evaluation for Video Generation and Editing",
+      "primary_route": "visual_value.evaluation",
+      "secondary_routes": [
+        "frontier.video_generation"
+      ],
+      "score": 15,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.multimodal",
+          "tech.video_generation"
+        ],
+        "task": [
+          "task.t2v"
+        ],
+        "capability": [
+          "cap.editability",
+          "cap.evaluation"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.repo_update"
+        ]
+      },
+      "primary_source_id": "src_516b594cc71a1b8a22b5",
+      "source_ids": [
+        "src_516b594cc71a1b8a22b5"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.05485"
+      ],
+      "published_at": "2026-08-06T00:28:38Z",
+      "matched_signals": [
+        "benchmark",
+        "eval",
+        "evaluation",
+        "rubric",
+        "video generation"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "评测任务和指标能否对应真实视频/图像产品任务？"
+      ],
+      "selection_reason": "score_and_route_quota",
+      "verification_priority": "priority.p2",
+      "why_candidate": "可能补充视频/图像模型的评测维度、指标或诊断方法；命中信号：benchmark、eval、evaluation、rubric。"
+    }
+  ],
+  "overflow_candidates": [
+    {
+      "candidate_id": "cand_cd469acf4bff45d3",
+      "status": "needs_verification",
+      "canonical_title": "Addressable Memory for Video World Models",
+      "primary_route": "frontier.world_model",
+      "secondary_routes": [
+        "visual_value.evaluation"
+      ],
+      "score": 15,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.video_generation",
+          "tech.world_model"
+        ],
+        "task": [],
+        "capability": [
+          "cap.evaluation",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.virtual_environment"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_e9bcd09b6bbdb2fd253f",
+      "source_ids": [
+        "src_e9bcd09b6bbdb2fd253f"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.07408"
+      ],
+      "published_at": "2026-08-07T16:55:57Z",
+      "matched_signals": [
+        "benchmark",
+        "eval",
+        "world model"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "是否真正建模空间、时间、物理或交互，而非泛化使用“世界模型”概念？"
+      ]
+    },
+    {
+      "candidate_id": "cand_e1fa026aeb67d3b1",
+      "status": "needs_verification",
+      "canonical_title": "DreamWAM: Beyond RGB Future Prediction for World Action Models",
+      "primary_route": "frontier.world_model",
+      "secondary_routes": [
+        "frontier.embodied_ai"
+      ],
+      "score": 15,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.video_generation",
+          "tech.world_model"
+        ],
+        "task": [],
+        "capability": [
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.repo_update"
+        ]
+      },
+      "primary_source_id": "src_18dfd76413cbddb27de1",
+      "source_ids": [
+        "src_18dfd76413cbddb27de1"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.04996"
+      ],
+      "published_at": "2026-08-05T16:04:23Z",
+      "matched_signals": [
+        "manipulation",
+        "world action",
+        "world model",
+        "world modeling",
+        "world-action"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "是否真正建模空间、时间、物理或交互，而非泛化使用“世界模型”概念？"
+      ]
+    },
+    {
+      "candidate_id": "cand_b7be36d586c9e68d",
+      "status": "needs_verification",
+      "canonical_title": "Dreamer-SAC: Off-Policy Learning in Latent World Models for Sample-Efficient Autonomous Driving",
+      "primary_route": "frontier.world_model",
+      "secondary_routes": [
+        "visual_value.evaluation"
+      ],
+      "score": 15,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.world_model"
+        ],
+        "task": [],
+        "capability": [
+          "cap.efficiency",
+          "cap.evaluation",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_5ff813685ceb8ec7a439",
+      "source_ids": [
+        "src_5ff813685ceb8ec7a439"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.10386"
+      ],
+      "published_at": "2026-08-11T02:27:26Z",
+      "matched_signals": [
+        "eval",
+        "world model"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "是否真正建模空间、时间、物理或交互，而非泛化使用“世界模型”概念？"
+      ]
+    },
+    {
+      "candidate_id": "cand_a68c07d3c2e90d03",
+      "status": "needs_verification",
+      "canonical_title": "Energy-Structured Latent World Models with Neural Time Fields for Physically Constistent Open-World Motion Planning",
+      "primary_route": "frontier.world_model",
+      "secondary_routes": [
+        "frontier.embodied_ai",
+        "visual_value.evaluation",
+        "visual_value.spatial_camera"
+      ],
+      "score": 15,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.embodied_ai",
+          "tech.world_model"
+        ],
+        "task": [],
+        "capability": [
+          "cap.evaluation",
+          "cap.physics",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.robotics"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_6b501a6965da844d98bf",
+      "source_ids": [
+        "src_6b501a6965da844d98bf"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.09876"
+      ],
+      "published_at": "2026-08-10T17:31:18Z",
+      "matched_signals": [
+        "embodied",
+        "eval",
+        "evaluation",
+        "physics",
+        "world model"
+      ],
+      "negative_signals": [
+        "navigation"
+      ],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "是否真正建模空间、时间、物理或交互，而非泛化使用“世界模型”概念？"
+      ]
+    },
+    {
+      "candidate_id": "cand_f005721f5e2a1940",
+      "status": "needs_verification",
+      "canonical_title": "HelloWorld: Enabling Socially Interactive Characters in Video World Models",
+      "primary_route": "frontier.world_model",
+      "secondary_routes": [
+        "frontier.video_generation",
+        "visual_value.evaluation",
+        "visual_value.spatial_camera"
+      ],
+      "score": 15,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.video_generation",
+          "tech.world_model"
+        ],
+        "task": [
+          "task.camera_transfer",
+          "task.t2v"
+        ],
+        "capability": [
+          "cap.camera_language",
+          "cap.evaluation",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.repo_update"
+        ]
+      },
+      "primary_source_id": "src_f51d8f50cb1dd9b55bab",
+      "source_ids": [
+        "src_f51d8f50cb1dd9b55bab"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.05070"
+      ],
+      "published_at": "2026-08-05T17:14:19Z",
+      "matched_signals": [
+        "benchmark",
+        "camera motion",
+        "eval",
+        "evaluation",
+        "metric",
+        "video generation",
+        "world model"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "是否真正建模空间、时间、物理或交互，而非泛化使用“世界模型”概念？"
+      ]
+    },
+    {
+      "candidate_id": "cand_87da53fdf742d3ca",
+      "status": "needs_verification",
+      "canonical_title": "MASS: Multiplayer World Models with Authoritative Shared State",
+      "primary_route": "frontier.world_model",
+      "secondary_routes": [
+        "visual_value.evaluation"
+      ],
+      "score": 15,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.video_generation",
+          "tech.world_model"
+        ],
+        "task": [],
+        "capability": [
+          "cap.evaluation",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.virtual_environment"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_8178c6417ff479f53a08",
+      "source_ids": [
+        "src_8178c6417ff479f53a08"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.06257"
+      ],
+      "published_at": "2026-08-06T16:47:24Z",
+      "matched_signals": [
+        "benchmark",
+        "world model"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "是否真正建模空间、时间、物理或交互，而非泛化使用“世界模型”概念？"
+      ]
+    },
+    {
+      "candidate_id": "cand_cf9c72f2be952961",
+      "status": "needs_verification",
+      "canonical_title": "Model Discovery Agent: LLM-assisted Bayesian experiment design for data-efficient discovery of mechanistic world models",
+      "primary_route": "frontier.world_model",
+      "secondary_routes": [
+        "visual_value.evaluation",
+        "visual_value.spatial_camera"
+      ],
+      "score": 15,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.world_model"
+        ],
+        "task": [],
+        "capability": [
+          "cap.efficiency",
+          "cap.evaluation",
+          "cap.physics",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_7b095aa6359e9c9fd8d8",
+      "source_ids": [
+        "src_7b095aa6359e9c9fd8d8"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.09696"
+      ],
+      "published_at": "2026-08-10T14:59:22Z",
+      "matched_signals": [
+        "benchmark",
+        "physics",
+        "world model"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "是否真正建模空间、时间、物理或交互，而非泛化使用“世界模型”概念？"
+      ]
+    },
+    {
+      "candidate_id": "cand_d6100007bc5ebcc6",
+      "status": "needs_verification",
+      "canonical_title": "Population-Scalable Multi-Agent World Modeling",
+      "primary_route": "frontier.world_model",
+      "secondary_routes": [],
+      "score": 15,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.video_generation",
+          "tech.world_model"
+        ],
+        "task": [],
+        "capability": [
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_220a570ba3a99701f96c",
+      "source_ids": [
+        "src_220a570ba3a99701f96c"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.08600"
+      ],
+      "published_at": "2026-08-09T09:26:15Z",
+      "matched_signals": [
+        "world model",
+        "world modeling"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "是否真正建模空间、时间、物理或交互，而非泛化使用“世界模型”概念？"
+      ]
+    },
+    {
+      "candidate_id": "cand_680558a7d5e8a827",
+      "status": "needs_verification",
+      "canonical_title": "4D-WAM: Infusing Spatiotemporal Awareness into World Action Models through Trajectory Fields",
+      "primary_route": "frontier.world_model",
+      "secondary_routes": [
+        "visual_value.spatial_camera",
+        "frontier.embodied_ai"
+      ],
+      "score": 14,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.embodied_ai",
+          "tech.video_generation",
+          "tech.world_model"
+        ],
+        "task": [],
+        "capability": [
+          "cap.spatial_consistency",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.robotics"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_c825fbbece193bc32175",
+      "source_ids": [
+        "src_c825fbbece193bc32175"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.08023"
+      ],
+      "published_at": "2026-08-08T09:11:05Z",
+      "matched_signals": [
+        "4d",
+        "robot",
+        "robotic",
+        "world action",
+        "world model"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "是否真正建模空间、时间、物理或交互，而非泛化使用“世界模型”概念？"
+      ]
+    },
+    {
+      "candidate_id": "cand_3b95d11546362cf7",
+      "status": "needs_verification",
+      "canonical_title": "Capek 0.5: An Execution-Centric Vision-Language Model for Embodied Intelligence",
+      "primary_route": "frontier.embodied_ai",
+      "secondary_routes": [
+        "visual_value.evaluation",
+        "visual_value.spatial_camera"
+      ],
+      "score": 14,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.embodied_ai"
+        ],
+        "task": [],
+        "capability": [
+          "cap.evaluation",
+          "cap.physics",
+          "cap.spatial_consistency"
+        ],
+        "scene": [
+          "scene.robotics"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_07b0f937c6d19f9466a4",
+      "source_ids": [
+        "src_07b0f937c6d19f9466a4"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.06756"
+      ],
+      "published_at": "2026-08-07T03:24:25Z",
+      "matched_signals": [
+        "benchmark",
+        "embodied",
+        "eval",
+        "evaluation",
+        "robot",
+        "spatial reasoning"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "结果来自真实机器人、仿真还是离线数据？"
+      ]
+    },
+    {
+      "candidate_id": "cand_266a969bfd2122d5",
+      "status": "needs_verification",
+      "canonical_title": "CausalNav: Reliability-Certified Causal World Models for Control under Physical-Parameter Shift",
+      "primary_route": "frontier.world_model",
+      "secondary_routes": [
+        "visual_value.evaluation",
+        "frontier.embodied_ai"
+      ],
+      "score": 14,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.world_model"
+        ],
+        "task": [],
+        "capability": [
+          "cap.evaluation",
+          "cap.physics",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_22b0bb6560d675a1be74",
+      "source_ids": [
+        "src_22b0bb6560d675a1be74"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.07809"
+      ],
+      "published_at": "2026-08-07T23:16:57Z",
+      "matched_signals": [
+        "eval",
+        "physical ai",
+        "world model"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "是否真正建模空间、时间、物理或交互，而非泛化使用“世界模型”概念？"
+      ]
+    },
+    {
+      "candidate_id": "cand_3d9efbba897dd095",
+      "status": "needs_verification",
+      "canonical_title": "Dueling World Models: Advantage-Style Action Channels for Common-Mode Distractor Rejection",
+      "primary_route": "frontier.world_model",
+      "secondary_routes": [],
+      "score": 14,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.world_model"
+        ],
+        "task": [],
+        "capability": [
+          "cap.editability",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_eea5a7b0d8aa6556e663",
+      "source_ids": [
+        "src_eea5a7b0d8aa6556e663"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.06706"
+      ],
+      "published_at": "2026-08-07T02:02:19Z",
+      "matched_signals": [
+        "latent dynamics",
+        "world model"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "是否真正建模空间、时间、物理或交互，而非泛化使用“世界模型”概念？"
+      ]
+    },
+    {
+      "candidate_id": "cand_b4009d131d2c5180",
+      "status": "needs_verification",
+      "canonical_title": "FACT: Failure-Aware Causal Training for World-Action Models",
+      "primary_route": "frontier.world_model",
+      "secondary_routes": [
+        "frontier.embodied_ai",
+        "visual_value.spatial_camera"
+      ],
+      "score": 14,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.video_generation",
+          "tech.world_model"
+        ],
+        "task": [],
+        "capability": [
+          "cap.physics",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.repo_update"
+        ]
+      },
+      "primary_source_id": "src_aa989249386218645f30",
+      "source_ids": [
+        "src_aa989249386218645f30"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.10232"
+      ],
+      "published_at": "2026-08-10T21:10:46Z",
+      "matched_signals": [
+        "manipulation",
+        "physical priors",
+        "world model",
+        "world-action"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "是否真正建模空间、时间、物理或交互，而非泛化使用“世界模型”概念？"
+      ]
+    },
+    {
+      "candidate_id": "cand_6f9cf723e9cd393b",
+      "status": "needs_verification",
+      "canonical_title": "Flex-$π$: A Multi-Stream World-Action Model with Compute Flexibility",
+      "primary_route": "frontier.world_model",
+      "secondary_routes": [
+        "frontier.embodied_ai"
+      ],
+      "score": 14,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.video_generation",
+          "tech.world_model"
+        ],
+        "task": [],
+        "capability": [
+          "cap.efficiency",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.repo_update"
+        ]
+      },
+      "primary_source_id": "src_ae9e1ee30c697669a8a0",
+      "source_ids": [
+        "src_ae9e1ee30c697669a8a0"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.10860"
+      ],
+      "published_at": "2026-08-11T12:33:51Z",
+      "matched_signals": [
+        "manipulation",
+        "world-action"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "是否真正建模空间、时间、物理或交互，而非泛化使用“世界模型”概念？"
+      ]
+    },
+    {
+      "candidate_id": "cand_8f4d3f182a04b9a8",
+      "status": "needs_verification",
+      "canonical_title": "GWM-VLA: Geometry-Aware Latent World Modeling for Vision-Language-Action Learning",
+      "primary_route": "frontier.embodied_ai",
+      "secondary_routes": [
+        "frontier.world_model",
+        "visual_value.spatial_camera",
+        "visual_value.evaluation"
+      ],
+      "score": 14,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.embodied_ai",
+          "tech.world_model"
+        ],
+        "task": [],
+        "capability": [
+          "cap.evaluation",
+          "cap.spatial_consistency",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.robotics"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_917fcfc1f8a386fe509d",
+      "source_ids": [
+        "src_917fcfc1f8a386fe509d"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.07619"
+      ],
+      "published_at": "2026-08-07T06:41:51Z",
+      "matched_signals": [
+        "geometry-aware",
+        "manipulation",
+        "metric",
+        "robot",
+        "robotic",
+        "vision-language-action",
+        "vla",
+        "world model",
+        "world modeling"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "结果来自真实机器人、仿真还是离线数据？"
+      ]
+    },
+    {
+      "candidate_id": "cand_bbaab0a2af5b310b",
+      "status": "needs_verification",
+      "canonical_title": "GeniWorld: A Generalizable Interactive World Model for Robotic Manipulation via Visual Actions",
+      "primary_route": "frontier.embodied_ai",
+      "secondary_routes": [
+        "frontier.world_model",
+        "visual_value.evaluation"
+      ],
+      "score": 14,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.embodied_ai",
+          "tech.video_generation",
+          "tech.world_model"
+        ],
+        "task": [],
+        "capability": [
+          "cap.evaluation",
+          "cap.spatial_consistency",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.robotics",
+          "scene.virtual_environment"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_8c4195171638def5feab",
+      "source_ids": [
+        "src_8c4195171638def5feab"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.06332"
+      ],
+      "published_at": "2026-08-06T17:40:32Z",
+      "matched_signals": [
+        "eval",
+        "evaluation",
+        "interactive world",
+        "manipulation",
+        "robot",
+        "robotic",
+        "world model"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "结果来自真实机器人、仿真还是离线数据？"
+      ]
+    },
+    {
+      "candidate_id": "cand_4df81e6c6614aaca",
+      "status": "needs_verification",
+      "canonical_title": "PhysX-CoT: Structured Physical Reasoning from a Single Image to Simulation-Ready 3D Assets",
+      "primary_route": "frontier.image_asset",
+      "secondary_routes": [
+        "visual_value.spatial_camera",
+        "frontier.embodied_ai",
+        "visual_value.evaluation"
+      ],
+      "score": 14,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.embodied_ai",
+          "tech.image_generation"
+        ],
+        "task": [],
+        "capability": [
+          "cap.evaluation",
+          "cap.physics"
+        ],
+        "scene": [
+          "scene.robotics"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_f3523ac48771c6fa6f8e",
+      "source_ids": [
+        "src_f3523ac48771c6fa6f8e"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.08053"
+      ],
+      "published_at": "2026-08-08T10:39:09Z",
+      "matched_signals": [
+        "3d assets",
+        "embodied",
+        "metric",
+        "physical reasoning",
+        "robot",
+        "robotic"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？"
+      ]
+    },
+    {
+      "candidate_id": "cand_a2930574190eef67",
+      "status": "needs_verification",
+      "canonical_title": "RAVEN-Eval: Rubric-Guided Automatic Evaluation for AI Video Generation Models Based on LMM Preference Judgement",
+      "primary_route": "visual_value.evaluation",
+      "secondary_routes": [
+        "frontier.video_generation",
+        "frontier.image_asset"
+      ],
+      "score": 14,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.multimodal",
+          "tech.video_generation"
+        ],
+        "task": [
+          "task.i2v",
+          "task.t2v"
+        ],
+        "capability": [
+          "cap.evaluation"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_77d9b988bff9986c1d18",
+      "source_ids": [
+        "src_77d9b988bff9986c1d18"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.09111"
+      ],
+      "published_at": "2026-08-10T04:38:15Z",
+      "matched_signals": [
+        "eval",
+        "evaluation",
+        "image-to-video",
+        "rubric",
+        "text-to-video",
+        "video generation"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "评测任务和指标能否对应真实视频/图像产品任务？"
+      ]
+    },
+    {
+      "candidate_id": "cand_d6b05e7c3a07b861",
+      "status": "needs_verification",
+      "canonical_title": "SG-WAM: Text-Grounded and Spatial-aware Semantic Guidance for World-Action Models",
+      "primary_route": "frontier.world_model",
+      "secondary_routes": [
+        "frontier.video_generation",
+        "frontier.embodied_ai"
+      ],
+      "score": 14,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.embodied_ai",
+          "tech.video_generation",
+          "tech.world_model"
+        ],
+        "task": [
+          "task.t2v"
+        ],
+        "capability": [
+          "cap.spatial_consistency",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.robotics"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_06db2560fb9062bf1ce7",
+      "source_ids": [
+        "src_06db2560fb9062bf1ce7"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.08839"
+      ],
+      "published_at": "2026-08-09T17:59:35Z",
+      "matched_signals": [
+        "manipulation",
+        "robot",
+        "robotic",
+        "video generation",
+        "world-action"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "是否真正建模空间、时间、物理或交互，而非泛化使用“世界模型”概念？"
+      ]
+    },
+    {
+      "candidate_id": "cand_2cfcaae0254a0b82",
+      "status": "needs_verification",
+      "canonical_title": "SLIM-0.5B: Learning Action-Grounded Predictive Latents for Robot Manipulation",
+      "primary_route": "frontier.embodied_ai",
+      "secondary_routes": [
+        "frontier.world_model",
+        "visual_value.evaluation"
+      ],
+      "score": 14,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.embodied_ai",
+          "tech.world_model"
+        ],
+        "task": [],
+        "capability": [
+          "cap.evaluation",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.robotics"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_a222b654f68c92be8bde",
+      "source_ids": [
+        "src_a222b654f68c92be8bde"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.09771"
+      ],
+      "published_at": "2026-08-10T15:58:39Z",
+      "matched_signals": [
+        "benchmark",
+        "embodied",
+        "eval",
+        "evaluation",
+        "manipulation",
+        "predictive latents",
+        "robot",
+        "vision-language-action",
+        "vla",
+        "world model",
+        "world-action"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "结果来自真实机器人、仿真还是离线数据？"
+      ]
+    },
+    {
+      "candidate_id": "cand_e2d8705e0bfe1ae7",
+      "status": "needs_verification",
+      "canonical_title": "SimWAM: A Simple World Action Model for End-to-End Autonomous Driving",
+      "primary_route": "frontier.world_model",
+      "secondary_routes": [
+        "frontier.video_generation"
+      ],
+      "score": 14,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.video_generation",
+          "tech.world_model"
+        ],
+        "task": [
+          "task.t2v"
+        ],
+        "capability": [
+          "cap.efficiency",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.repo_update"
+        ]
+      },
+      "primary_source_id": "src_0a9673b442c78277b4e4",
+      "source_ids": [
+        "src_0a9673b442c78277b4e4"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.07468"
+      ],
+      "published_at": "2026-08-07T17:59:09Z",
+      "matched_signals": [
+        "video generation",
+        "world action",
+        "world-action"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "是否真正建模空间、时间、物理或交互，而非泛化使用“世界模型”概念？"
+      ]
+    },
+    {
+      "candidate_id": "cand_f6ba3f03c5717fce",
+      "status": "needs_verification",
+      "canonical_title": "SparSTAR: Sparse Attention for SpaceTime AutoRegressive Video Synthesis",
+      "primary_route": "frontier.video_generation",
+      "secondary_routes": [
+        "frontier.image_asset"
+      ],
+      "score": 14,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.video_generation"
+        ],
+        "task": [
+          "task.i2v",
+          "task.t2v"
+        ],
+        "capability": [],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_0d593a1f670e643c0db5",
+      "source_ids": [
+        "src_0d593a1f670e643c0db5"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.10519"
+      ],
+      "published_at": "2026-08-11T05:46:18Z",
+      "matched_signals": [
+        "image-to-video",
+        "text-to-video",
+        "video generation",
+        "video synthesis"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "对时长、一致性、镜头或控制的提升是否有可比实验？"
+      ]
+    },
+    {
+      "candidate_id": "cand_be6ca0282da0b943",
+      "status": "needs_verification",
+      "canonical_title": "TaskSense: Focusing on What Matters in World Models",
+      "primary_route": "frontier.world_model",
+      "secondary_routes": [],
+      "score": 14,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.world_model"
+        ],
+        "task": [],
+        "capability": [
+          "cap.spatial_consistency",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_d491582e5638582efd59",
+      "source_ids": [
+        "src_d491582e5638582efd59"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.06544"
+      ],
+      "published_at": "2026-08-06T19:49:31Z",
+      "matched_signals": [
+        "world model",
+        "world modeling"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "是否真正建模空间、时间、物理或交互，而非泛化使用“世界模型”概念？"
+      ]
+    },
+    {
+      "candidate_id": "cand_0efd8cfaf60a4143",
+      "status": "needs_verification",
+      "canonical_title": "Toward the Cognitive--Physical Limits of Embodied Intelligence through a World-Model-Centric Autonomous Racing Agent",
+      "primary_route": "frontier.embodied_ai",
+      "secondary_routes": [
+        "frontier.world_model",
+        "visual_value.evaluation"
+      ],
+      "score": 14,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.embodied_ai",
+          "tech.world_model"
+        ],
+        "task": [],
+        "capability": [
+          "cap.evaluation",
+          "cap.physics",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.robotics"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_6ba7375e80b5d46a1c48",
+      "source_ids": [
+        "src_6ba7375e80b5d46a1c48"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.10618"
+      ],
+      "published_at": "2026-08-11T08:01:35Z",
+      "matched_signals": [
+        "embodied",
+        "eval",
+        "world model",
+        "world-model"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "结果来自真实机器人、仿真还是离线数据？"
+      ]
+    },
+    {
+      "candidate_id": "cand_5b87b48e5886e88f",
+      "status": "needs_verification",
+      "canonical_title": "TrustRoboReward: Preference-Ordered Isotonic Score Editing for Multi-Paradigm Robot Reward Models",
+      "primary_route": "frontier.embodied_ai",
+      "secondary_routes": [
+        "visual_value.evaluation"
+      ],
+      "score": 14,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.embodied_ai",
+          "tech.video_generation"
+        ],
+        "task": [],
+        "capability": [
+          "cap.editability",
+          "cap.evaluation"
+        ],
+        "scene": [
+          "scene.robotics"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_497f61572cdccc12658e",
+      "source_ids": [
+        "src_497f61572cdccc12658e"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.08491"
+      ],
+      "published_at": "2026-08-09T05:25:22Z",
+      "matched_signals": [
+        "benchmark",
+        "embodied",
+        "eval",
+        "manipulation",
+        "robot",
+        "robotic"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "结果来自真实机器人、仿真还是离线数据？"
+      ]
+    },
+    {
+      "candidate_id": "cand_b3c1b06d7e3e32ef",
+      "status": "needs_verification",
+      "canonical_title": "World Tokens: Enhancing Embodied Policies with Training-Time World Modeling",
+      "primary_route": "frontier.embodied_ai",
+      "secondary_routes": [
+        "frontier.world_model"
+      ],
+      "score": 14,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.embodied_ai",
+          "tech.video_generation",
+          "tech.world_model"
+        ],
+        "task": [],
+        "capability": [
+          "cap.efficiency",
+          "cap.physics",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.robotics"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_cc47cf16144d92e43f8c",
+      "source_ids": [
+        "src_cc47cf16144d92e43f8c"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.09730"
+      ],
+      "published_at": "2026-08-10T15:30:38Z",
+      "matched_signals": [
+        "embodied",
+        "vision-language-action",
+        "vla",
+        "world model",
+        "world modeling",
+        "world-action",
+        "world-model"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "结果来自真实机器人、仿真还是离线数据？"
+      ]
+    },
+    {
+      "candidate_id": "cand_3e8abde9f10e6aee",
+      "status": "needs_verification",
+      "canonical_title": "verdi: retrieval is not transfer for continual world model optimization",
+      "primary_route": "frontier.world_model",
+      "secondary_routes": [
+        "visual_value.evaluation",
+        "frontier.embodied_ai"
+      ],
+      "score": 14,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.embodied_ai",
+          "tech.world_model"
+        ],
+        "task": [],
+        "capability": [
+          "cap.evaluation",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.robotics"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_ea7e352fffe24e2709a9",
+      "source_ids": [
+        "src_ea7e352fffe24e2709a9"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.09537"
+      ],
+      "published_at": "2026-08-10T12:35:59Z",
+      "matched_signals": [
+        "embodied",
+        "eval",
+        "world model"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "是否真正建模空间、时间、物理或交互，而非泛化使用“世界模型”概念？"
+      ]
+    },
+    {
+      "candidate_id": "cand_d8bd3b080509c894",
+      "status": "needs_verification",
+      "canonical_title": "Alpha as an Efficiency Signal: Visibility-Routed RGBA Image-to-Video Generation",
+      "primary_route": "frontier.video_generation",
+      "secondary_routes": [
+        "frontier.image_asset",
+        "visual_value.evaluation"
+      ],
+      "score": 13,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.video_generation"
+        ],
+        "task": [
+          "task.i2v",
+          "task.t2v"
+        ],
+        "capability": [
+          "cap.evaluation"
+        ],
+        "scene": [
+          "scene.virtual_environment"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_a6b2228f8e3d879bff65",
+      "source_ids": [
+        "src_a6b2228f8e3d879bff65"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.09355"
+      ],
+      "published_at": "2026-08-10T09:35:36Z",
+      "matched_signals": [
+        "eval",
+        "evaluation",
+        "image-to-video",
+        "video generation"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "对时长、一致性、镜头或控制的提升是否有可比实验？"
+      ]
+    },
+    {
+      "candidate_id": "cand_b040ae26ecbd6600",
+      "status": "needs_verification",
+      "canonical_title": "Multi-modal Interactive Control of Robotic Arm based on Offline Large Language Models",
+      "primary_route": "frontier.embodied_ai",
+      "secondary_routes": [],
+      "score": 13,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.embodied_ai"
+        ],
+        "task": [],
+        "capability": [
+          "cap.efficiency"
+        ],
+        "scene": [
+          "scene.robotics"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_0665cf0666cde5c06ea9",
+      "source_ids": [
+        "src_0665cf0666cde5c06ea9"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.08183"
+      ],
+      "published_at": "2026-08-08T15:21:57Z",
+      "matched_signals": [
+        "embodied",
+        "manipulation",
+        "robot",
+        "robotic"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "结果来自真实机器人、仿真还是离线数据？"
+      ]
+    },
+    {
+      "candidate_id": "cand_20f7922401486e5f",
+      "status": "needs_verification",
+      "canonical_title": "Self-Evolving Neuro-Symbolic Skills for Tool-Augmented Spatial Reasoning",
+      "primary_route": "visual_value.spatial_camera",
+      "secondary_routes": [
+        "visual_value.evaluation"
+      ],
+      "score": 13,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.video_generation"
+        ],
+        "task": [],
+        "capability": [
+          "cap.evaluation",
+          "cap.spatial_consistency"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_4307ba166a71e4ce4ba1",
+      "source_ids": [
+        "src_4307ba166a71e4ce4ba1"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.07955"
+      ],
+      "published_at": "2026-08-08T06:36:40Z",
+      "matched_signals": [
+        "benchmark",
+        "metric",
+        "spatial reasoning"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？"
+      ]
+    },
+    {
+      "candidate_id": "cand_32cb2040f1fd5fbf",
+      "status": "needs_verification",
+      "canonical_title": "Surg-UniWorld: A Unified Surgical World Model with Multimodal Control Experts",
+      "primary_route": "frontier.world_model",
+      "secondary_routes": [
+        "frontier.video_generation",
+        "visual_value.evaluation"
+      ],
+      "score": 13,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.video_generation",
+          "tech.world_model"
+        ],
+        "task": [
+          "task.t2v"
+        ],
+        "capability": [
+          "cap.editability",
+          "cap.evaluation",
+          "cap.spatial_consistency",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_c465d01eb95f518eb85e",
+      "source_ids": [
+        "src_c465d01eb95f518eb85e"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.06770"
+      ],
+      "published_at": "2026-08-07T03:43:37Z",
+      "matched_signals": [
+        "benchmark",
+        "metric",
+        "video diffusion",
+        "video generation",
+        "world model",
+        "world modeling",
+        "world-model"
+      ],
+      "negative_signals": [
+        "surgical"
+      ],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "是否真正建模空间、时间、物理或交互，而非泛化使用“世界模型”概念？"
+      ]
+    },
+    {
+      "candidate_id": "cand_73d39a10eae1f905",
+      "status": "needs_verification",
+      "canonical_title": "Transformers Struggle to Use Their Emergent World Models: Revisiting the Tower of Hanoi, and the Illusion of Thinking",
+      "primary_route": "frontier.world_model",
+      "secondary_routes": [
+        "visual_value.evaluation"
+      ],
+      "score": 13,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.world_model"
+        ],
+        "task": [],
+        "capability": [
+          "cap.evaluation",
+          "cap.physics",
+          "cap.spatial_consistency",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_0bf7e3c6c60f20c899e1",
+      "source_ids": [
+        "src_0bf7e3c6c60f20c899e1"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.07077"
+      ],
+      "published_at": "2026-08-07T10:29:19Z",
+      "matched_signals": [
+        "metric",
+        "world model"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "是否真正建模空间、时间、物理或交互，而非泛化使用“世界模型”概念？"
+      ]
+    },
+    {
+      "candidate_id": "cand_ef5c4002970a2962",
+      "status": "needs_verification",
+      "canonical_title": "Vorch-Director: Interactive World Story Model via Noise-Aware Error Rectification",
+      "primary_route": "frontier.world_model",
+      "secondary_routes": [
+        "frontier.video_generation",
+        "visual_value.evaluation"
+      ],
+      "score": 13,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.video_generation",
+          "tech.world_model"
+        ],
+        "task": [
+          "task.t2v"
+        ],
+        "capability": [
+          "cap.cross_shot_consistency",
+          "cap.efficiency",
+          "cap.evaluation"
+        ],
+        "scene": [
+          "scene.virtual_environment"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_44fd303045756e5bde06",
+      "source_ids": [
+        "src_44fd303045756e5bde06"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.05776"
+      ],
+      "published_at": "2026-08-06T09:09:49Z",
+      "matched_signals": [
+        "audio-visual generation",
+        "benchmark",
+        "eval",
+        "interactive world",
+        "metric",
+        "video generation"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "是否真正建模空间、时间、物理或交互，而非泛化使用“世界模型”概念？"
+      ]
+    },
+    {
+      "candidate_id": "cand_4bf0bbdd5a26f04d",
+      "status": "needs_verification",
+      "canonical_title": "Vorch-IR: Long-Form Unified Multimodal Identity Replacement Video Generation",
+      "primary_route": "frontier.video_generation",
+      "secondary_routes": [
+        "visual_value.evaluation"
+      ],
+      "score": 13,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.video_generation"
+        ],
+        "task": [
+          "task.editing",
+          "task.r2v",
+          "task.t2v"
+        ],
+        "capability": [
+          "cap.editability",
+          "cap.evaluation",
+          "cap.long_video",
+          "cap.reference_fidelity",
+          "cap.spatial_consistency"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_974d86febab39f876e92",
+      "source_ids": [
+        "src_974d86febab39f876e92"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.05648"
+      ],
+      "published_at": "2026-08-06T06:46:35Z",
+      "matched_signals": [
+        "eval",
+        "evaluation",
+        "identity replacement video",
+        "long-form",
+        "metric",
+        "video generation"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "对时长、一致性、镜头或控制的提升是否有可比实验？"
+      ]
+    },
+    {
+      "candidate_id": "cand_7f03b533b29335f8",
+      "status": "needs_verification",
+      "canonical_title": "iARCS: Iterative Agentic RL for Controllable 3D Scene Generation",
+      "primary_route": "frontier.image_asset",
+      "secondary_routes": [
+        "frontier.multimodal_agent",
+        "frontier.embodied_ai"
+      ],
+      "score": 13,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.embodied_ai",
+          "tech.image_generation"
+        ],
+        "task": [],
+        "capability": [
+          "cap.editability",
+          "cap.physics",
+          "cap.spatial_consistency"
+        ],
+        "scene": [
+          "scene.robotics"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_3849719041fe5a6bf20d",
+      "source_ids": [
+        "src_3849719041fe5a6bf20d"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.06161"
+      ],
+      "published_at": "2026-08-06T15:30:21Z",
+      "matched_signals": [
+        "3d scene generation",
+        "agentic rl",
+        "embodied"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？"
+      ]
+    },
+    {
+      "candidate_id": "cand_3711bb490519021e",
+      "status": "needs_verification",
+      "canonical_title": "A Structural Dynamics Graph World Model: Unified Modeling, Constrained Rollout, and Interpretable Calibration",
+      "primary_route": "frontier.world_model",
+      "secondary_routes": [],
+      "score": 12,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.world_model"
+        ],
+        "task": [],
+        "capability": [
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_c350b0681fcdd371fbd5",
+      "source_ids": [
+        "src_c350b0681fcdd371fbd5"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.08689"
+      ],
+      "published_at": "2026-08-09T13:11:40Z",
+      "matched_signals": [
+        "world model"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "是否真正建模空间、时间、物理或交互，而非泛化使用“世界模型”概念？"
+      ]
+    },
+    {
+      "candidate_id": "cand_844a3ba7fe7c7ac8",
+      "status": "needs_verification",
+      "canonical_title": "Beyond Starry Night: Shortcut-Aware Control-State Planning for Artist-Grounded Text to Image Generation",
+      "primary_route": "frontier.image_asset",
+      "secondary_routes": [
+        "visual_value.evaluation"
+      ],
+      "score": 12,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.image_generation"
+        ],
+        "task": [
+          "task.r2v",
+          "task.t2i"
+        ],
+        "capability": [
+          "cap.evaluation",
+          "cap.reference_fidelity"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_15d94e5429a70203742a",
+      "source_ids": [
+        "src_15d94e5429a70203742a"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.06751"
+      ],
+      "published_at": "2026-08-07T03:17:49Z",
+      "matched_signals": [
+        "auditing",
+        "benchmark",
+        "eval",
+        "evaluation",
+        "image generation",
+        "text to image"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？"
+      ]
+    },
+    {
+      "candidate_id": "cand_025aa1176ba8a811",
+      "status": "needs_verification",
+      "canonical_title": "DUET: A Diversity-Quality Duet of Distillation Experts for Two-Step Video Generation",
+      "primary_route": "frontier.video_generation",
+      "secondary_routes": [],
+      "score": 12,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.video_generation"
+        ],
+        "task": [
+          "task.t2v"
+        ],
+        "capability": [
+          "cap.efficiency"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_2861b21e7d6466e3400c",
+      "source_ids": [
+        "src_2861b21e7d6466e3400c"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.09637"
+      ],
+      "published_at": "2026-08-10T14:17:52Z",
+      "matched_signals": [
+        "video generation"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "对时长、一致性、镜头或控制的提升是否有可比实验？"
+      ]
+    },
+    {
+      "candidate_id": "cand_67bdd6b4adf1ea93",
+      "status": "needs_verification",
+      "canonical_title": "Explore, Map, Remember, Decide: Are Embodied VLMs Ready for Safety-Critical Scenarios?",
+      "primary_route": "frontier.embodied_ai",
+      "secondary_routes": [
+        "visual_value.evaluation",
+        "visual_value.spatial_camera"
+      ],
+      "score": 12,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.embodied_ai"
+        ],
+        "task": [],
+        "capability": [
+          "cap.evaluation",
+          "cap.physics",
+          "cap.spatial_consistency"
+        ],
+        "scene": [
+          "scene.robotics"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_6ab9aae1d47f4cc7e779",
+      "source_ids": [
+        "src_6ab9aae1d47f4cc7e779"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.08077"
+      ],
+      "published_at": "2026-08-08T11:57:01Z",
+      "matched_signals": [
+        "embodied",
+        "eval",
+        "metric",
+        "spatial grounding",
+        "spatial reasoning"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "结果来自真实机器人、仿真还是离线数据？"
+      ]
+    },
+    {
+      "candidate_id": "cand_0c48d76669bfb442",
+      "status": "needs_verification",
+      "canonical_title": "HERA: Historical Evidence Routing Adapter for Physical Prediction in Latent World Models",
+      "primary_route": "frontier.world_model",
+      "secondary_routes": [],
+      "score": 12,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.video_generation",
+          "tech.world_model"
+        ],
+        "task": [],
+        "capability": [
+          "cap.physics",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_011356f010f9de3ae84e",
+      "source_ids": [
+        "src_011356f010f9de3ae84e"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.05523"
+      ],
+      "published_at": "2026-08-06T02:01:05Z",
+      "matched_signals": [
+        "world model"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "是否真正建模空间、时间、物理或交互，而非泛化使用“世界模型”概念？"
+      ]
+    },
+    {
+      "candidate_id": "cand_af175477920ac876",
+      "status": "needs_verification",
+      "canonical_title": "LUCID: Latent-Skill Unified Control via Imagined Dynamics for Long-Horizon Humanoid Loco-Manipulation",
+      "primary_route": "frontier.embodied_ai",
+      "secondary_routes": [
+        "frontier.world_model",
+        "visual_value.evaluation"
+      ],
+      "score": 12,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.embodied_ai",
+          "tech.world_model"
+        ],
+        "task": [],
+        "capability": [
+          "cap.evaluation",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_2656d84ed1ffe8aa112b",
+      "source_ids": [
+        "src_2656d84ed1ffe8aa112b"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.07746"
+      ],
+      "published_at": "2026-08-07T20:26:34Z",
+      "matched_signals": [
+        "eval",
+        "humanoid",
+        "imagined dynamics",
+        "loco-manipulation",
+        "manipulation",
+        "world model"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "结果来自真实机器人、仿真还是离线数据？"
+      ]
+    },
+    {
+      "candidate_id": "cand_77728a4813d1eb17",
+      "status": "needs_verification",
+      "canonical_title": "Multi-View Relational Distillation for Spatial Reasoning with Vision-Language Models",
+      "primary_route": "visual_value.spatial_camera",
+      "secondary_routes": [
+        "frontier.embodied_ai",
+        "visual_value.evaluation"
+      ],
+      "score": 12,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.embodied_ai",
+          "tech.video_generation"
+        ],
+        "task": [],
+        "capability": [
+          "cap.evaluation",
+          "cap.spatial_consistency"
+        ],
+        "scene": [
+          "scene.robotics"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_7b6d8fd0668228c486af",
+      "source_ids": [
+        "src_7b6d8fd0668228c486af"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.10864"
+      ],
+      "published_at": "2026-08-11T12:34:41Z",
+      "matched_signals": [
+        "embodied",
+        "metric",
+        "robot",
+        "robotic",
+        "spatial reasoning"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？"
+      ]
+    },
+    {
+      "candidate_id": "cand_0b8e0d0b1d6dac65",
+      "status": "needs_verification",
+      "canonical_title": "PBD-AG: Persistent Baseline-Delta Active Graphs with Uncertainty-Aware Inspection for Long-Horizon Service Robots",
+      "primary_route": "frontier.embodied_ai",
+      "secondary_routes": [
+        "frontier.world_model",
+        "visual_value.evaluation"
+      ],
+      "score": 12,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.embodied_ai",
+          "tech.world_model"
+        ],
+        "task": [],
+        "capability": [
+          "cap.evaluation",
+          "cap.physics",
+          "cap.spatial_consistency",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.robotics"
+        ],
+        "event": [
+          "event.repo_update"
+        ]
+      },
+      "primary_source_id": "src_8baccb97b4b810753feb",
+      "source_ids": [
+        "src_8baccb97b4b810753feb"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.10449"
+      ],
+      "published_at": "2026-08-11T04:03:54Z",
+      "matched_signals": [
+        "eval",
+        "evaluation",
+        "metric",
+        "robot",
+        "robotic",
+        "world model"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "结果来自真实机器人、仿真还是离线数据？"
+      ]
+    },
+    {
+      "candidate_id": "cand_348eeb20c5c99938",
+      "status": "needs_verification",
+      "canonical_title": "PhyLatent: Learning Dynamics-Relevant Representations for JEPA World Models",
+      "primary_route": "frontier.world_model",
+      "secondary_routes": [],
+      "score": 12,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.world_model"
+        ],
+        "task": [],
+        "capability": [
+          "cap.physics",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_108069f288367477ce2b",
+      "source_ids": [
+        "src_108069f288367477ce2b"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.05720"
+      ],
+      "published_at": "2026-08-06T08:02:15Z",
+      "matched_signals": [
+        "world model"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "是否真正建模空间、时间、物理或交互，而非泛化使用“世界模型”概念？"
+      ]
+    },
+    {
+      "candidate_id": "cand_53bf073bd30dd577",
+      "status": "needs_verification",
+      "canonical_title": "Temporally Grounded Compositional Camera Motion Understanding via Geometric Knowledge Distillation",
+      "primary_route": "visual_value.evaluation",
+      "secondary_routes": [
+        "visual_value.spatial_camera",
+        "frontier.video_generation"
+      ],
+      "score": 12,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.multimodal",
+          "tech.video_generation"
+        ],
+        "task": [
+          "task.camera_transfer",
+          "task.t2v"
+        ],
+        "capability": [
+          "cap.camera_language",
+          "cap.editability",
+          "cap.evaluation",
+          "cap.spatial_consistency"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.repo_update"
+        ]
+      },
+      "primary_source_id": "src_2efe25053db74287df8e",
+      "source_ids": [
+        "src_2efe25053db74287df8e"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.10932"
+      ],
+      "published_at": "2026-08-11T14:00:02Z",
+      "matched_signals": [
+        "benchmark",
+        "camera motion",
+        "metric",
+        "video generation"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "评测任务和指标能否对应真实视频/图像产品任务？"
+      ]
+    },
+    {
+      "candidate_id": "cand_d21a1047fd6523bd",
+      "status": "needs_verification",
+      "canonical_title": "Uncertainty-Aware World Model for Aerial Image-Goal Navigation",
+      "primary_route": "frontier.world_model",
+      "secondary_routes": [],
+      "score": 12,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.world_model"
+        ],
+        "task": [],
+        "capability": [
+          "cap.efficiency",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.repo_update"
+        ]
+      },
+      "primary_source_id": "src_8e37d524a69878433d26",
+      "source_ids": [
+        "src_8e37d524a69878433d26"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.05597"
+      ],
+      "published_at": "2026-08-06T04:43:53Z",
+      "matched_signals": [
+        "world model",
+        "world-model"
+      ],
+      "negative_signals": [
+        "navigation"
+      ],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "是否真正建模空间、时间、物理或交互，而非泛化使用“世界模型”概念？"
+      ]
+    },
+    {
+      "candidate_id": "cand_151dc008d44d1318",
+      "status": "needs_verification",
+      "canonical_title": "Vorch-Streamer: Extending Human Audio-Visual Generation to Real-Time Long-Form Streaming",
+      "primary_route": "frontier.video_generation",
+      "secondary_routes": [],
+      "score": 12,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.video_generation"
+        ],
+        "task": [
+          "task.t2v"
+        ],
+        "capability": [
+          "cap.efficiency",
+          "cap.long_video",
+          "cap.physics"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_56c2df2b4b8d94a81472",
+      "source_ids": [
+        "src_56c2df2b4b8d94a81472"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.05663"
+      ],
+      "published_at": "2026-08-06T07:00:37Z",
+      "matched_signals": [
+        "audio-visual generation",
+        "long-form",
+        "video generation"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "对时长、一致性、镜头或控制的提升是否有可比实验？"
+      ]
+    },
+    {
+      "candidate_id": "cand_cba12ef0619ab1e5",
+      "status": "needs_verification",
+      "canonical_title": "WorldSimProbe: Diagnosing Simulator Faithfulness in Action-Conditioned World Models for Embodied Manipulation",
+      "primary_route": "visual_value.evaluation",
+      "secondary_routes": [
+        "frontier.embodied_ai",
+        "frontier.world_model"
+      ],
+      "score": 12,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.embodied_ai",
+          "tech.multimodal",
+          "tech.world_model"
+        ],
+        "task": [],
+        "capability": [
+          "cap.evaluation",
+          "cap.physics",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.robotics"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_2133b1e8e0cd82fab001",
+      "source_ids": [
+        "src_2133b1e8e0cd82fab001"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.09298"
+      ],
+      "published_at": "2026-08-10T08:48:06Z",
+      "matched_signals": [
+        "benchmark",
+        "diagnosing",
+        "embodied",
+        "eval",
+        "evaluation",
+        "manipulation",
+        "robot",
+        "world model"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "评测任务和指标能否对应真实视频/图像产品任务？"
+      ]
+    },
+    {
+      "candidate_id": "cand_9b6b17e07036f74d",
+      "status": "needs_verification",
+      "canonical_title": "XEWorld: Can Action-Conditioned World Models Generalize to Unseen Robot Embodiments?",
+      "primary_route": "frontier.embodied_ai",
+      "secondary_routes": [
+        "frontier.world_model",
+        "visual_value.evaluation"
+      ],
+      "score": 12,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.embodied_ai",
+          "tech.world_model"
+        ],
+        "task": [],
+        "capability": [
+          "cap.evaluation",
+          "cap.physics",
+          "cap.spatial_consistency",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.robotics"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_7ca991d324cefd1dab53",
+      "source_ids": [
+        "src_7ca991d324cefd1dab53"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.05799"
+      ],
+      "published_at": "2026-08-06T09:35:33Z",
+      "matched_signals": [
+        "eval",
+        "manipulation",
+        "robot",
+        "robotic",
+        "world model"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "结果来自真实机器人、仿真还是离线数据？"
+      ]
+    },
+    {
+      "candidate_id": "cand_7595601adcbfaf97",
+      "status": "needs_verification",
+      "canonical_title": "AppDeltaWorld: Transition-Grounded Delta Code World Model for Mobile GUI Agents",
+      "primary_route": "frontier.world_model",
+      "secondary_routes": [
+        "visual_value.evaluation"
+      ],
+      "score": 11,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.world_model"
+        ],
+        "task": [],
+        "capability": [
+          "cap.evaluation",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_c5763d35dbdbfe12d69e",
+      "source_ids": [
+        "src_c5763d35dbdbfe12d69e"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.05891"
+      ],
+      "published_at": "2026-08-06T11:15:41Z",
+      "matched_signals": [
+        "eval",
+        "evaluation",
+        "world model",
+        "world-model"
+      ],
+      "negative_signals": [
+        "mobile gui"
+      ],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "是否真正建模空间、时间、物理或交互，而非泛化使用“世界模型”概念？"
+      ]
+    },
+    {
+      "candidate_id": "cand_eeb3cadf84d1bce2",
+      "status": "needs_verification",
+      "canonical_title": "CosmosAlign: Adapting a World Foundation Model for Generative Traffic Video Forecasting",
+      "primary_route": "frontier.world_model",
+      "secondary_routes": [
+        "visual_value.evaluation"
+      ],
+      "score": 11,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.video_generation",
+          "tech.world_model"
+        ],
+        "task": [],
+        "capability": [
+          "cap.evaluation",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.repo_update"
+        ]
+      },
+      "primary_source_id": "src_75f986c2e8b86a426332",
+      "source_ids": [
+        "src_75f986c2e8b86a426332"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.07693"
+      ],
+      "published_at": "2026-08-07T18:34:29Z",
+      "matched_signals": [
+        "benchmark",
+        "world foundation model",
+        "world model"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "是否真正建模空间、时间、物理或交互，而非泛化使用“世界模型”概念？"
+      ]
+    },
+    {
+      "candidate_id": "cand_2433d11abd7f78b1",
+      "status": "needs_verification",
+      "canonical_title": "DreamGuard: Efficient Runtime Guardrail for LLM Agents via Risk-Aware World Model",
+      "primary_route": "frontier.world_model",
+      "secondary_routes": [
+        "visual_value.evaluation"
+      ],
+      "score": 11,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.world_model"
+        ],
+        "task": [],
+        "capability": [
+          "cap.efficiency",
+          "cap.evaluation",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_e2213d060760865a8673",
+      "source_ids": [
+        "src_e2213d060760865a8673"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.05695"
+      ],
+      "published_at": "2026-08-06T07:37:49Z",
+      "matched_signals": [
+        "benchmark",
+        "eval",
+        "evaluation",
+        "world model"
+      ],
+      "negative_signals": [
+        "llm agents"
+      ],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "是否真正建模空间、时间、物理或交互，而非泛化使用“世界模型”概念？"
+      ]
+    },
+    {
+      "candidate_id": "cand_0eff63ab67d6baf6",
+      "status": "needs_verification",
+      "canonical_title": "JEPA-WAM: Learning Vision-Language-Action Policies with Joint-Embedding World Modeling",
+      "primary_route": "frontier.embodied_ai",
+      "secondary_routes": [
+        "frontier.world_model"
+      ],
+      "score": 11,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.embodied_ai",
+          "tech.video_generation",
+          "tech.world_model"
+        ],
+        "task": [],
+        "capability": [
+          "cap.spatial_consistency",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.robotics"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_ca852ddfa04ee87f6c84",
+      "source_ids": [
+        "src_ca852ddfa04ee87f6c84"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.09381"
+      ],
+      "published_at": "2026-08-10T09:57:54Z",
+      "matched_signals": [
+        "manipulation",
+        "robot",
+        "vision-language-action",
+        "vla",
+        "world action",
+        "world model",
+        "world modeling"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "结果来自真实机器人、仿真还是离线数据？"
+      ]
+    },
+    {
+      "candidate_id": "cand_c7e92aa6b7a0c005",
+      "status": "needs_verification",
+      "canonical_title": "Latent World Models with Monotone Planning Costs for Image-Goal Navigation",
+      "primary_route": "frontier.world_model",
+      "secondary_routes": [
+        "frontier.embodied_ai"
+      ],
+      "score": 11,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.embodied_ai",
+          "tech.world_model"
+        ],
+        "task": [],
+        "capability": [
+          "cap.physics",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.robotics"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_4a6f87b5fff1707bcbf5",
+      "source_ids": [
+        "src_4a6f87b5fff1707bcbf5"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.09073"
+      ],
+      "published_at": "2026-08-10T03:23:26Z",
+      "matched_signals": [
+        "robot",
+        "vla",
+        "world model"
+      ],
+      "negative_signals": [
+        "navigation"
+      ],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "是否真正建模空间、时间、物理或交互，而非泛化使用“世界模型”概念？"
+      ]
+    },
+    {
+      "candidate_id": "cand_265c2ce1604f8eaa",
+      "status": "needs_verification",
+      "canonical_title": "RL-Native Distillation: Exploiting Scored Trajectories for Few-Step Image Generation",
+      "primary_route": "frontier.image_asset",
+      "secondary_routes": [],
+      "score": 11,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.image_generation"
+        ],
+        "task": [
+          "task.t2i"
+        ],
+        "capability": [
+          "cap.efficiency"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_0179cdb0d40987b4410e",
+      "source_ids": [
+        "src_0179cdb0d40987b4410e"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.09226"
+      ],
+      "published_at": "2026-08-10T07:49:05Z",
+      "matched_signals": [
+        "image generation",
+        "text-to-image"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？"
+      ]
+    },
+    {
+      "candidate_id": "cand_891b2b1193f9b23e",
+      "status": "needs_verification",
+      "canonical_title": "SpikeWorld: Fast-State Adaptation for Frozen Spiking World Models",
+      "primary_route": "frontier.world_model",
+      "secondary_routes": [
+        "visual_value.evaluation"
+      ],
+      "score": 11,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.world_model"
+        ],
+        "task": [],
+        "capability": [
+          "cap.evaluation",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.repo_update"
+        ]
+      },
+      "primary_source_id": "src_cfbc56f0a34dc6daa244",
+      "source_ids": [
+        "src_cfbc56f0a34dc6daa244"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.07712"
+      ],
+      "published_at": "2026-08-07T18:57:06Z",
+      "matched_signals": [
+        "eval",
+        "world model"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "是否真正建模空间、时间、物理或交互，而非泛化使用“世界模型”概念？"
+      ]
+    },
+    {
+      "candidate_id": "cand_c4224a254355abeb",
+      "status": "needs_verification",
+      "canonical_title": "VIScore: Diagnosing Planning-Relevant Quality in Latent World Models",
+      "primary_route": "visual_value.evaluation",
+      "secondary_routes": [
+        "frontier.world_model"
+      ],
+      "score": 11,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.multimodal",
+          "tech.world_model"
+        ],
+        "task": [],
+        "capability": [
+          "cap.evaluation",
+          "cap.physics",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_4d5d974a2da6eaff2d71",
+      "source_ids": [
+        "src_4d5d974a2da6eaff2d71"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.11174"
+      ],
+      "published_at": "2026-08-11T17:34:10Z",
+      "matched_signals": [
+        "diagnosing",
+        "metric",
+        "world model"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "评测任务和指标能否对应真实视频/图像产品任务？"
+      ]
+    },
+    {
+      "candidate_id": "cand_412247d6914f72fa",
+      "status": "needs_verification",
+      "canonical_title": "WA-SpecDec: World-Aware Speculative Decoding for Vision-Language-Action Models",
+      "primary_route": "frontier.embodied_ai",
+      "secondary_routes": [
+        "frontier.world_model"
+      ],
+      "score": 11,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.embodied_ai",
+          "tech.world_model"
+        ],
+        "task": [],
+        "capability": [
+          "cap.physics",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.robotics"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_f019af80f3dfcd24ce30",
+      "source_ids": [
+        "src_f019af80f3dfcd24ce30"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.08725"
+      ],
+      "published_at": "2026-08-09T14:17:46Z",
+      "matched_signals": [
+        "robot",
+        "vision-language-action",
+        "vla",
+        "world-model"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "结果来自真实机器人、仿真还是离线数据？"
+      ]
+    },
+    {
+      "candidate_id": "cand_2593691596903a67",
+      "status": "needs_verification",
+      "canonical_title": "360CityArena: A Realistic Virtual Urban Navigation Benchmark for Embodied Agents",
+      "primary_route": "visual_value.evaluation",
+      "secondary_routes": [
+        "frontier.embodied_ai",
+        "visual_value.spatial_camera"
+      ],
+      "score": 10,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.embodied_ai",
+          "tech.multimodal",
+          "tech.video_generation"
+        ],
+        "task": [],
+        "capability": [
+          "cap.evaluation",
+          "cap.spatial_consistency"
+        ],
+        "scene": [
+          "scene.robotics",
+          "scene.virtual_environment"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_e8f1d89351d3c8b04bda",
+      "source_ids": [
+        "src_e8f1d89351d3c8b04bda"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.08814"
+      ],
+      "published_at": "2026-08-09T17:03:15Z",
+      "matched_signals": [
+        "benchmark",
+        "embodied",
+        "eval",
+        "evaluation",
+        "spatial reasoning"
+      ],
+      "negative_signals": [
+        "navigation"
+      ],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "评测任务和指标能否对应真实视频/图像产品任务？"
+      ]
+    },
+    {
+      "candidate_id": "cand_5878fd6458e45096",
+      "status": "needs_verification",
+      "canonical_title": "Chain of Spatial Thoughts: Modality-Agnostic Spatial Grounding for Vision Language Models",
+      "primary_route": "visual_value.spatial_camera",
+      "secondary_routes": [
+        "frontier.embodied_ai",
+        "visual_value.evaluation"
+      ],
+      "score": 10,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.embodied_ai",
+          "tech.video_generation"
+        ],
+        "task": [],
+        "capability": [
+          "cap.efficiency",
+          "cap.evaluation",
+          "cap.spatial_consistency"
+        ],
+        "scene": [
+          "scene.robotics"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_acde4b4ba729521661e2",
+      "source_ids": [
+        "src_acde4b4ba729521661e2"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.10278"
+      ],
+      "published_at": "2026-08-10T22:20:07Z",
+      "matched_signals": [
+        "benchmark",
+        "embodied",
+        "manipulation",
+        "metric",
+        "robot",
+        "robotic",
+        "spatial grounding",
+        "spatial reasoning"
+      ],
+      "negative_signals": [
+        "navigation"
+      ],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？"
+      ]
+    },
+    {
+      "candidate_id": "cand_43c553b234d0be3c",
+      "status": "needs_verification",
+      "canonical_title": "Controllable Clothing: Precise Labels and Generation for Virtual Try-On with Latent Diffusion Models",
+      "primary_route": "frontier.image_asset",
+      "secondary_routes": [],
+      "score": 10,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.image_generation"
+        ],
+        "task": [
+          "task.t2i"
+        ],
+        "capability": [
+          "cap.editability"
+        ],
+        "scene": [
+          "scene.virtual_environment"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_5a1aaac9339a055738ad",
+      "source_ids": [
+        "src_5a1aaac9339a055738ad"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.05834"
+      ],
+      "published_at": "2026-08-06T10:03:07Z",
+      "matched_signals": [
+        "image generation",
+        "virtual try-on"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？"
+      ]
+    },
+    {
+      "candidate_id": "cand_5137ae8540fb3db9",
+      "status": "needs_verification",
+      "canonical_title": "Ex-Omni-2D: Expressive Omni-Modal Dialogue Models with Native Visual Presence",
+      "primary_route": "frontier.multimodal_agent",
+      "secondary_routes": [
+        "frontier.embodied_ai"
+      ],
+      "score": 10,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.agent",
+          "tech.embodied_ai",
+          "tech.video_generation"
+        ],
+        "task": [],
+        "capability": [
+          "cap.efficiency",
+          "cap.physics"
+        ],
+        "scene": [
+          "scene.robotics"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_2b8ca5d6e678a7aa6900",
+      "source_ids": [
+        "src_2b8ca5d6e678a7aa6900"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.10720"
+      ],
+      "published_at": "2026-08-11T09:37:11Z",
+      "matched_signals": [
+        "embodied",
+        "omni-modal"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？"
+      ]
+    },
+    {
+      "candidate_id": "cand_4fa88b76fb1dbd9b",
+      "status": "needs_verification",
+      "canonical_title": "HRDiT: Training-Free High-Resolution Image Generation with Off-the-Shelf Diffusion Transformer Models",
+      "primary_route": "frontier.image_asset",
+      "secondary_routes": [],
+      "score": 10,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.image_generation"
+        ],
+        "task": [
+          "task.t2i"
+        ],
+        "capability": [
+          "cap.spatial_consistency"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.repo_update"
+        ]
+      },
+      "primary_source_id": "src_25c0476c7bbed2f0d6fd",
+      "source_ids": [
+        "src_25c0476c7bbed2f0d6fd"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.07003"
+      ],
+      "published_at": "2026-08-07T09:19:16Z",
+      "matched_signals": [
+        "image generation",
+        "text-to-image"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？"
+      ]
+    },
+    {
+      "candidate_id": "cand_60cd872c43ad4403",
+      "status": "needs_verification",
+      "canonical_title": "Representation Handoffs for OpenArm-Based Laboratory Mobile Manipulation",
+      "primary_route": "frontier.embodied_ai",
+      "secondary_routes": [
+        "visual_value.evaluation"
+      ],
+      "score": 10,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.embodied_ai"
+        ],
+        "task": [],
+        "capability": [
+          "cap.evaluation"
+        ],
+        "scene": [
+          "scene.robotics"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_f9f069fb04d6a972954b",
+      "source_ids": [
+        "src_f9f069fb04d6a972954b"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.07154"
+      ],
+      "published_at": "2026-08-07T12:19:50Z",
+      "matched_signals": [
+        "embodied",
+        "eval",
+        "manipulation",
+        "robot",
+        "robotic"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "结果来自真实机器人、仿真还是离线数据？"
+      ]
+    },
+    {
+      "candidate_id": "cand_25db83c7bb777c7e",
+      "status": "needs_verification",
+      "canonical_title": "Towards Expressive and Faithful Audio-to-Image Generation: A Unified Multimodal Dataset and Synthesis Framework",
+      "primary_route": "frontier.image_asset",
+      "secondary_routes": [],
+      "score": 10,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.image_generation"
+        ],
+        "task": [
+          "task.t2i"
+        ],
+        "capability": [],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.repo_update"
+        ]
+      },
+      "primary_source_id": "src_992db8fa9163a8e25355",
+      "source_ids": [
+        "src_992db8fa9163a8e25355"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.09529"
+      ],
+      "published_at": "2026-08-10T12:31:16Z",
+      "matched_signals": [
+        "image generation",
+        "text-to-image"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？"
+      ]
+    },
+    {
+      "candidate_id": "cand_51f42d3c4b3874de",
+      "status": "needs_verification",
+      "canonical_title": "UniVVT: A Unified End-to-End Framework for High-Fidelity Video Virtual Try-on",
+      "primary_route": "frontier.image_asset",
+      "secondary_routes": [
+        "frontier.video_generation",
+        "visual_value.evaluation"
+      ],
+      "score": 10,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.image_generation",
+          "tech.video_generation"
+        ],
+        "task": [
+          "task.t2v"
+        ],
+        "capability": [
+          "cap.evaluation",
+          "cap.spatial_consistency"
+        ],
+        "scene": [
+          "scene.virtual_environment"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_9e0071f73f0d492b327d",
+      "source_ids": [
+        "src_9e0071f73f0d492b327d"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.05745"
+      ],
+      "published_at": "2026-08-06T08:29:47Z",
+      "matched_signals": [
+        "benchmark",
+        "metric",
+        "video generation",
+        "virtual try-on"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？"
+      ]
+    },
+    {
+      "candidate_id": "cand_5e3b4ba74cc84886",
+      "status": "needs_verification",
+      "canonical_title": "MemWM: Memory-Augmented Text-Based World Model",
+      "primary_route": "frontier.world_model",
+      "secondary_routes": [
+        "visual_value.evaluation"
+      ],
+      "score": 9,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.world_model"
+        ],
+        "task": [],
+        "capability": [
+          "cap.evaluation",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_9de11af9049238eb8a93",
+      "source_ids": [
+        "src_9de11af9049238eb8a93"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.07107"
+      ],
+      "published_at": "2026-08-07T11:03:32Z",
+      "matched_signals": [
+        "benchmark",
+        "eval",
+        "world model",
+        "world-model"
+      ],
+      "negative_signals": [
+        "text-based world model"
+      ],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "是否真正建模空间、时间、物理或交互，而非泛化使用“世界模型”概念？"
+      ]
+    },
+    {
+      "candidate_id": "cand_c862759a462d253d",
+      "status": "needs_verification",
+      "canonical_title": "Tokenizer Generator Coupling in Medical Image Generation",
+      "primary_route": "frontier.image_asset",
+      "secondary_routes": [
+        "visual_value.evaluation"
+      ],
+      "score": 9,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.image_generation"
+        ],
+        "task": [
+          "task.t2i"
+        ],
+        "capability": [
+          "cap.evaluation"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.repo_update"
+        ]
+      },
+      "primary_source_id": "src_c64f0ee4bf552c66dc52",
+      "source_ids": [
+        "src_c64f0ee4bf552c66dc52"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.07713"
+      ],
+      "published_at": "2026-08-07T18:57:09Z",
+      "matched_signals": [
+        "eval",
+        "image generation",
+        "metric"
+      ],
+      "negative_signals": [
+        "medical image"
+      ],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？"
+      ]
+    },
+    {
+      "candidate_id": "cand_722aea197c5e63a3",
+      "status": "needs_verification",
+      "canonical_title": "BRUCE: Benchmarking Robustness Under Corruption Escalation for Scientific Vision-Language Reasoning",
+      "primary_route": "visual_value.evaluation",
+      "secondary_routes": [
+        "visual_value.spatial_camera"
+      ],
+      "score": 8,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.multimodal"
+        ],
+        "task": [],
+        "capability": [
+          "cap.evaluation",
+          "cap.spatial_consistency"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_9378823145fae78b09e7",
+      "source_ids": [
+        "src_9378823145fae78b09e7"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.07742"
+      ],
+      "published_at": "2026-08-07T20:19:11Z",
+      "matched_signals": [
+        "benchmark",
+        "eval",
+        "evaluation",
+        "metric",
+        "spatial reasoning"
+      ],
+      "negative_signals": [
+        "scientific vision-language reasoning"
+      ],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "评测任务和指标能否对应真实视频/图像产品任务？"
+      ]
+    },
+    {
+      "candidate_id": "cand_8e44a3c5346c9d39",
+      "status": "needs_verification",
+      "canonical_title": "Did the Grid Erase the Event? EndoClock for Auditing Medical World-Model Pipelines",
+      "primary_route": "visual_value.evaluation",
+      "secondary_routes": [
+        "frontier.world_model"
+      ],
+      "score": 8,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.multimodal",
+          "tech.video_generation",
+          "tech.world_model"
+        ],
+        "task": [],
+        "capability": [
+          "cap.evaluation",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_ceb06c638d44f03f1c9e",
+      "source_ids": [
+        "src_ceb06c638d44f03f1c9e"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.09266"
+      ],
+      "published_at": "2026-08-10T08:20:42Z",
+      "matched_signals": [
+        "auditing",
+        "world model",
+        "world-model"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "评测任务和指标能否对应真实视频/图像产品任务？"
+      ]
+    },
+    {
+      "candidate_id": "cand_01b3a992f5f1fc53",
+      "status": "needs_verification",
+      "canonical_title": "From Passive Mirrors to Active Agents: Holonic Digital Twins for Physical AI over Networks",
+      "primary_route": "frontier.embodied_ai",
+      "secondary_routes": [
+        "frontier.world_model"
+      ],
+      "score": 8,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.embodied_ai",
+          "tech.world_model"
+        ],
+        "task": [],
+        "capability": [
+          "cap.physics",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.robotics"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_242580e1c75b0ae28465",
+      "source_ids": [
+        "src_242580e1c75b0ae28465"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.06227"
+      ],
+      "published_at": "2026-08-06T16:17:43Z",
+      "matched_signals": [
+        "physical ai",
+        "robot",
+        "world model"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "结果来自真实机器人、仿真还是离线数据？"
+      ]
+    },
+    {
+      "candidate_id": "cand_61da275bafea5ce8",
+      "status": "needs_verification",
+      "canonical_title": "InstructionCrafter: Generating Consistent and High-Fidelity Visual Instructions",
+      "primary_route": "frontier.video_generation",
+      "secondary_routes": [
+        "visual_value.evaluation",
+        "frontier.image_asset"
+      ],
+      "score": 8,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.image_generation",
+          "tech.video_generation"
+        ],
+        "task": [
+          "task.t2i"
+        ],
+        "capability": [
+          "cap.evaluation",
+          "cap.spatial_consistency"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_bc50e9545b89e83f02d4",
+      "source_ids": [
+        "src_bc50e9545b89e83f02d4"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.08460"
+      ],
+      "published_at": "2026-08-09T04:01:21Z",
+      "matched_signals": [
+        "benchmark",
+        "image generation",
+        "text-to-image",
+        "video diffusion"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "对时长、一致性、镜头或控制的提升是否有可比实验？"
+      ]
+    },
+    {
+      "candidate_id": "cand_7fedc2874557e5ff",
+      "status": "needs_verification",
+      "canonical_title": "MotionCraft: Latent World Modeling with Sparse Attention for Visual Upscaling",
+      "primary_route": "frontier.world_model",
+      "secondary_routes": [
+        "visual_value.evaluation"
+      ],
+      "score": 8,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.video_generation",
+          "tech.world_model"
+        ],
+        "task": [],
+        "capability": [
+          "cap.editability",
+          "cap.efficiency",
+          "cap.evaluation",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_9f4e24861d5c68c2562d",
+      "source_ids": [
+        "src_9f4e24861d5c68c2562d"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.08553"
+      ],
+      "published_at": "2026-08-09T07:54:43Z",
+      "matched_signals": [
+        "eval",
+        "evaluation",
+        "world model",
+        "world modeling"
+      ],
+      "negative_signals": [
+        "super-resolution",
+        "visual upscaling"
+      ],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "是否真正建模空间、时间、物理或交互，而非泛化使用“世界模型”概念？"
+      ]
+    },
+    {
+      "candidate_id": "cand_9e041e9f9c496c30",
+      "status": "needs_verification",
+      "canonical_title": "SurgWMBench: A Vision-Based Benchmark for World-Modeling Surgical Instrument Motion Planning",
+      "primary_route": "visual_value.evaluation",
+      "secondary_routes": [
+        "frontier.world_model"
+      ],
+      "score": 8,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.multimodal",
+          "tech.video_generation",
+          "tech.world_model"
+        ],
+        "task": [],
+        "capability": [
+          "cap.evaluation",
+          "cap.spatial_consistency",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_3baabd77732db590c394",
+      "source_ids": [
+        "src_3baabd77732db590c394"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.08070"
+      ],
+      "published_at": "2026-08-08T11:30:50Z",
+      "matched_signals": [
+        "benchmark",
+        "eval",
+        "evaluation",
+        "metric",
+        "world model",
+        "world-model",
+        "world-modeling"
+      ],
+      "negative_signals": [
+        "surgical"
+      ],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "评测任务和指标能否对应真实视频/图像产品任务？"
+      ]
+    },
+    {
+      "candidate_id": "cand_ed3fed54370b9a08",
+      "status": "needs_verification",
+      "canonical_title": "EnvACE: Internalizing Environment Dynamics via World Rehearsal for Agentic Reinforcement Learning",
+      "primary_route": "frontier.world_model",
+      "secondary_routes": [
+        "visual_value.evaluation"
+      ],
+      "score": 7,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.world_model"
+        ],
+        "task": [],
+        "capability": [
+          "cap.evaluation",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.general_visual_ai"
+        ],
+        "event": [
+          "event.repo_update"
+        ]
+      },
+      "primary_source_id": "src_1397ad6f5cd93be276b1",
+      "source_ids": [
+        "src_1397ad6f5cd93be276b1"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.06197"
+      ],
+      "published_at": "2026-08-06T15:54:36Z",
+      "matched_signals": [
+        "eval",
+        "evaluation",
+        "world model"
+      ],
+      "negative_signals": [],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "是否真正建模空间、时间、物理或交互，而非泛化使用“世界模型”概念？"
+      ]
+    },
+    {
+      "candidate_id": "cand_a4209eb59c73453c",
+      "status": "needs_verification",
+      "canonical_title": "Surgical WAM: A World-Action Model for Data-Efficient Surgical Robot Learning",
+      "primary_route": "frontier.embodied_ai",
+      "secondary_routes": [
+        "frontier.world_model",
+        "visual_value.evaluation"
+      ],
+      "score": 7,
+      "track": "track.emerging",
+      "tags": {
+        "tech": [
+          "tech.embodied_ai",
+          "tech.video_generation",
+          "tech.world_model"
+        ],
+        "task": [],
+        "capability": [
+          "cap.efficiency",
+          "cap.evaluation",
+          "cap.world_state"
+        ],
+        "scene": [
+          "scene.robotics"
+        ],
+        "event": [
+          "event.research"
+        ]
+      },
+      "primary_source_id": "src_053d8c10eb42c40fa090",
+      "source_ids": [
+        "src_053d8c10eb42c40fa090"
+      ],
+      "source_urls": [
+        "https://arxiv.org/abs/2608.11204"
+      ],
+      "published_at": "2026-08-11T17:59:13Z",
+      "matched_signals": [
+        "eval",
+        "evaluation",
+        "manipulation",
+        "robot",
+        "world model",
+        "world-action"
+      ],
+      "negative_signals": [
+        "endoscopic",
+        "surgical"
+      ],
+      "aggregation": {
+        "source_count": 1,
+        "method": "single_source",
+        "note": null
+      },
+      "verification_questions": [
+        "论文原文中的核心新增事实是什么？",
+        "关键指标、数据规模与限制是否能定位到原文？",
+        "结果来自真实机器人、仿真还是离线数据？"
+      ]
+    }
+  ],
+  "exclusions": {
+    "hard": [
+      {
+        "source_id": "src_a8735fbfbfff010207ec",
+        "title": "CodecArena: Codec Quality Assessment via Visual Reinforcement Learning",
+        "terms": [
+          "codec quality"
+        ]
+      },
+      {
+        "source_id": "src_9be7eb7cd7778a4b2278",
+        "title": "Findings of the First Teaching Monster Challenge: A Benchmark of Pedagogical Content Knowledge in AI Agents",
+        "terms": [
+          "teaching monster"
+        ]
+      },
+      {
+        "source_id": "src_39a072e6e7151a8c18d4",
+        "title": "High-Quality Exposure Correction with Diffusion-Based Image Generation Priors",
+        "terms": [
+          "exposure correction"
+        ]
+      },
+      {
+        "source_id": "src_6a817f5abc5bc8642eac",
+        "title": "LMM Modality Transfer: A Pre-requisite for Autonomous GIS Agents",
+        "terms": [
+          "gis agents"
+        ]
+      },
+      {
+        "source_id": "src_5e527db919304c060346",
+        "title": "Corrupting Attention: Evasion-Based Adversarial Attacks on Encoder Attention in Detection Transformers",
+        "terms": [
+          "detection transformers"
+        ]
+      },
+      {
+        "source_id": "src_3d1fb556a8f866c0da51",
+        "title": "From Economic Agents to Agentic Economies: A Systems Blueprint for Economic World Models",
+        "terms": [
+          "economic world model"
+        ]
+      },
+      {
+        "source_id": "src_2e35f58bdd6847a6a6e4",
+        "title": "When Agentic AI Meets Integrated Sensing and Communication",
+        "terms": [
+          "integrated sensing and communication"
+        ]
+      },
+      {
+        "source_id": "src_a9d07a24d3bfdcbf3a86",
+        "title": "VQ-VAD: Vector-quantized Motion Representation Learning for Human-centric Video Anomaly Detection",
+        "terms": [
+          "video anomaly detection"
+        ]
+      }
+    ],
+    "unrouted": [
+      {
+        "source_id": "src_84f69bf979c7717a0154",
+        "title": "JustLLMGRPO: Radiographic Control for Chest X-Ray Generation"
+      }
+    ]
+  }
+}

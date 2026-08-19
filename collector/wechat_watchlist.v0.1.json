@@ -1,0 +1,32 @@
+{
+  "schema_version": "0.1",
+  "record_type": "wechat_account_watchlist",
+  "source_note": "https://www.xiaohongshu.com/explore/68823c1d000000001203f450",
+  "discovery_mode": "account_search_to_news_extractor_inbox",
+  "topic_queries": [
+    "视频生成",
+    "图像生成",
+    "世界模型",
+    "具身智能",
+    "机器人",
+    "模型评测",
+    "AI短剧",
+    "AI营销"
+  ],
+  "accounts": [
+    {"account_name": "机器之心", "focus": ["前沿技术", "论文", "模型发布"], "priority": "P0", "enabled": true},
+    {"account_name": "AI好好用", "focus": ["AI产品", "应用案例"], "priority": "P1", "enabled": true},
+    {"account_name": "新智元", "focus": ["前沿技术", "产业动态"], "priority": "P0", "enabled": true},
+    {"account_name": "量子位", "focus": ["AI产品", "模型发布", "产业动态"], "priority": "P0", "enabled": true},
+    {"account_name": "晚点LatePost", "focus": ["公司战略", "人物访谈", "商业化"], "priority": "P0", "enabled": true},
+    {"account_name": "极客公园", "focus": ["AI产品", "行业应用", "创业公司"], "priority": "P1", "enabled": true},
+    {"account_name": "Founder Park", "focus": ["创业者", "人物访谈", "海外产品"], "priority": "P1", "enabled": true},
+    {"account_name": "雷峰网", "focus": ["产业深度", "公司战略", "行业应用"], "priority": "P1", "enabled": true},
+    {"account_name": "AI科技评论", "focus": ["AI技术", "论文", "产业研究"], "priority": "P0", "enabled": true},
+    {"account_name": "海外独角兽", "focus": ["海外公司", "投资", "产品与商业"], "priority": "P1", "enabled": true},
+    {"account_name": "数字生命卡兹克", "focus": ["AI产品", "模型体验", "行业观察", "内容应用"], "priority": "P1", "enabled": true}
+  ],
+  "candidate_accounts": [
+    {"account_name": "AI全球视野", "source": "source note comment", "status": "needs_quality_review"}
+  ]
+}
