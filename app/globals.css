@@ -368,3 +368,8 @@ html{scroll-behavior:smooth}.workspace>section,.coverage-card{scroll-margin-top:
 .mini-chart-plot{display:grid;gap:10px}.mini-chart-row{display:grid;grid-template-columns:78px minmax(80px,1fr) 44px;align-items:center;gap:8px}.mini-chart-row>span{color:#8e97a8;font-size:9px}.mini-chart-row>i{display:block;height:7px;overflow:hidden;border-radius:7px;background:#1b202b}.mini-chart-row>i>em{display:block;height:100%;border-radius:7px;background:linear-gradient(90deg,#8059bc,#b288e5)}.mini-chart-row>b{color:#c8b8e1;font:700 9px var(--font-geist-mono),monospace;text-align:right}
 .mini-data-chart>p{margin:12px 0 0;color:#626c7d;font-size:8px;line-height:1.55}
 @media(max-width:620px){.mini-chart-row{grid-template-columns:70px minmax(60px,1fr) 40px}}
+
+/* Desktop workbench: trend copy is primary content and must never be clamped. */
+.overview-main{align-items:stretch}
+.overview-main .panel-card{height:auto;min-height:450px}
+.overview-main .trend-one-line strong{display:block;overflow:visible;-webkit-line-clamp:unset;-webkit-box-orient:initial;white-space:normal}
