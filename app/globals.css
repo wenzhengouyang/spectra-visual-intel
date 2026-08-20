@@ -344,6 +344,7 @@ html{scroll-behavior:smooth}.workspace>section,.coverage-card{scroll-margin-top:
 .timeline-detail{overflow:visible;box-shadow:none}
 .timeline-detail::after{content:none}
 .timeline-event-list{box-sizing:border-box;padding-right:10px;padding-bottom:26px;scroll-padding-bottom:26px}
+.timeline-event-list .timeline-event-card{padding-left:18px!important;padding-right:14px!important}
 .timeline-event-card:last-child{margin-bottom:2px!important;padding-bottom:30px!important}
 .mini-data-chart{margin:4px 0 22px;padding:15px 14px 13px;border:1px solid #2b3140;border-radius:9px;background:linear-gradient(145deg,#12151d,#0b0e14)}
 .mini-data-chart figcaption{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:15px}
