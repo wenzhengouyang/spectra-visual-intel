@@ -370,6 +370,86 @@ VERIFIED_HEADLINE_OVERRIDES = {
 # The summary may restate the source abstract; it must not present an LLM
 # judgment or an unlocated metric as a verified fact.
 P2_BRIEF_COPY = {
+    "cand_04f007eab88ff413": {
+        "headline": "Anthropic与OpenAI将亮相TechCrunch Disrupt 2026人工智能舞台",
+        "summary": "TechCrunch宣布两家公司将参与Disrupt 2026的人工智能专题讨论；议程内容与具体发言仍以大会最终安排为准。",
+    },
+    "cand_5fe747cc48a2afaa": {
+        "headline": "研究者质疑Claude Code Opus 5自动模式的提示注入防护",
+        "summary": "Simon Willison转述安全研究者Johann Rehberger对Claude Code自动模式防护机制的测试与质疑；具体攻击条件和防护效果仍待阅读全文核验。",
+    },
+    "cand_1db654ce391bd80f": {
+        "headline": "Thinking Machines联合创始人Barret Zoph转投Google",
+        "summary": "TechCrunch报道称，曾短暂加入OpenAI的Barret Zoph现已加入Google；具体岗位与团队安排仍待公司信息确认。",
+    },
+    "cand_c2506e05ccef24ef": {
+        "headline": "CLAP探索跨具身视频世界模型的零样本物理模拟",
+        "summary": "论文摘要称，CLAP通过互联网规模视频数据训练跨具身视频世界模型，并探索在真实任务中的零样本部署；具体实验范围与效果仍待正文核验。",
+    },
+    "cand_b244787caf1969ad": {
+        "headline": "OpenAI拟在印度ChatGPT免费版与Go版展示广告",
+        "summary": "TechCrunch报道称，OpenAI计划在印度的ChatGPT免费版与Go版中引入广告；上线时间、展示范围与用户影响仍待官方说明。",
+    },
+    "cand_b492fc1b3f4cd856": {
+        "headline": "TetherMem用查询感知记忆路由改善长视频生成",
+        "summary": "论文提出一种无需额外训练的查询感知时空记忆路由方法，尝试分别处理主体与场景信息；长视频生成效果仍待正文核验。",
+    },
+    "cand_5380824b7af533db": {
+        "headline": "Ring Forcing探索自回归视频扩散的长期记忆",
+        "summary": "论文将长视频生成中的长期记忆拆分为物体再现能力与超长上下文容量，并提出相应方法；实验结果仍待正文核验。",
+    },
+    "cand_f8e9882e9ff07aab": {
+        "headline": "RECAP-Forcing按内容新颖性组织长视频记忆",
+        "summary": "论文提出按内容新颖性组织记忆的长视频生成方法，以应对有限注意力窗口带来的记忆问题；具体效果仍待正文核验。",
+    },
+    "cand_4729839a2bd28b22": {
+        "headline": "HUG-VIS构建面向人物理解与生成的多模态基准",
+        "summary": "论文介绍一个面向人物理解与生成的多模态视频基准，覆盖情感识别、视频生成、语音克隆与视频抠图等任务；数据规模与评测结果仍待正文核验。",
+    },
+    "cand_5ed95eb1e72bed39": {
+        "headline": "OpenAI发布Hugging Face安全事件正式报告",
+        "summary": "TechCrunch称该报告梳理了多起相互关联的网络安全事件；事件细节与责任边界仍需回到OpenAI正式报告核验。",
+    },
+    "cand_9329b73d7920cf4c": {
+        "headline": "4DGS-WAM以物体为中心连接历史状态与未来动作",
+        "summary": "论文提出基于4D高斯泼溅的世界动作模型，以显式空间结构表示物体并减少重复背景处理；具体效果仍待正文核验。",
+    },
+    "cand_e7fb56cf759860cb": {
+        "headline": "Radar让播客内容可搜索并可供AI Agent调用",
+        "summary": "TechCrunch介绍Particle的播客情报平台，可转录和分析播客，并通过API与MCP提供检索能力；覆盖范围与实际可用性仍待产品页面核验。",
+    },
+    "cand_271ac81bd7481553": {
+        "headline": "Code World Model让代码Agent承担世界状态记忆",
+        "summary": "论文提出结合语言模型推理与视频生成的框架，由代码Agent记录世界状态并维持规则一致性；方法与实验结果仍待正文核验。",
+    },
+    "cand_710a1e206b3e96bb": {
+        "headline": "Anima Anandkumar：语言已有基础模型，物理仍没有",
+        "summary": "访谈围绕物理世界建模展开，并介绍其团队在天气预测模型方面的工作；相关能力、成本与精度表述仍需回到完整访谈核验。",
+    },
+    "cand_63734d3379a6c1e2": {
+        "headline": "比尔·盖茨提出机器人税与“人类保留岗位”",
+        "summary": "TechCrunch转述比尔·盖茨对AI就业影响的看法，包括机器人税和保留部分人类岗位等主张；本条属于个人观点，而非已实施政策。",
+    },
+    "cand_8fea707e260cdb8a": {
+        "headline": "AI Agent时代，客户体验系统面临新的编排难题",
+        "summary": "VentureBeat赞助内容讨论企业在旧有客户服务系统上接入AI Agent、语音AI与自动化时的编排挑战；具体实践成效仍待独立核验。",
+    },
+    "cand_caf00800a927a493": {
+        "headline": "Agent化游戏开发被用作世界模型的可验证轨迹数据引擎",
+        "summary": "论文主张，扩展世界模型不仅需要更多视频与算力，还需要能够提供可验证奖励信号的递归数据引擎；方法与实验仍待正文核验。",
+    },
+    "cand_19eb21e06aae80c9": {
+        "headline": "EVE Online启动Python 3迁移",
+        "summary": "官方工程文章介绍EVE Online从Python 2迁移至Python 3的计划，包括自动转换与人工审查；迁移进度与影响范围仍以原文为准。",
+    },
+    "cand_6b53e8bbd36eb719": {
+        "headline": "Claude如何为AI生成文本加入水印",
+        "summary": "该视频介绍令牌采样、文本水印检测与移除方法；具体技术结论和适用范围仍待观看完整演示核验。",
+    },
+    "cand_11f5792d28f7eb89": {
+        "headline": "Google Cloud CISO：AI时代仍需坚持安全基本原则",
+        "summary": "Google Cloud安全负责人在官方文章中讨论AI时代的安全基础，并主张在传统安全措施上结合AI能力；具体实践建议仍以原文为准。",
+    },
     "cand_8054a194921a8a82": {
         "headline": "烤过头了？为何机器人披萨制作系统仍频频失败",
         "summary": "BBC报道关注机器人披萨制作系统持续遭遇的落地问题；当前采集记录只有来源标题，具体失败环节、案例范围与原因仍待阅读全文核验。",
