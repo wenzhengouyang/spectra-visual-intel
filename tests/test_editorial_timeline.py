@@ -39,6 +39,31 @@ class EditorialTimelineTest(unittest.TestCase):
         self.assertLessEqual(len(summary), 361)
         self.assertTrue(summary.endswith((".", "…")))
 
+    def test_p2_known_english_headline_uses_complete_chinese_copy(self):
+        candidates = {
+            "selected_candidates": [{
+                "candidate_id": "cand_8054a194921a8a82",
+                "canonical_title": "Overcooked? Why robotic pizza makers are failing",
+                "primary_source_id": "src_pizza",
+                "source_ids": ["src_pizza"],
+                "published_at": "2026-08-28T00:00:00Z",
+                "primary_route": "frontier.embodied_ai",
+                "intelligence_type": "type.industry_market",
+                "tags": {},
+                "score": 13,
+            }]
+        }
+        collection = {"source_records": [{
+            "source_id": "src_pizza",
+            "source_type": "media",
+            "canonical_url": "https://example.com/pizza",
+        }]}
+
+        brief = MODULE.build_news_briefs(candidates, collection, set())[0]
+
+        self.assertEqual(brief["headline"], "烤过头了？为何机器人披萨制作系统仍频频失败")
+        self.assertNotIn("cooked", brief["headline"])
+
     def test_timeline_ends_on_collection_day_and_uses_shanghai_dates(self):
         events = [
             {
