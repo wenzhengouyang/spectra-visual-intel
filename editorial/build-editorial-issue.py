@@ -1142,7 +1142,7 @@ def main() -> None:
         # draft from leaking `../../../` paths into the GitHub Pages homepage.
         html = re.sub(r'href="[^"]*tokens\.css(?:\?v=\d+)?"', 'href="tokens.css?v=4"', html, count=1)
         html = re.sub(r'href="[^"]*app/globals\.css(?:\?v=\d+)?"', 'href="app/globals.css?v=19"', html, count=1)
-        html = re.sub(r'href="[^"]*app/hallmark-editorial\.css(?:\?v=\d+)?"', 'href="app/hallmark-editorial.css?v=12"', html, count=1)
+        html = re.sub(r'href="[^"]*app/hallmark-editorial\.css(?:\?v=\d+)?"', 'href="app/hallmark-editorial.css?v=13"', html, count=1)
         payload = json.dumps(output, ensure_ascii=False, separators=(",", ":")).replace("<", "\\u003c")
         embedded = f'<!-- ISSUE_DATA_START --><script id="issue-data" type="application/json">{payload}</script><!-- ISSUE_DATA_END -->'
         html, replacements = re.subn(r"<!-- ISSUE_DATA_START -->.*?<!-- ISSUE_DATA_END -->", lambda _: embedded, html, count=1, flags=re.S)

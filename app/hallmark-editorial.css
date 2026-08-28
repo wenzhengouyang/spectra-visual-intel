@@ -1866,6 +1866,10 @@ body[data-current-view="articles"] .taxonomy-note {
   gap: var(--space-lg);
 }
 
+.verified-brief-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .story-browse-card,
 .story-browse-card.brief-card,
 .news-brief-card {
