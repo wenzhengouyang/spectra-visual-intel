@@ -3,7 +3,8 @@
   "window_days": 7,
   "watchlists": {
     "wechat_accounts": "collector/wechat_watchlist.v0.1.json",
-    "financial_public_reports": "collector/financial_public_report_watchlist.v0.1.json"
+    "financial_public_reports": "collector/financial_public_report_watchlist.v0.1.json",
+    "core_observers": "collector/observer_watchlist.v0.1.json"
   },
   "keyword_groups": {
     "visual_core": [
@@ -517,6 +518,72 @@
       "enabled": true
     },
     {
+      "registry_id": "reg_rss_sv101_podcast",
+      "adapter": "rss",
+      "source_name": "硅谷101",
+      "source_type": "professional_view",
+      "publisher": "硅谷101",
+      "url": "https://feeds.fireside.fm/sv101/rss",
+      "homepage": "https://sv101.fireside.fm/",
+      "content_format": "podcast",
+      "rights_scope": "excerpt",
+      "access_method": "publisher_rss",
+      "audio_ingestion": "metadata_only",
+      "transcript_ingestion": "official_public_only",
+      "max_excerpt_chars": 4000,
+      "language": "zh-CN",
+      "enabled": true
+    },
+    {
+      "registry_id": "reg_rss_simon_willison_blog",
+      "adapter": "rss",
+      "source_name": "Simon Willison's Weblog",
+      "source_type": "professional_view",
+      "publisher": "Simon Willison",
+      "url": "https://simonwillison.net/atom/everything-but-beats/",
+      "homepage": "https://simonwillison.net/",
+      "content_format": "blog",
+      "rights_scope": "excerpt",
+      "access_method": "publisher_atom",
+      "max_excerpt_chars": 6000,
+      "language": "en",
+      "enabled": true
+    },
+    {
+      "registry_id": "reg_rss_crossing_podcast",
+      "adapter": "rss",
+      "source_name": "十字路口 Crossing",
+      "source_type": "professional_view",
+      "publisher": "Koji",
+      "url": "https://feed.xyzfm.space/68fyjknth9hj",
+      "homepage": "https://crossingpodcast.com/",
+      "content_format": "podcast",
+      "rights_scope": "excerpt",
+      "access_method": "publisher_linked_rss",
+      "audio_ingestion": "metadata_only",
+      "transcript_ingestion": "official_public_only",
+      "max_excerpt_chars": 4000,
+      "language": "zh-CN",
+      "enabled": true
+    },
+    {
+      "registry_id": "reg_rss_latent_space_podcast",
+      "adapter": "rss",
+      "source_name": "Latent Space: The AI Engineer Podcast",
+      "source_type": "professional_view",
+      "publisher": "Latent Space",
+      "url": "https://api.substack.com/feed/podcast/1084089.rss",
+      "homepage": "https://www.latent.space/podcast",
+      "content_format": "podcast",
+      "rights_scope": "excerpt",
+      "access_method": "publisher_podcast_rss",
+      "audio_ingestion": "metadata_only",
+      "transcript_ingestion": "official_public_only",
+      "max_excerpt_chars": 4000,
+      "language": "en",
+      "enabled": true
+    },
+    {
       "registry_id": "reg_news_extractor_bbc_technology",
       "adapter": "news_extractor_feed",
       "source_name": "BBC Technology",
@@ -563,7 +630,23 @@
       "refresh_before_read": true,
       "refresh_limit": 6,
       "refresh_channel": "weread",
+      "verify_refresh_auth": true,
       "weread_fallback": true,
+      "full_text_extract_limit": 6,
+      "full_text_min_chars": 180,
+      "full_text_retry_attempts": 2,
+      "full_text_command": [
+        "/Users/wenzheng/Library/Python/3.9/bin/uv",
+        "--directory",
+        "/Users/wenzheng/.codex/skills/news-extractor",
+        "run",
+        "scripts/extract_news.py",
+        "{url}",
+        "--format",
+        "json",
+        "--output",
+        "{output}"
+      ],
       "enabled": true
     },
     {

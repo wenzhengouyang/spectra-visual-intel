@@ -39,6 +39,10 @@ python3 spectra_agent/run.py run \
 
 每次运行都独立保存在 `spectra_agent/runs/<run-id>/`，包含状态、状态变更历史、JSONL日志、采集结果、候选、审核文件、正式事件、周报和运行报告。
 
+采集完成后还会生成 `discussion-radar.json`：它汇总核心人物与机构在近 7 天对同一主题的
+独立提及，用于发现尚未成为正式新闻的前置信号。该文件只进入 P2 观察层，不会自动改变
+P1 队列，也不会绕过人工审核。
+
 `resume` 只生成运行目录内的 `weekly-report.html` 草稿，不会自动覆盖线上页面。发布是独立步骤，防止一次错误运行污染当前线上周报。
 
 ## 每周更新时间
@@ -105,3 +109,15 @@ python3 spectra_agent/run.py run --llm
 ```
 
 主流程使用`.venv-llm`执行结构化模型，并在运行目录写入`llm-structure-checkpoint.json`。每完成一批会输出`llm_batch_completed`，重试时可复用已完成分析。LLM建议只辅助核验，不能自动批准候选；流程仍强制暂停在`waiting_for_review`。
+
+结构化阶段执行两道前置硬门槛：`content_completeness` 检查正文是否满足来源类型要求，`fact_wording_fidelity` 检查来源归因、不确定措辞以及单一案例是否被错误升级为行业趋势。只有两道门槛均为 `pass` 的候选才能进入 `p1-review.json`。失败或仍为 `pending_llm` 的记录统一写入同一运行目录的 `gated-review.json`，等待补正文、按原文限定重写、观察或剔除；它们不会进入P1深读或后续正式事件生成。
+
+通过结构化硬门槛后，`verification/verification_harness.py` 会在人工审核前运行：从完整正文定位每条候选主张的对应证据，检查数字、归因和单一案例趋势化风险，并在有多来源时给出一致性提示。它输出 `verification-candidates.json` 和 `evidence-review.json`，同时把机器建议写入 `p1-review.json.suggested_evidence`。所有结果状态仍为 `provisional_unverified` 或 `waiting_for_human_review`；Harness不会自动填入正式 `claims`、不会批准事件，也不会触发发布。
+
+当前主流程为：
+
+```text
+collect → validate_collection → discussion_radar → structure
+→ validate_structure → verification_harness → waiting_for_review
+→ human review → verified-events → editorial
+```

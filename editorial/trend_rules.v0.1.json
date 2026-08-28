@@ -1,0 +1,42 @@
+{
+  "version": "trend-score.v0.1",
+  "heat_weights": {
+    "signal_volume": 20,
+    "evidence_quality": 25,
+    "source_corroboration": 15,
+    "importance": 15,
+    "strategy_relevance": 15,
+    "novelty": 10
+  },
+  "status_thresholds": {
+    "重点升温": 75,
+    "升温": 68,
+    "待验证": 58
+  },
+  "evidence_values": {
+    "evidence.a": 100,
+    "evidence.b": 75,
+    "evidence.c": 50
+  },
+  "confidence_multipliers": {
+    "confidence.high": 1.0,
+    "confidence.medium": 0.85,
+    "confidence.low": 0.65
+  },
+  "productization_values": {
+    "type.industry_market": 90,
+    "type.product_release": 80,
+    "type.company_strategy": 70,
+    "type.technology_breakthrough": 35
+  },
+  "maturity_weights": {
+    "evidence_quality": 45,
+    "source_corroboration": 20,
+    "productization": 35
+  },
+  "impact_weights": {
+    "importance": 35,
+    "strategy_relevance": 45,
+    "signal_volume": 20
+  }
+}

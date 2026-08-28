@@ -29,7 +29,21 @@ ROUTES = [
     "frontier.image_asset",
     "visual_value.spatial_camera",
     "frontier.multimodal_agent",
+    "extended.foundation_multimodal",
+    "extended.ai_agent_tools",
+    "extended.talent_organization",
+    "extended.compute_data",
+    "extended.open_source_ecosystem",
 ]
+
+CORE_VISUAL_ROUTES = {
+    "visual_value.evaluation",
+    "frontier.video_generation",
+    "frontier.world_model",
+    "frontier.embodied_ai",
+    "frontier.image_asset",
+    "visual_value.spatial_camera",
+}
 
 INTELLIGENCE_TYPES = [
     "type.technology_breakthrough",
@@ -87,7 +101,8 @@ LLM_ANALYSIS_SCHEMA: dict[str, Any] = {
 
 LLM_INSTRUCTIONS = """你是SPECTRA视觉行业情报Agent的结构化分析节点，面向AI产品策略从业者。
 只分析输入中给出的候选与来源摘录，不补充外部事实，不把推测写成事实。
-重点覆盖视频生成、图像与资产、世界模型、具身智能应用、评测标准、空间与运镜控制。
+来源使用“称、声称、据报道、计划、预计、可能、作者报告”等归因或不确定措辞时，canonical_title、What和proposed_claims必须保留同等强度的限定，禁止改写成已经证实的确定事实。
+核心覆盖视频生成、图像与资产、世界模型、具身智能应用、评测标准、空间与运镜控制；外围观察基础模型与多模态、AI Agent与工具、算力与数据、开源生态。
 每条候选必须先判断一级情报性质intelligence_type，只能选择以下一种：
 - type.technology_breakthrough：论文、模型方法、数据集、训练推理、能力突破、评测与技术指标；
 - type.product_release：模型或产品发布、功能更新、API与定价、开源权重；
@@ -96,10 +111,14 @@ LLM_INSTRUCTIONS = """你是SPECTRA视觉行业情报Agent的结构化分析节�
 判断依据是“这条信息主要回答什么问题”，不是发布平台。公众号文章可以属于任意一类，论文通常但不必然属于技术突破。
 公司身份也不是分类依据：同一家大厂的财报收入、市场采用和商业化数据归入industry_market；模型/产品上线与功能更新归入product_release；
 投资、组织、合作和战略调整归入company_strategy。例如腾讯财报不因主体是腾讯就自动归入“大厂动态”，必须按本条信息的主问题分类。
+人才招聘、人才激励、期权、团队结构和组织管理属于company_strategy，具体主题使用extended.talent_organization；除非来源明确讨论Agent产品或Agent工作流，否则不得归入extended.ai_agent_tools。
 intelligence_type_reason必须用一句中文说明为何归入该一级类别，并指出来源中支持判断的信号。
-primary_route和secondary_routes继续表示二级领域，不得用它们替代一级情报性质。
+primary_route和secondary_routes继续表示具体AI领域，不得用它们替代一级情报性质。
+视觉生成、世界模型、具身智能、图像资产、评测和空间控制属于视觉AI核心；基础模型与多模态、AI Agent与工具、算力与数据、开源生态属于外围AI观察。
+外围AI路由必须分别使用extended.foundation_multimodal、extended.ai_agent_tools、extended.compute_data、extended.open_source_ecosystem；不要把通用AI Agent继续塞入视觉核心路由。
 canonical_title可以保留原文，除此之外所有自然语言字段必须使用简洁中文。
 What必须简述来源明确写出的事实；Why必须说明这些已知事实对视觉模型能力、产品、内容或商业应用的意义，不得自行增加来源未提到的行业、场景或效果。
+单一公司、单一产品或单篇作者体验只能表述为“该案例/该产品/文章展示或认为”，不得据此写成“行业进入某时代”“已成为行业趋势”“正在普遍替代传统流程”。只有输入中存在相互独立的多来源证据时，才可形成行业级判断。
 Why必须落到以下至少一种策略意义：能力边界、评测体系、产品功能、模型优化、内容创意或商业应用。仍需核验时使用“若原文成立/需要确认”，不要把推断冒充结论。
 source_ids只能使用候选中提供的ID。证据不足时写入missing_evidence并降低confidence。
 当前输入通常只是来源摘要而非人工核验后的全文：默认confidence不得高于medium；除非摘要已经提供可定位证据，否则missing_evidence至少列出需要回原文确认的指标、对比或限制。
@@ -134,6 +153,80 @@ def similarity(a: str, b: str) -> float:
 def matches(text: str, terms: list[str]) -> list[str]:
     lowered = text.lower()
     return [term for term in terms if term.lower() in lowered]
+
+
+ATTRIBUTION_MARKERS = (
+    " says ", " said ", " claims ", " claimed ", " reports ", " reported ",
+    " according to ", " plans to ", " planned ", " may ", " might ", " could ",
+    "称", "声称", "表示", "据报道", "据称", "计划", "拟", "预计", "可能", "或将", "作者报告",
+    "神秘", "尚不清楚", "尚未确认", "不确定", "仿佛", "好像", "据业内", "朋友发来",
+)
+CHINESE_ATTRIBUTION_MARKERS = (
+    "称", "声称", "表示", "据", "报告", "计划", "拟", "预计", "可能", "或将", "作者",
+    "文章展示", "文章认为", "尚不清楚", "尚未确认", "未确认", "不确定", "据业内",
+)
+
+SINGLE_CASE_TREND_PATTERNS = (
+    r"行业(?:已经|正在|全面)?进入.{0,12}时代",
+    r"已成为行业趋势",
+    r"行业正在(?:普遍|全面)",
+    r"(?:普遍|全面)替代(?:传统|现有)",
+    r"标志着.{0,16}行业(?:已经|正式)?进入",
+)
+SINGLE_CASE_QUALIFIERS = (
+    "该案例", "该产品", "该平台", "这篇文章", "文章展示", "文章认为", "作者认为",
+    "可能", "若", "尚需", "仍需", "有待", "个案", "单一案例",
+)
+TALENT_ORGANIZATION_MARKERS = (
+    "人才", "实习生", "招聘", "薪酬", "期权", "员工激励", "组织管理", "团队结构",
+    "talent", "hiring", "recruiting", "employee stock", "organization design",
+)
+
+
+def requires_attribution(text: str) -> bool:
+    padded = f" {text.lower()} "
+    return any(marker in padded for marker in ATTRIBUTION_MARKERS)
+
+
+def preserves_attribution(text: str) -> bool:
+    return any(marker in text for marker in CHINESE_ATTRIBUTION_MARKERS)
+
+
+def single_case_generalization_failed(candidate: dict[str, Any], analysis: dict[str, Any]) -> bool:
+    if candidate.get("aggregation", {}).get("source_count", 1) > 1:
+        return False
+    factual_text = " ".join([
+        analysis.get("canonical_title", ""),
+        analysis.get("what", ""),
+        " ".join(analysis.get("proposed_claims", [])),
+    ])
+    generalized = any(re.search(pattern, factual_text) for pattern in SINGLE_CASE_TREND_PATTERNS)
+    qualified = any(marker in factual_text for marker in SINGLE_CASE_QUALIFIERS)
+    return generalized and not qualified
+
+
+def content_completeness_gate(record: dict[str, Any], config: dict[str, Any]) -> dict[str, Any]:
+    """Return an auditable hard gate based only on captured source content."""
+    gate = config.get("content_completeness_gate", {})
+    raw_text = re.sub(r"\s+", " ", (record.get("raw_text") or "")).strip()
+    excerpt = re.sub(r"\s+", " ", (record.get("raw_excerpt") or "")).strip()
+    source_type = record.get("source_type") or "unknown"
+    full_text_required = set(gate.get("full_text_required_source_types", []))
+    minimum_full = int(gate.get("minimum_full_text_chars", 180))
+    minimum_excerpt = int(gate.get("minimum_excerpt_chars", 80))
+    if len(raw_text) >= minimum_full:
+        return {"status": "pass", "evidence": "raw_text", "content_chars": len(raw_text)}
+    if source_type in full_text_required:
+        return {
+            "status": "fail", "reason": "full_text_required_but_missing",
+            "content_chars": len(raw_text), "excerpt_chars": len(excerpt),
+        }
+    if len(excerpt) >= minimum_excerpt and excerpt.lower() not in {"n/a", "none", "null"}:
+        return {"status": "pass", "evidence": "structured_excerpt", "content_chars": len(excerpt)}
+    return {
+        "status": "fail", "reason": "insufficient_source_body",
+        "content_chars": len(raw_text), "excerpt_chars": len(excerpt),
+    }
 
 
 def classify_intelligence_type(records: list[dict[str, Any]], text: str,
@@ -181,6 +274,11 @@ def atomic_tags(text: str, config: dict[str, Any], primary_route: str) -> dict[s
         "frontier.world_model": "tech.world_model",
         "frontier.embodied_ai": "tech.embodied_ai",
         "frontier.multimodal_agent": "tech.agent",
+        "extended.foundation_multimodal": "tech.foundation_multimodal",
+        "extended.ai_agent_tools": "tech.agent",
+        "extended.talent_organization": "tech.talent_organization",
+        "extended.compute_data": "tech.ai_infrastructure",
+        "extended.open_source_ecosystem": "tech.open_source",
         "visual_value.evaluation": "tech.multimodal",
         "visual_value.spatial_camera": "tech.video_generation"
     }
@@ -230,6 +328,22 @@ def score_record(record: dict[str, Any], config: dict[str, Any]) -> dict[str, An
         evidence_hits = title_hits.get(route, []) + excerpt_hits.get(route, [])
         context_only_hits = [f"routing_context:{term}" for term in context_hits.get(route, [])]
         hits[route] = sorted(set(evidence_hits + context_only_hits))
+    # The WeChat watchlist is deliberately curated, but many Chinese product
+    # stories only put a product name plus "AI" in the headline. Give those
+    # records a low-confidence general-AI route so they reach P2 review rather
+    # than disappearing before the LLM can classify them. This is an inclusion
+    # fallback, not evidence of importance and never promotes the item to P1.
+    fallback = config.get("wechat_ai_fallback", {})
+    if record.get("source_type") == "wechat_official_account" and not scores and fallback:
+        fallback_terms = fallback.get("terms", [])
+        fallback_hits = [
+            term for term in fallback_terms
+            if (re.search(r"(?<![a-z])ai(?![a-z])", evidence_text.lower()) if term == "ai" else term.lower() in evidence_text.lower())
+        ]
+        if fallback_hits:
+            route = fallback.get("route", "extended.ai_agent_tools")
+            scores[route] = int(fallback.get("score", 5))
+            hits[route] = [f"wechat_watchlist:{term}" for term in fallback_hits]
     soft_hits = {term: value for term, value in config["soft_negative_terms"].items() if term in evidence_text.lower()}
     boosts = {term: value for term, value in config["priority_boosts"].items() if term in evidence_text.lower()}
     if record["source_name"].startswith("Wan-"):
@@ -253,9 +367,13 @@ def score_record(record: dict[str, Any], config: dict[str, Any]) -> dict[str, An
         "company_news", "public_report",
     }:
         total += 2
+    total += int(config.get("source_type_selection_boosts", {}).get(record.get("source_type"), 0))
+    total += int(config.get("source_name_selection_boosts", {}).get(record.get("source_name"), 0))
     if title_lower in {"update readme md", "fix author list in readme md", "update links", "fix arxiv link in readme md", "fix arxiv badge link in readme", "fix arxiv badge link in readme md", "revise citation for wan animate 2 in readme", "add hai xu as a contributor in readme md"}:
         total -= 8
+    completeness = content_completeness_gate(record, config)
     return {"record": record, "hard_exclude": hard, "soft_negative_hits": soft_hits,
+            "content_completeness_gate": completeness,
             "route_scores": scores, "route_hits": hits, "primary_route": primary,
             "secondary_routes": secondary, "boosts": boosts, "score": total}
 
@@ -276,10 +394,30 @@ def near_duplicate_groups(scored: list[dict[str, Any]]) -> list[list[dict[str, A
     return groups
 
 
+def same_event_rule(text: str, config: dict[str, Any]) -> str | None:
+    """Return an auditable high-confidence cross-source event rule."""
+    lowered = text.lower()
+    for rule in config.get("same_event_rules", []):
+        if any(term.lower() in lowered for term in rule.get("entity_terms", [])) and any(
+            term.lower() in lowered for term in rule.get("event_terms", [])
+        ):
+            return rule["name"]
+    return None
+
+
 def aggregate(scored: list[dict[str, Any]]) -> list[dict[str, Any]]:
     github = [item for item in scored if item["record"]["source_name"] == "Wan-Animate-2 GitHub Commits"]
     others = [item for item in scored if item not in github]
     groups = near_duplicate_groups(others)
+    event_groups: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    ungrouped: list[list[dict[str, Any]]] = []
+    for group in groups:
+        rule_name = same_event_rule(" ".join(item["record"]["raw_title"] for item in group), CONFIG)
+        if rule_name:
+            event_groups[rule_name].extend(group)
+        else:
+            ungrouped.append(group)
+    groups = ungrouped + list(event_groups.values())
     if github:
         groups.append(sorted(github, key=lambda x: x["record"]["published_at"] or ""))
     candidates = []
@@ -287,6 +425,7 @@ def aggregate(scored: list[dict[str, Any]]) -> list[dict[str, Any]]:
         best = max(group, key=lambda x: x["score"])
         records = [item["record"] for item in group]
         is_github_cluster = records[0]["source_name"] == "Wan-Animate-2 GitHub Commits"
+        event_rule = same_event_rule(" ".join(record["raw_title"] for record in records), CONFIG)
         title = "Wan-Animate-2 repository opened and documented" if is_github_cluster else best["record"]["raw_title"]
         cid = "cand_" + hashlib.sha256((title + (records[0]["published_at"] or "")).encode()).hexdigest()[:16]
         # Only source-authored title/excerpt content may determine editorial
@@ -304,20 +443,30 @@ def aggregate(scored: list[dict[str, Any]]) -> list[dict[str, Any]]:
             "intelligence_type_signals": type_signals,
             "primary_route": best["primary_route"],
             "secondary_routes": best["secondary_routes"],
+            "domain_scope": "scope.visual_core" if best["primary_route"] in CORE_VISUAL_ROUTES else "scope.ai_extended",
             "score": best["score"] + (3 if is_github_cluster else 0),
             "track": "track.fixed" if is_github_cluster else "track.emerging",
             "tags": tags,
             "primary_source_id": best["record"]["source_id"],
             "source_ids": [r["source_id"] for r in records],
+            "source_types": sorted({r.get("source_type") for r in records if r.get("source_type")}),
             "source_urls": [r["canonical_url"] for r in records],
             "published_at": min((r["published_at"] for r in records if r["published_at"]), default=None),
             "matched_signals": sorted({term for item in group for terms in item["route_hits"].values() for term in terms}),
             "negative_signals": sorted({term for item in group for term in item["soft_negative_hits"]}),
             "aggregation": {
                 "source_count": len(records),
-                "method": "fixed_repository_weekly_cluster" if is_github_cluster else ("near_title_dedupe" if len(records) > 1 else "single_source"),
-                "note": "多个提交仅构成一个仓库动态候选，不按多条新闻计数。" if is_github_cluster else None
+                "method": "fixed_repository_weekly_cluster" if is_github_cluster else ("same_event_rule" if event_rule and len(records) > 1 else ("near_title_dedupe" if len(records) > 1 else "single_source")),
+                "note": "多个提交仅构成一个仓库动态候选，不按多条新闻计数。" if is_github_cluster else (f"按可审计规则 {event_rule} 合并跨来源同事件。" if event_rule and len(records) > 1 else None)
             },
+            "hard_gates": {
+                "content_completeness": best["content_completeness_gate"],
+                "fact_wording_fidelity": {
+                    "status": "pending_llm" if requires_attribution(combined_text) else "pass",
+                    "requires_attribution": requires_attribution(combined_text),
+                },
+            },
+            "front_display_eligible": best["content_completeness_gate"]["status"] == "pass",
             "verification_questions": verification_questions(
                 best["primary_route"],
                 is_github_cluster,
@@ -350,6 +499,12 @@ def verification_questions(route: str, repo: bool,
             "官方原文明确披露了哪些产品范围、合作对象和可用条件？",
             "是否有用户、收入、采用率或效果数据支持其商业影响？",
         ]
+    if "wechat_official_account" in source_types:
+        return [
+            "公众号文章转述的核心事实来自哪一手来源？",
+            "涉及的产品、数据或公司动作能否回溯到官方公告、论文、财报或产品页面？",
+            "哪些内容是作者体验或观点，哪些是可核验事实？",
+        ]
     common = ["论文原文中的核心新增事实是什么？", "关键指标、数据规模与限制是否能定位到原文？"]
     if route == "visual_value.evaluation":
         common.append("评测任务和指标能否对应真实视频/图像产品任务？")
@@ -366,7 +521,8 @@ def select(candidates: list[dict[str, Any]], config: dict[str, Any]) -> tuple[li
     selected = []
     route_counts = Counter()
     type_counts = Counter()
-    eligible = sorted((c for c in candidates if c["primary_route"] and c["score"] >= config["minimum_score"]),
+    eligible = sorted((c for c in candidates if c["primary_route"] and c["score"] >= config["minimum_score"]
+                       and c.get("front_display_eligible", True)),
                       key=lambda c: (-c["score"], c["canonical_title"]))
 
     def add(candidate: dict[str, Any], reason: str) -> None:
@@ -461,13 +617,76 @@ def select(candidates: list[dict[str, Any]], config: dict[str, Any]) -> tuple[li
 
     overflow = [candidate for candidate in eligible if candidate not in selected]
     for candidate in selected:
-        candidate["verification_priority"] = "priority.p1" if candidate["selection_reason"] == "previously_verified_regression_sample" or candidate["track"] == "track.fixed" or candidate["score"] >= 16 else "priority.p2"
+        candidate["verification_priority"] = candidate_priority(candidate, config)
         candidate["why_candidate"] = candidate_rationale(candidate)
     return selected, overflow
 
 
+def candidate_priority(candidate: dict[str, Any], config: dict[str, Any]) -> str:
+    """Assign review priority without treating a media source as verified fact."""
+    if candidate.get("selection_reason") == "previously_verified_regression_sample" or candidate.get("track") == "track.fixed":
+        return "priority.p1"
+    source_types = set(candidate.get("source_types") or [])
+    p2_only = set(config.get("p2_only_source_types_before_verification", []))
+    if source_types and source_types.issubset(p2_only):
+        return "priority.p2"
+    threshold = int(config.get("p1_score_threshold", 16))
+    return "priority.p1" if candidate.get("score", 0) >= threshold else "priority.p2"
+
+
+def build_feed_candidates(candidates: list[dict[str, Any]], config: dict[str, Any]) -> list[dict[str, Any]]:
+    """Keep a broad, deduplicated feed without expanding the human review queue.
+
+    Editorial caps protect the P1 queue from being dominated by papers. They
+    must not silently remove otherwise relevant P2 information from the news
+    product, so the feed is drawn from every routed candidate above the same
+    minimum score.
+    """
+    eligible = sorted(
+        (candidate for candidate in candidates if candidate["primary_route"] and candidate["score"] >= config["minimum_score"]
+         and candidate.get("front_display_eligible", True)),
+        key=lambda candidate: (
+            0 if candidate.get("selection_reason") else 1,
+            -candidate["score"],
+            candidate["canonical_title"],
+        ),
+    )
+    for candidate in eligible:
+        candidate.setdefault(
+            "verification_priority",
+            candidate_priority(candidate, config),
+        )
+        candidate.setdefault("why_candidate", candidate_rationale(candidate))
+    feed_count = int(config.get("feed_count", 40))
+    selected = [candidate for candidate in eligible if candidate.get("selection_reason")][:feed_count]
+    selected_ids = {candidate["candidate_id"] for candidate in selected}
+
+    # Guarantee representation of healthy channels after relevance routing.
+    # This quota never bypasses minimum_score and therefore cannot admit an
+    # unrelated article merely because it came from WeChat.
+    for source_type, minimum in config.get("feed_source_type_minimums", {}).items():
+        current = sum(source_type in (candidate.get("source_types") or []) for candidate in selected)
+        for candidate in eligible:
+            if current >= int(minimum) or len(selected) >= feed_count:
+                break
+            if candidate["candidate_id"] in selected_ids:
+                continue
+            if source_type in (candidate.get("source_types") or []):
+                selected.append(candidate)
+                selected_ids.add(candidate["candidate_id"])
+                current += 1
+
+    for candidate in eligible:
+        if len(selected) >= feed_count:
+            break
+        if candidate["candidate_id"] not in selected_ids:
+            selected.append(candidate)
+            selected_ids.add(candidate["candidate_id"])
+    return selected
+
+
 def candidate_rationale(candidate: dict[str, Any]) -> str:
-    if candidate["selection_reason"] == "previously_verified_regression_sample":
+    if candidate.get("selection_reason") == "previously_verified_regression_sample":
         return "该信号已在真实样刊中完成二轮核验，本轮用于检验自动链路能否稳定召回。"
     if candidate["track"] == "track.fixed":
         return "固定关注仓库在本周出现集中更新，需要确认是否构成正式开源、模型发布或能力变化。"
@@ -478,7 +697,11 @@ def candidate_rationale(candidate: dict[str, Any]) -> str:
         "frontier.embodied_ai": "可能影响视觉模型到机器人感知、规划与操作的落地链路",
         "frontier.image_asset": "可能影响图像生成、参考保持或可编辑资产生产",
         "visual_value.spatial_camera": "可能改善空间一致性、4D表达、运镜理解或镜头控制",
-        "frontier.multimodal_agent": "可能形成多模态Agent或自动化视觉工作流的新组织方式"
+        "frontier.multimodal_agent": "可能形成多模态Agent或自动化视觉工作流的新组织方式",
+        "extended.foundation_multimodal": "可能改变基础模型、多模态理解或通用AI产品的能力边界",
+        "extended.ai_agent_tools": "可能改变AI Agent、开发工具或自动化工作流的产品形态",
+        "extended.compute_data": "可能影响AI算力、芯片、数据中心或训练推理成本结构",
+        "extended.open_source_ecosystem": "可能影响开源模型、权重、代码与开发者生态的可用性",
     }
     signals = "、".join(candidate["matched_signals"][:4])
     suffix = f"；命中信号：{signals}" if signals else ""
@@ -494,13 +717,16 @@ def _llm_input(selected: list[dict[str, Any]], payload: dict[str, Any]) -> str:
             source = source_map.get(source_id)
             if not source:
                 continue
-            excerpt_limit = 6000 if source.get("source_type") == "financial_report" else 1800
+            has_verified_full_text = source.get("processing_status") in {
+                "text_extracted", "text_extracted_verified"
+            }
+            excerpt_limit = 6000 if source.get("source_type") == "financial_report" or has_verified_full_text else 1800
             sources.append({
                 "source_id": source_id,
                 "publisher": source.get("publisher"),
                 "source_type": source.get("source_type"),
                 "title": source.get("raw_title"),
-                "excerpt": (source.get("raw_excerpt") or source.get("raw_text") or "")[:excerpt_limit],
+                "excerpt": (source.get("raw_text") or source.get("raw_excerpt") or "")[:excerpt_limit],
                 "published_at": source.get("published_at"),
                 "url": source.get("canonical_url"),
             })
@@ -645,10 +871,59 @@ def enrich_with_llm(
     analysis_map = {item["candidate_id"]: item for item in analyses}
     for candidate in selected:
         analysis = analysis_map[candidate["candidate_id"]]
+        source_text = " ".join(
+            " ".join(filter(None, [
+                (source_map.get(source_id) or {}).get("raw_title"),
+                (source_map.get(source_id) or {}).get("raw_text"),
+                (source_map.get(source_id) or {}).get("raw_excerpt"),
+            ]))
+            for source_id in candidate["source_ids"]
+        ).lower()
+        if (
+            analysis.get("intelligence_type") == "type.company_strategy"
+            and any(marker in source_text for marker in TALENT_ORGANIZATION_MARKERS)
+        ):
+            analysis["primary_route"] = "extended.talent_organization"
+            analysis["secondary_routes"] = [
+                route for route in analysis.get("secondary_routes", [])
+                if route != "extended.ai_agent_tools"
+            ]
+            analysis["intelligence_type_reason"] = (
+                "该信息主要涉及人才招聘、激励或组织机制，属于公司战略；"
+                "二级主题按人才与组织归类，而非AI Agent产品。"
+            )
         candidate["deterministic_intelligence_type"] = candidate["intelligence_type"]
         candidate["intelligence_type"] = analysis["intelligence_type"]
         candidate["intelligence_type_reason"] = analysis["intelligence_type_reason"]
+        candidate["primary_route"] = analysis["primary_route"]
+        candidate["secondary_routes"] = analysis["secondary_routes"]
         candidate["llm_analysis"] = analysis
+        fidelity = candidate.setdefault("hard_gates", {}).setdefault("fact_wording_fidelity", {})
+        if fidelity.get("requires_attribution"):
+            checked_fields = {
+                "canonical_title": analysis.get("canonical_title", ""),
+                "what": analysis.get("what", ""),
+            }
+            failed_fields = [name for name, value in checked_fields.items() if not preserves_attribution(value)]
+            fidelity["checked_fields"] = list(checked_fields)
+            fidelity["failed_fields"] = failed_fields
+            fidelity["status"] = "fail" if failed_fields else "pass"
+            if fidelity["status"] == "fail":
+                fidelity["reason"] = "source_attribution_or_uncertainty_was_upgraded_to_fact"
+                candidate["front_display_eligible"] = False
+                analysis["recommended_disposition"] = "watch"
+                analysis["disposition_reason"] = "事实措辞保真硬门槛未通过：来源归因或不确定措辞未被保留。"
+                candidate["verification_priority"] = "priority.p3"
+        else:
+            fidelity["status"] = "pass"
+        if single_case_generalization_failed(candidate, analysis):
+            fidelity["status"] = "fail"
+            fidelity["reason"] = "single_case_was_generalized_to_industry_trend"
+            fidelity.setdefault("failed_fields", []).append("single_case_generalization")
+            candidate["front_display_eligible"] = False
+            analysis["recommended_disposition"] = "watch"
+            analysis["disposition_reason"] = "事实措辞保真硬门槛未通过：单一案例被上升为行业趋势。"
+            candidate["verification_priority"] = "priority.p3"
     result["llm"] = {
         "status": "completed",
         "prompt_version": prompt_version,
@@ -666,6 +941,25 @@ def enrich_with_llm(
         },
     }
     result["summary"]["llm_analyzed_candidates"] = len(selected)
+    fidelity_failed = [item for item in selected if not item.get("front_display_eligible", True)]
+    result["summary"]["fact_fidelity_gate_failed"] = len(fidelity_failed)
+    if fidelity_failed:
+        failed_ids = {item["candidate_id"] for item in fidelity_failed}
+        result.setdefault("gated_candidates", []).extend(fidelity_failed)
+        result["selected_candidates"] = [
+            item for item in result["selected_candidates"] if item["candidate_id"] not in failed_ids
+        ]
+        result["feed_candidates"] = [
+            item for item in result.get("feed_candidates", []) if item["candidate_id"] not in failed_ids
+        ]
+        result["summary"]["selected_for_verification"] = len(result["selected_candidates"])
+        result["summary"]["feed_candidate_count"] = len(result["feed_candidates"])
+        result["summary"]["selected_by_intelligence_type"] = dict(Counter(
+            item["intelligence_type"] for item in result["selected_candidates"]
+        ))
+        result["summary"]["selected_by_route"] = dict(Counter(
+            item["primary_route"] for item in result["selected_candidates"]
+        ))
     return result
 
 
@@ -675,11 +969,13 @@ def process(payload: dict[str, Any], config: dict[str, Any]) -> dict[str, Any]:
     successful = [r for r in payload["source_records"] if r["access_status"] == "success"]
     scored = [score_record(r, config) for r in successful]
     hard_excluded = [item for item in scored if item["hard_exclude"]]
+    incomplete = [item for item in scored if item["content_completeness_gate"]["status"] == "fail"]
     soft_demoted = [item for item in scored if not item["hard_exclude"] and item["soft_negative_hits"]]
     routed = [item for item in scored if not item["hard_exclude"] and item["primary_route"]]
     unrouted = [item for item in scored if not item["hard_exclude"] and not item["primary_route"]]
     candidates = aggregate(routed)
     selected, overflow = select(candidates, config)
+    feed_candidates = build_feed_candidates(candidates, config)
     input_titles = {r["raw_title"] for r in successful}
     selected_titles = {c["canonical_title"] for c in selected}
     expected = config["expected_fixture_titles"]
@@ -697,23 +993,29 @@ def process(payload: dict[str, Any], config: dict[str, Any]) -> dict[str, Any]:
             "input_records": len(payload["source_records"]),
             "successful_input_records": len(successful),
             "hard_excluded": len(hard_excluded),
+            "content_completeness_gate_failed": len(incomplete),
             "soft_demoted": len(soft_demoted),
             "unrouted": len(unrouted),
             "routed_before_aggregation": len(routed),
             "candidate_events_after_aggregation": len(candidates),
             "near_duplicate_records_collapsed": sum(max(0, c["aggregation"]["source_count"] - 1) for c in candidates if c["aggregation"]["method"] == "near_title_dedupe"),
-            "same_event_records_collapsed": sum(max(0, c["aggregation"]["source_count"] - 1) for c in candidates if c["aggregation"]["method"] == "fixed_repository_weekly_cluster"),
+            "same_event_records_collapsed": sum(max(0, c["aggregation"]["source_count"] - 1) for c in candidates if c["aggregation"]["method"] in {"fixed_repository_weekly_cluster", "same_event_rule"}),
             "selected_for_verification": len(selected),
+            "feed_candidate_count": len(feed_candidates),
             "selected_by_intelligence_type": dict(Counter(c["intelligence_type"] for c in selected)),
             "selected_by_route": dict(Counter(c["primary_route"] for c in selected)),
+            "feed_by_domain_scope": dict(Counter(c["domain_scope"] for c in feed_candidates)),
+            "feed_by_route": dict(Counter(c["primary_route"] for c in feed_candidates)),
             "fixture_recall_in_input": sum(1 for item in recall if item["present_in_input"]),
             "fixture_recall_selected": sum(1 for item in recall if item["selected"])
         },
         "fixture_recall": recall,
         "selected_candidates": selected,
+        "feed_candidates": feed_candidates,
         "overflow_candidates": overflow,
         "exclusions": {
             "hard": [{"source_id": i["record"]["source_id"], "title": i["record"]["raw_title"], "terms": i["hard_exclude"]} for i in hard_excluded],
+            "content_incomplete": [{"source_id": i["record"]["source_id"], "title": i["record"]["raw_title"], "gate": i["content_completeness_gate"]} for i in incomplete],
             "unrouted": [{"source_id": i["record"]["source_id"], "title": i["record"]["raw_title"]} for i in unrouted]
         }
     }

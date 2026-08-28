@@ -178,6 +178,51 @@ def keyword_match(text: str, keywords: Iterable[str]) -> bool:
     return any(keyword.lower() in lowered for keyword in keywords)
 
 
+def feed_entry_media(entry: Any) -> dict[str, Any]:
+    """Inspect public feed metadata without downloading enclosed media.
+
+    Podcast RSS commonly exposes an audio enclosure and, less commonly, an
+    official transcript link. SPECTRA records their presence for health and
+    audit purposes only; the collector never downloads or transcribes audio.
+    """
+    links = list(entry.get("links", []) or [])
+    enclosures = list(entry.get("enclosures", []) or [])
+    audio_urls: list[str] = []
+    transcript_urls: list[str] = []
+
+    for link in links + enclosures:
+        if not isinstance(link, dict):
+            continue
+        href = str(link.get("href") or link.get("url") or "").strip()
+        relation = str(link.get("rel") or "").lower()
+        media_type = str(link.get("type") or "").lower()
+        if href and (media_type.startswith("audio/") or relation == "enclosure"):
+            audio_urls.append(href)
+        if href and (relation == "transcript" or "transcript" in media_type):
+            transcript_urls.append(href)
+
+    # feedparser preserves namespaced podcast transcript elements under keys
+    # that vary across feed versions. Only accept an explicit public URL.
+    for key, value in entry.items():
+        if "transcript" not in str(key).lower():
+            continue
+        candidates = value if isinstance(value, list) else [value]
+        for candidate in candidates:
+            if isinstance(candidate, dict):
+                href = str(candidate.get("url") or candidate.get("href") or "").strip()
+            else:
+                href = str(candidate).strip()
+            if href.startswith(("http://", "https://")):
+                transcript_urls.append(href)
+
+    duration = entry.get("itunes_duration") or entry.get("duration")
+    return {
+        "audio_urls": list(dict.fromkeys(audio_urls)),
+        "transcript_urls": list(dict.fromkeys(transcript_urls)),
+        "duration": str(duration).strip() if duration else None,
+    }
+
+
 def fetch_bytes(url: str, attempts: int = 3, timeout: int = 45,
                 headers: Optional[dict[str, str]] = None) -> bytes:
     last_error: Optional[Exception] = None
@@ -747,6 +792,20 @@ def normalize_werss_article(item: dict[str, Any], source: dict[str, Any], ctx: C
     )
 
 
+def attach_werss_detail_text(record: dict[str, Any], detail: dict[str, Any],
+                             minimum_chars: int = 180) -> bool:
+    """Attach source-authored text returned by the local WeRSS detail API."""
+    body = clean_html(detail.get("content_html")) or clean_html(detail.get("content")) or ""
+    if len(body) < minimum_chars:
+        return False
+    record["raw_text"] = body
+    record["content_hash"] = content_hash(record["raw_title"], body, record.get("raw_excerpt"))
+    record["processing_status"] = "text_extracted"
+    record["rights_scope"] = "full_text_internal_analysis"
+    record["discovery_context"] = f"{record.get('discovery_context')}; full_text:werss_detail"
+    return True
+
+
 def collect_werss(source: dict[str, Any], ctx: Context) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """Collect authorized WeChat watchlist articles from a local WeRSS service."""
     password = os.getenv(source.get("password_env", "WERSS_PASSWORD"))
@@ -760,8 +819,14 @@ def collect_werss(source: dict[str, Any], ctx: Context) -> tuple[list[dict[str, 
             form={"username": os.getenv("WERSS_USERNAME", source.get("username", "admin")), "password": password},
         )
         token = login["access_token"]
-        wx_auth = werss_request_json(base_url, "/api/v1/wx/auth/qr/status", token=token)
-        if not wx_auth.get("login_status"):
+        refresh_channel = source.get("refresh_channel", "wechat")
+        # WeRead keeps and refreshes its own cookie. Do not gate that channel on
+        # the separate WeChat public-platform session, otherwise every expired
+        # public-platform login incorrectly disables unattended collection.
+        wx_auth = None
+        if refresh_channel != "weread":
+            wx_auth = werss_request_json(base_url, "/api/v1/wx/auth/qr/status", token=token)
+        if wx_auth is not None and not wx_auth.get("login_status"):
             return [], {
                 "status": "failed",
                 "error": "WeRSS WeChat authorization is expired; scan a new QR code",
@@ -778,7 +843,20 @@ def collect_werss(source: dict[str, Any], ctx: Context) -> tuple[list[dict[str, 
         allowed_feed_ids = {item["id"] for item in allowed_feeds.values()}
 
         refresh_results: list[dict[str, Any]] = []
-        if source.get("refresh_before_read", False) and allowed_feeds:
+        refresh_auth_status = "not_checked"
+        refresh_auth_error = None
+        if refresh_channel == "weread" and source.get("verify_refresh_auth", False):
+            try:
+                # This collector refreshes public-account feeds through the
+                # WeRead MP channel. The generic /weread/test endpoint probes
+                # the bookshelf and can fail while MP credentials are valid.
+                werss_request_json(base_url, "/api/v1/wx/weread/mp/test", token=token, json_body={})
+                refresh_auth_status = "healthy"
+            except Exception as exc:
+                refresh_auth_status = "failed"
+                refresh_auth_error = f"{type(exc).__name__}: {exc}"
+        can_refresh = refresh_auth_status != "failed"
+        if source.get("refresh_before_read", False) and allowed_feeds and can_refresh:
             priority_rank = {"P0": 0, "P1": 1, "P2": 2}
             enabled_accounts = [item for item in watchlist["accounts"] if item.get("enabled", True)]
             enabled_accounts.sort(key=lambda item: (priority_rank.get(item.get("priority", "P2"), 9), item["account_name"]))
@@ -795,7 +873,6 @@ def collect_werss(source: dict[str, Any], ctx: Context) -> tuple[list[dict[str, 
                 selected = (available_accounts + available_accounts)[start:start + refresh_limit]
                 for account in selected:
                     feed = allowed_feeds[account["account_name"]]
-                    refresh_channel = source.get("refresh_channel", "wechat")
                     try:
                         if refresh_channel == "weread":
                             refreshed = werss_request_json(
@@ -859,6 +936,9 @@ def collect_werss(source: dict[str, Any], ctx: Context) -> tuple[list[dict[str, 
         records: list[dict[str, Any]] = []
         scanned = 0
         missing_url = 0
+        local_detail_attempted = 0
+        local_detail_extracted = 0
+        local_detail_errors: list[dict[str, str]] = []
         page_size = min(int(source.get("page_size", 100)), 100)
         max_scan = int(source.get("max_scan", 500))
         offset = 0
@@ -883,15 +963,32 @@ def collect_werss(source: dict[str, Any], ctx: Context) -> tuple[list[dict[str, 
                 if not str(item.get("url") or "").strip():
                     missing_url += 1
                     continue
-                records.append(normalize_werss_article(item, source, ctx))
+                record = normalize_werss_article(item, source, ctx)
+                if item.get("has_content") and item.get("id"):
+                    local_detail_attempted += 1
+                    try:
+                        detail = werss_request_json(
+                            base_url, f"/api/v1/wx/articles/{item['id']}", token=token
+                        )
+                        if attach_werss_detail_text(
+                            record, detail, int(source.get("full_text_min_chars", 180))
+                        ):
+                            local_detail_extracted += 1
+                    except Exception as exc:
+                        local_detail_errors.append({
+                            "source_id": record["source_id"],
+                            "error": f"{type(exc).__name__}: {exc}",
+                        })
+                records.append(record)
                 if scanned >= max_scan:
                     break
             offset += len(items)
 
         feed_names = {item.get("mp_name") for item in feeds.get("list", [])}
         sync_pending = bool(allowed_feed_ids) and not (total or 0)
+        stale_cache_only = refresh_channel == "weread" and refresh_auth_status == "failed"
         health = {
-            "status": "failed" if sync_pending else "success",
+            "status": "failed" if sync_pending else ("degraded" if stale_cache_only else "success"),
             "configured_accounts": len(allowed_names),
             "matched_accounts": len(allowed_feed_ids),
             "missing_accounts": sorted(allowed_names - feed_names),
@@ -901,11 +998,24 @@ def collect_werss(source: dict[str, Any], ctx: Context) -> tuple[list[dict[str, 
             "missing_url": missing_url,
             "reauth_required": False,
             "sync_pending": sync_pending,
+            "refresh_auth_status": refresh_auth_status,
+            "refresh_auth_error": refresh_auth_error,
+            "stale_cache_only": stale_cache_only,
             "refresh_attempts": len(refresh_results),
             "refresh_results": refresh_results,
+            "local_full_text": {
+                "attempted": local_detail_attempted,
+                "extracted": local_detail_extracted,
+                "failed": len(local_detail_errors),
+                "errors": local_detail_errors,
+            },
         }
+        if source.get("full_text_command"):
+            health["full_text_extraction"] = enrich_werss_full_text(records, source, ctx)
         if sync_pending:
             health["error"] = "WeRSS is authorized and subscribed, but its article store is empty; initial sync is required"
+        elif stale_cache_only:
+            health["warning"] = "WeRead authorization is expired; returned records are cached and were not refreshed in this run"
         return records, health
     except Exception as exc:
         return [], {"status": "failed", "error": f"{type(exc).__name__}: {exc}"}
@@ -924,21 +1034,75 @@ def collect_feed(source: dict[str, Any], ctx: Context, keywords: list[str]) -> t
                             access_status="failed", failure_reason=reason, rights_scope="metadata_only")], {"status": "failed", "error": reason}
     records = []
     scanned = 0
+    in_window_count = 0
+    audio_enclosures = 0
+    feed_audio_entries = 0
+    transcript_entries = 0
+    feed_transcript_entries = 0
+    show_notes_entries = 0
+    truncated_excerpts = 0
+    latest_published: Optional[datetime] = None
     for entry in parsed.entries:
         scanned += 1
         published = parse_feed_datetime(entry)
+        media = feed_entry_media(entry)
+        if media["audio_urls"]:
+            feed_audio_entries += 1
+        if media["transcript_urls"]:
+            feed_transcript_entries += 1
+        if published and (latest_published is None or published > latest_published):
+            latest_published = published
         if not in_window(published, ctx):
             continue
+        in_window_count += 1
         title = clean_html(entry.get("title")) or "Untitled feed entry"
         excerpt = clean_html(entry.get("summary") or entry.get("description"))
+        max_excerpt_chars = int(source.get("max_excerpt_chars", 0) or 0)
+        if excerpt and max_excerpt_chars and len(excerpt) > max_excerpt_chars:
+            excerpt = excerpt[:max_excerpt_chars].rsplit(" ", 1)[0].rstrip() + " …"
+            truncated_excerpts += 1
         searchable = " ".join([title, excerpt or ""])
         if keywords and not keyword_match(searchable, keywords):
             continue
+        if media["audio_urls"]:
+            audio_enclosures += 1
+        if media["transcript_urls"]:
+            transcript_entries += 1
+        if excerpt:
+            show_notes_entries += 1
         authors = [a.get("name", "").strip() for a in entry.get("authors", []) if a.get("name")]
+        context_parts = [f"{source['adapter']}:{source['url']}"]
+        if source.get("content_format"):
+            context_parts.append(f"content_format:{source['content_format']}")
+        if media["audio_urls"]:
+            context_parts.append("audio_enclosure:present_not_downloaded")
+        if media["transcript_urls"]:
+            context_parts.append("official_transcript:linked")
+        if media["duration"]:
+            context_parts.append(f"duration:{media['duration']}")
         records.append(make_record(source=source, url=entry.get("link", source["url"]), title=title, ctx=ctx,
                                    published_at=published, authors=authors, raw_excerpt=excerpt,
-                                   discovery_context=f"{source['adapter']}:{source['url']}"))
-    return records, {"status": "success", "scanned": scanned, "accepted": len(records)}
+                                   rights_scope=source.get("rights_scope", "excerpt"),
+                                   discovery_context="; ".join(context_parts)))
+    health = {
+        "status": "success",
+        "scanned": scanned,
+        "in_window": in_window_count,
+        "accepted": len(records),
+        "truncated_excerpts": truncated_excerpts,
+        "latest_published_at": iso(latest_published),
+    }
+    if source.get("content_format") == "podcast":
+        health.update({
+            "show_notes_entries": show_notes_entries,
+            "audio_enclosures": audio_enclosures,
+            "feed_audio_entries": feed_audio_entries,
+            "official_transcript_entries": transcript_entries,
+            "feed_official_transcript_entries": feed_transcript_entries,
+            "audio_ingestion": source.get("audio_ingestion", "metadata_only"),
+            "transcription": "disabled_unless_official_public_transcript",
+        })
+    return records, health
 
 
 class TheBatchPageParser(HTMLParser):
@@ -1275,6 +1439,130 @@ def collect_news_extractor(source: dict[str, Any], ctx: Context) -> tuple[list[d
                             access_status="failed", failure_reason=reason, rights_scope="metadata_only")], {"status": "failed", "error": reason}
 
 
+def enrich_werss_full_text(records: list[dict[str, Any]], source: dict[str, Any],
+                           ctx: Context) -> dict[str, Any]:
+    """Use the isolated news-extractor Skill to enrich WeRSS discoveries.
+
+    WeRSS remains the authorized discovery/index channel. The Skill is called
+    only for a small configured number of recent allowlisted articles, and its
+    source-authored text is merged back into the same source_record. This is
+    intentionally not a broad crawl.
+    """
+    command = source.get("full_text_command")
+    if not command:
+        return {"status": "disabled", "attempted": 0, "extracted": 0, "failed": 0}
+    minimum_chars = int(source.get("full_text_min_chars", 180))
+    limit = max(0, int(source.get("full_text_extract_limit", 6)))
+    retry_attempts = max(1, int(source.get("full_text_retry_attempts", 2)))
+    watchlist = json.loads(Path(source["watchlist"]).read_text(encoding="utf-8"))
+    priority = {
+        item["account_name"]: {"P0": 0, "P1": 1, "P2": 2}.get(item.get("priority", "P2"), 9)
+        for item in watchlist.get("accounts", []) if item.get("enabled", True)
+    }
+    eligible = [
+        record for record in records
+        if record.get("access_status") == "success"
+        and record.get("canonical_url", "").startswith("https://mp.weixin.qq.com/")
+        and len((record.get("raw_text") or "").strip()) < minimum_chars
+    ]
+    eligible.sort(key=lambda record: (
+        priority.get(record.get("source_name"), 9),
+        -(datetime.fromisoformat(record["published_at"].replace("Z", "+00:00")).timestamp()
+          if record.get("published_at") else 0),
+    ))
+    attempted = extracted = 0
+    errors: list[dict[str, Any]] = []
+    review_queue: list[dict[str, Any]] = []
+    for record in eligible[:limit]:
+        attempted += 1
+        article_source = {
+            **source,
+            "adapter": "news_extractor",
+            "url": record["canonical_url"],
+            "source_name": record["source_name"],
+            "publisher": record.get("publisher"),
+            "command": command,
+        }
+        body = ""
+        extracted_record = None
+        extraction_health: dict[str, Any] = {}
+        attempts_used = 0
+        for attempts_used in range(1, retry_attempts + 1):
+            batch, extraction_health = collect_news_extractor(article_source, ctx)
+            extracted_record = next(
+                (item for item in batch if item.get("access_status") == "success" and item.get("raw_text")),
+                None,
+            )
+            body = (extracted_record or {}).get("raw_text") or ""
+            if len(body.strip()) >= minimum_chars:
+                break
+        if len(body.strip()) < minimum_chars:
+            record["processing_status"] = "full_text_needs_review"
+            reason = extraction_health.get("error") or f"extracted body shorter than {minimum_chars} chars"
+            error = {
+                "source_id": record["source_id"],
+                "url": record["canonical_url"],
+                "error": reason,
+                "attempts": attempts_used,
+            }
+            errors.append(error)
+            review_queue.append({
+                "queue_id": "fulltext_" + record["source_id"].removeprefix("src_"),
+                "source_id": record["source_id"],
+                "publisher": record.get("publisher") or record.get("source_name"),
+                "title": record.get("raw_title"),
+                "url": record["canonical_url"],
+                "published_at": record.get("published_at"),
+                "processing_status": "full_text_needs_review",
+                "secondary_attempts": attempts_used,
+                "failure_reason": reason,
+                "review_status": "pending",
+                "allowed_decisions": ["retry", "supply_verified_text", "exclude"],
+            })
+            continue
+        record["raw_text"] = body.strip()
+        extracted_excerpt = (extracted_record or {}).get("raw_excerpt")
+        if extracted_excerpt:
+            record["raw_excerpt"] = extracted_excerpt
+        record["content_hash"] = content_hash(record["raw_title"], record["raw_text"], record.get("raw_excerpt"))
+        record["processing_status"] = "text_extracted"
+        record["rights_scope"] = "full_text_internal_analysis"
+        record["discovery_context"] = f"{record.get('discovery_context')}; full_text:news-extractor"
+        extracted += 1
+    return {
+        "status": "success" if not errors else ("degraded" if extracted else "failed"),
+        "attempted": attempted,
+        "extracted": extracted,
+        "failed": len(errors),
+        "minimum_chars": minimum_chars,
+        "retry_attempts": retry_attempts,
+        "errors": errors,
+        "review_queue": review_queue,
+    }
+
+
+def build_full_text_review_artifact(result: dict[str, Any]) -> dict[str, Any]:
+    """Collect bounded full-text failures into a dedicated human gate."""
+    items: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for check in result.get("source_checks", []):
+        extraction = check.get("full_text_extraction") or {}
+        for item in extraction.get("review_queue", []):
+            if item["queue_id"] in seen:
+                continue
+            seen.add(item["queue_id"])
+            items.append(item)
+    return {
+        "schema_version": "0.1",
+        "record_type": "full_text_review_queue",
+        "run_id": result["run_id"],
+        "status": "waiting_for_review" if items else "complete",
+        "created_at": result["collected_at"],
+        "count": len(items),
+        "items": items,
+    }
+
+
 def rewrite_discovered_url(url: str, source: dict[str, Any]) -> str:
     rewritten = url
     for rule in source.get("link_replacements", []):
@@ -1386,6 +1674,50 @@ def dedupe(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return sorted(chosen.values(), key=lambda r: (r["published_at"] or "", r["source_name"]), reverse=True)
 
 
+def expand_observer_sources(config: dict[str, Any]) -> dict[str, Any]:
+    """Add explicitly approved public RSS/Atom observer channels at runtime.
+
+    The watchlist may also contain link-only profiles. Those are deliberately
+    not scraped: they document the observation boundary without introducing a
+    private-account, cookie, or brittle page-scraping dependency.
+    """
+    watchlist_ref = (config.get("watchlists") or {}).get("core_observers")
+    if not watchlist_ref:
+        return config
+    watchlist_path = Path(watchlist_ref)
+    if not watchlist_path.is_absolute():
+        watchlist_path = ROOT / watchlist_path
+    watchlist = json.loads(watchlist_path.read_text(encoding="utf-8"))
+    existing_ids = {source["registry_id"] for source in config["sources"]}
+    additions = []
+    for observer in watchlist.get("observers", []):
+        for index, channel in enumerate(observer.get("channels", []), 1):
+            if not channel.get("automated", False):
+                continue
+            if channel.get("kind") not in {"rss", "atom"}:
+                continue
+            registry_id = channel.get("registry_id") or f"observer_{observer['observer_id']}_{index}"
+            if registry_id in existing_ids:
+                continue
+            additions.append({
+                "registry_id": registry_id,
+                "adapter": "rss",
+                "source_name": f"讨论雷达 · {observer['name']}",
+                "source_type": "official_announcement" if observer.get("evidence_tier") == "first_party" else "professional_view",
+                "publisher": observer["name"],
+                "url": channel["url"],
+                "language": observer.get("language", "en"),
+                "keyword_group": "industry_product",
+                "rights_scope": "excerpt",
+                "observer_id": observer["observer_id"],
+                "enabled": True,
+            })
+            existing_ids.add(registry_id)
+    config = dict(config)
+    config["sources"] = list(config["sources"]) + additions
+    return config
+
+
 def run(config: dict[str, Any], ctx: Context) -> dict[str, Any]:
     records: list[dict[str, Any]] = []
     checks = []
@@ -1437,6 +1769,7 @@ def run(config: dict[str, Any], ctx: Context) -> dict[str, Any]:
         "summary": {
             "configured_sources": len(checks),
             "successful_sources": sum(1 for c in checks if c["status"] == "success"),
+            "degraded_sources": sum(1 for c in checks if c["status"] == "degraded"),
             "failed_sources": sum(1 for c in checks if c["status"] == "failed"),
             "source_records": len(unique),
             "successful_records": sum(1 for r in unique if r["access_status"] == "success"),
@@ -1462,6 +1795,7 @@ def main() -> int:
     load_local_env()
 
     config = json.loads(Path(args.config).read_text(encoding="utf-8"))
+    config = expand_observer_sources(config)
     if args.source:
         selected_ids = set(args.source)
         config["sources"] = [item for item in config["sources"] if item["registry_id"] in selected_ids]
@@ -1477,6 +1811,12 @@ def main() -> int:
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    review_artifact = build_full_text_review_artifact(result)
+    review_output = output.with_name(output.stem + ".full-text-review.json")
+    review_output.write_text(
+        json.dumps(review_artifact, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
     print(json.dumps(result["summary"], ensure_ascii=False))
     return 0
 
