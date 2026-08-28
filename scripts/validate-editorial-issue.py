@@ -83,6 +83,14 @@ def main() -> None:
         require(brief["verification_status"] != "fact_checked", f"{brief['brief_id']} must retain its pending verification boundary")
         require(brief["source_links"] and all(link["url"].startswith("https://") for link in brief["source_links"]), f"{brief['brief_id']} needs source links")
         require(
+            bool(re.search(r"[\u4e00-\u9fff]", brief["headline"])),
+            f"{brief['brief_id']} headline must be localized into Chinese",
+        )
+        require(
+            bool(re.search(r"[\u4e00-\u9fff]", brief["dek"])),
+            f"{brief['brief_id']} summary must be localized into Chinese",
+        )
+        require(
             not re.search(r"[\u4e00-\u9fff][a-z]{3,}\b", brief["headline"]),
             f"{brief['brief_id']} headline contains a partial Chinese-English translation fragment",
         )
