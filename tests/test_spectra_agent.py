@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from spectra_agent.run import gated_review_template, review_template, select_review_candidates
+from spectra_agent.run import gated_review_template, prepare_static_draft, review_template, select_review_candidates
 from verification.build_final_events import build_bundle, validate_review
 
 
@@ -25,6 +25,18 @@ class SpectraAgentGateTest(unittest.TestCase):
         self.assertEqual(len(template["records"]), len(expected))
         self.assertTrue(all(item["decision"] == "pending" for item in template["records"]))
         self.assertEqual(template["review_status"], "pending")
+
+    def test_static_draft_copies_all_relative_dependencies(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            run_dir = Path(temporary_directory)
+            draft = prepare_static_draft(run_dir, ROOT / "visual-intelligence-prototype.html")
+            html = draft.read_text(encoding="utf-8")
+            self.assertIn('href="tokens.css?v=4"', html)
+            self.assertIn('href="app/globals.css?v=19"', html)
+            self.assertIn('href="app/hallmark-editorial.css?v=11"', html)
+            self.assertTrue((run_dir / "tokens.css").exists())
+            self.assertTrue((run_dir / "app/globals.css").exists())
+            self.assertTrue((run_dir / "app/hallmark-editorial.css").exists())
 
     def test_template_exposes_llm_analysis_without_crossing_gate(self):
         candidates = copy.deepcopy(self.candidates)

@@ -31,6 +31,11 @@ except ImportError:  # `python -m unittest` imports this file as spectra_agent.r
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG = ROOT / "spectra_agent/config.v0.1.json"
 TERMINAL = {"completed", "failed"}
+STATIC_ASSETS = (
+    Path("tokens.css"),
+    Path("app/globals.css"),
+    Path("app/hallmark-editorial.css"),
+)
 
 
 class WorkflowError(RuntimeError):
@@ -50,6 +55,23 @@ def write_json(path: Path, payload: dict[str, Any]) -> None:
     temporary = path.with_suffix(path.suffix + ".tmp")
     temporary.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     temporary.replace(path)
+
+
+def prepare_static_draft(run_dir: Path, static_page: Path) -> Path:
+    """Copy the report shell and every relative dependency it references."""
+    static_draft = run_dir / "weekly-report.html"
+    shutil.copyfile(static_page, static_draft)
+    for relative_path in STATIC_ASSETS:
+        source = ROOT / relative_path
+        if not source.exists():
+            raise WorkflowError(f"static asset is missing: {relative_path}")
+        target = run_dir / relative_path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(source, target)
+    source_assets = ROOT / "assets"
+    if source_assets.exists():
+        shutil.copytree(source_assets, run_dir / "assets", dirs_exist_ok=True)
+    return static_draft
 
 
 def resolve_config(path: str) -> tuple[Path, dict[str, Any]]:
@@ -524,11 +546,7 @@ def resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
 
         update_state(run_dir, current_stage="generate")
         issue_path = run_dir / "editorial-issue.json"
-        static_draft = run_dir / "weekly-report.html"
-        shutil.copyfile(ROOT / config["static_page"], static_draft)
-        draft_style = run_dir / "app" / "globals.css"
-        draft_style.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(ROOT / "app" / "globals.css", draft_style)
+        static_draft = prepare_static_draft(run_dir, ROOT / config["static_page"])
         generate_command = [sys.executable, "editorial/build-editorial-issue.py", "--verified", str(verified_path.relative_to(ROOT)), "--review", str(review_path.relative_to(ROOT)), "--candidates", str((run_dir / "candidates.json").relative_to(ROOT)), "--collection", str((run_dir / "collection.json").relative_to(ROOT)), "--output", str(issue_path.relative_to(ROOT)), "--static", str(static_draft.relative_to(ROOT))]
         if editorial_drafts_path.exists():
             generate_command += ["--drafts", str(editorial_drafts_path.relative_to(ROOT))]
