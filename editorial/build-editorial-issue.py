@@ -22,7 +22,36 @@ VERIFIED_PATH = ROOT / "verification/runs/p1-verified-events-v0.2.json"
 REVIEW_PATH = ROOT / "verification/p1-review.v0.1.json"
 OUTPUT_PATH = ROOT / "editorial/runs/issue-01-editorial-stories-v0.2.json"
 STATIC_PATH = ROOT / "visual-intelligence-prototype.html"
+COVER_MANIFEST_PATH = ROOT / "editorial/cover-manifest.json"
 REPORT_TIMEZONE = ZoneInfo("Asia/Shanghai")
+
+
+def load_cover_manifest(path: Path = COVER_MANIFEST_PATH) -> dict:
+    if not path.exists():
+        return {"covers": [], "fallbacks": {}}
+    manifest = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(manifest.get("covers"), list):
+        raise ValueError("cover manifest must contain a covers list")
+    return manifest
+
+
+def resolve_cover_image(manifest: dict, event_id: str, intelligence_type: str) -> dict:
+    for item in manifest.get("covers", []):
+        if item.get("event_id") == event_id:
+            return {key: value for key, value in item.items() if key != "event_id"}
+    fallback_key = {
+        "type.industry_market": "行业与市场",
+        "type.company_strategy": "产品与公司",
+        "type.product_release": "产品与公司",
+    }.get(intelligence_type, "技术突破")
+    fallback_url = manifest.get("fallbacks", {}).get(fallback_key) or manifest.get("fallbacks", {}).get("default")
+    return {
+        "url": fallback_url,
+        "kind": "editorial_fallback",
+        "label": "分类配图",
+        "credit": "SPECTRA",
+        "source_url": None,
+    }
 
 
 STORY_COPY = {
@@ -926,6 +955,7 @@ def main() -> None:
     collection = json.loads((ROOT / args.collection).read_text()) if args.collection else None
     draft_bundle = json.loads((ROOT / args.drafts).read_text()) if args.drafts else None
     writer_drafts = {item["event_id"]: item for item in (draft_bundle or {}).get("drafts", [])}
+    cover_manifest = load_cover_manifest()
     events = {item["event_id"]: item for item in verified["intelligence_events"]}
     claims = {item["claim_id"]: item for item in verified["evidence_claims"]}
     reviews = {
@@ -964,6 +994,9 @@ def main() -> None:
             {"label": label, "value": value, "claim_id": claim_ids[claim_index]}
             for label, value, claim_index in copy["numbers"]
         ]
+        intelligence_type = (review_item.get("agent_analysis") or {}).get(
+            "intelligence_type", "type.technology_breakthrough"
+        )
         story = {
             "schema_version": "0.2",
             "record_type": "editorial_story",
@@ -974,9 +1007,7 @@ def main() -> None:
             "one_line_takeaway": copy["one_line_takeaway"],
             "category": copy["category"],
             "domain_scope": event.get("domain_scope") or domain_scope(event["primary_route"]),
-            "intelligence_type": (review_item.get("agent_analysis") or {}).get(
-                "intelligence_type", "type.technology_breakthrough"
-            ),
+            "intelligence_type": intelligence_type,
             "related_event_ids": [event_id],
             "primary_event_id": event_id,
             "what_happened": section(copy["what"], claim_ids, "fact"),
@@ -988,6 +1019,7 @@ def main() -> None:
             "article_body": build_article_body(copy, event, claim_ids),
             "key_numbers": key_numbers,
             "visual_data": copy.get("visual_data"),
+            "cover_image": resolve_cover_image(cover_manifest, event_id, intelligence_type),
             "source_links": [source],
             "primary_tags": copy["tags"],
             "confidence": event["confidence"],
@@ -1110,7 +1142,7 @@ def main() -> None:
         # draft from leaking `../../../` paths into the GitHub Pages homepage.
         html = re.sub(r'href="[^"]*tokens\.css(?:\?v=\d+)?"', 'href="tokens.css?v=4"', html, count=1)
         html = re.sub(r'href="[^"]*app/globals\.css(?:\?v=\d+)?"', 'href="app/globals.css?v=19"', html, count=1)
-        html = re.sub(r'href="[^"]*app/hallmark-editorial\.css(?:\?v=\d+)?"', 'href="app/hallmark-editorial.css?v=11"', html, count=1)
+        html = re.sub(r'href="[^"]*app/hallmark-editorial\.css(?:\?v=\d+)?"', 'href="app/hallmark-editorial.css?v=12"', html, count=1)
         payload = json.dumps(output, ensure_ascii=False, separators=(",", ":")).replace("<", "\\u003c")
         embedded = f'<!-- ISSUE_DATA_START --><script id="issue-data" type="application/json">{payload}</script><!-- ISSUE_DATA_END -->'
         html, replacements = re.subn(r"<!-- ISSUE_DATA_START -->.*?<!-- ISSUE_DATA_END -->", lambda _: embedded, html, count=1, flags=re.S)

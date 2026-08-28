@@ -33,7 +33,7 @@ class SpectraAgentGateTest(unittest.TestCase):
             html = draft.read_text(encoding="utf-8")
             self.assertIn('href="tokens.css?v=4"', html)
             self.assertIn('href="app/globals.css?v=19"', html)
-            self.assertIn('href="app/hallmark-editorial.css?v=11"', html)
+            self.assertIn('href="app/hallmark-editorial.css?v=12"', html)
             self.assertTrue((run_dir / "tokens.css").exists())
             self.assertTrue((run_dir / "app/globals.css").exists())
             self.assertTrue((run_dir / "app/hallmark-editorial.css").exists())

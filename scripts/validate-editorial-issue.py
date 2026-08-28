@@ -42,6 +42,13 @@ def main() -> None:
 
     for story in stories:
         require(story["editorial_status"] == "fact_checked", f"{story['story_id']} must be fact_checked")
+        cover = story.get("cover_image") or {}
+        cover_url = cover.get("url") or ""
+        require(cover_url.startswith("https://") or cover_url.startswith("assets/"), f"{story['story_id']} needs a safe cover image")
+        require(cover.get("kind") in {"official", "editorial", "editorial_fallback"}, f"{story['story_id']} has invalid cover kind")
+        require(bool(cover.get("label")), f"{story['story_id']} needs a cover label")
+        if cover_url.startswith("assets/"):
+            require((ROOT / cover_url).exists(), f"{story['story_id']} local cover asset is missing")
         require(story["what_happened"]["statement_type"] == "fact", f"{story['story_id']} WHAT must be fact")
         require(story["why_it_matters"]["statement_type"] == "judgment", f"{story['story_id']} WHY must be judgment")
         require(story["source_links"] and all(link["url"].startswith("https://") for link in story["source_links"]), f"{story['story_id']} needs source links")
