@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from spectra_agent.run import review_template, select_review_candidates
+from spectra_agent.run import gated_review_template, review_template, select_review_candidates
 from verification.build_final_events import build_bundle, validate_review
 
 
@@ -39,6 +39,60 @@ class SpectraAgentGateTest(unittest.TestCase):
         self.assertEqual(record["agent_recommendation"], "p1")
         self.assertIn("原文指标在哪里？", record["verification_questions"])
         self.assertEqual(record["decision"], "pending")
+
+    def test_failed_hard_gates_are_separate_from_p1_review(self):
+        collection = {
+            "source_records": [{
+                "source_id": "src_incomplete", "raw_title": "正文缺失",
+                "canonical_url": "https://example.com/incomplete",
+            }, {
+                "source_id": "src_fidelity", "raw_title": "推测被写成事实",
+                "canonical_url": "https://example.com/fidelity",
+            }]
+        }
+        candidates = {
+            "selected_candidates": [],
+            "exclusions": {"content_incomplete": [{
+                "source_id": "src_incomplete", "title": "正文缺失",
+                "gate": {"status": "fail", "reason": "full_text_required_but_missing"},
+            }]},
+            "gated_candidates": [{
+                "candidate_id": "cand_fidelity", "primary_source_id": "src_fidelity",
+                "canonical_title": "推测被写成事实",
+                "hard_gates": {"fact_wording_fidelity": {
+                    "status": "fail", "reason": "source_attribution_or_uncertainty_was_upgraded_to_fact",
+                }},
+                "llm_analysis": {"what": "未经限定的事实"},
+            }],
+        }
+        p1 = review_template(collection, candidates, "test_gates", self.config)
+        gated = gated_review_template(collection, candidates, "test_gates")
+        self.assertEqual(p1["records"], [])
+        self.assertEqual(gated["count"], 2)
+        self.assertEqual({item["gate_type"] for item in gated["records"]}, {
+            "content_completeness", "fact_wording_fidelity",
+        })
+
+    def test_pending_fidelity_gate_cannot_enter_p1(self):
+        candidate = {
+            "candidate_id": "cand_pending", "primary_source_id": "src_pending",
+            "canonical_title": "待模型归因检查", "published_at": "2026-08-26T00:00:00Z",
+            "verification_priority": "priority.p1", "front_display_eligible": True,
+            "hard_gates": {
+                "content_completeness": {"status": "pass"},
+                "fact_wording_fidelity": {"status": "pending_llm"},
+            },
+            "score": 20, "intelligence_type": "type.company_strategy",
+        }
+        candidates = {"selected_candidates": [candidate], "exclusions": {}}
+        collection = {"source_records": [{
+            "source_id": "src_pending", "raw_title": "待模型归因检查",
+            "canonical_url": "https://example.com/pending",
+        }]}
+        self.assertEqual(select_review_candidates(candidates, self.config), [])
+        gated = gated_review_template(collection, candidates, "test_pending")
+        self.assertEqual(gated["count"], 1)
+        self.assertEqual(gated["records"][0]["gate"]["status"], "pending_llm")
 
     def test_pending_review_cannot_cross_gate(self):
         template = review_template(self.collection, self.candidates, "test_run", self.config)

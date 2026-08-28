@@ -9,13 +9,21 @@
 - `news_extractor_feed`：先从公开 Feed 发现本周链接，再调用已安装的 `news-extractor` Skill 提取正文并转为统一 JSON。
 - `news_extractor_inbox`：接收搜索、分享或其他连接器发现的公众号/腾讯/搜狐等文章链接，再走同一提取和标准化通道。
 - `werss_api`：从本机已授权的 WeRSS 读取固定公众号白名单，将文章元数据、摘要和原文链接直接转成统一记录。
+
+微信公众号正文采用两级、小批量补全：优先读取 WeRSS 已授权并缓存在本机文章详情中的正文；仅当本地正文缺失时，才把该篇具体文章 URL 交给已安装的 `news-extractor` Skill。二级补抓按配置执行有限重试，成功正文写入同一条 `source_record.raw_text`，并标记 `processing_status=text_extracted` 和 `rights_scope=full_text_internal_analysis`；失败文章标记为 `full_text_needs_review`，不得越过正文完整度硬门槛进入前台。每次采集还会在主输出文件旁生成 `<文件名>.full-text-review.json`，只包含等待人工处理的正文缺失记录，可选择 `retry`、`supply_verified_text` 或 `exclude`，与 P1 内容核验队列相互独立。
 - `official_ir_index`：读取企业官方 IR 索引，并支持同一来源的多级官方备用入口。
 - `hkex_title_search`：按发行人解析港交所公告表格，保留公告时间、分类和 PDF 原文链接。
 - 财报 PDF 正文增强：对启用 `extract_pdf_text` 的官方 PDF 保存带页码的内部分析正文，并优先生成关注词附近的可核验摘录。
 - `sec_submissions`：读取 SEC 官方结构化提交数据；当前公司网络返回 403，配置保留给外部运行环境。
 - `sitemap`：从权威机构 XML sitemap 发现近期更新的报告与研究页，并明确标记日期语义为 `last_modified`。
+- 博客与播客 RSS：当前接入硅谷101、Simon Willison、十字路口 Crossing 和 Latent Space。博客保存公开摘要；播客保存标题、发布日期、Show Notes、时长及音频 enclosure 是否存在，不下载音频。
 
 所有入口只写 Bronze 层。采集失败也会产生 `access_status: failed` 的记录，以便与“完成检查但没有更新”区分。
+
+播客音频采用合规优先策略：只读取发布方公开 RSS 元数据，`audio_ingestion` 固定为
+`metadata_only`；仅当发布方明确提供公开文字稿链接时才允许后续使用文字稿。采集器不会
+绕过登录、下载受限音频或自行批量转录。Feed 中过长的 Show Notes/文字内容也会按来源配置
+截断，避免把完整受版权保护内容复制进情报池。
 
 ## 运行
 
@@ -58,6 +66,23 @@ integrations/we-mp-rss/.venv/bin/python collector/werss_sync_one.py 机器之心
 `news-extractor` Skill 已通过独立参数数组配置在来源清单中。它的安装和依赖均位于个人 Codex Skill 目录，不复制进本仓库；适配器兼容它的 `news_url/meta_info/texts/contents` 输出。
 
 ## 社会化内容发现队列
+
+## 核心人物与机构观察池（讨论雷达）
+
+`collector/observer_watchlist.v0.1.json` 维护 30—50 个核心观察对象，覆盖模型机构、
+视觉/具身研究者和专业解释者。它不绑定个人账号：只允许官方博客、公开 RSS/Atom、
+官方 GitHub 和公开主页。标为 `automated: true` 的 RSS/Atom 会在正常采集时动态加入；
+`link_only` 仅保留为人工观察入口，不进行页面抓取。
+
+每次 Agent 采集完成后，`processor/discussion_radar.py` 会按主题统计独立观察对象：
+
+- 1 个对象：孤立提及，不展示为趋势；
+- 2 个对象：新出现；
+- 3 个以上且至少包含 1 个机构：升温；
+- 4 个以上且至少包含 2 个机构：明显升温。
+
+讨论雷达永远只产生 P2 线索。若要进入 P1，必须继续找到论文、官方发布、模型卡、
+代码仓库、财报等第一方材料，并通过人工审核闸门。
 
 微信公众号没有公开稳定的文章 Feed。当前固定名单通过本机 WeRSS 授权后自动发现；
 临时分享或白名单外的文章链接仍可写入

@@ -121,6 +121,7 @@ def build_bundle(review: dict[str, Any], collector: dict[str, Any], candidate_ru
             "fact_summary": "；".join(claim["text"].rstrip("。； ") for claim in record["claims"]) + "。",
             "limitations": record["limitation"], "primary_route": meta["primary_route"],
             "secondary_routes": meta.get("secondary_routes", []), "tags": meta["tags"],
+            "domain_scope": candidate.get("domain_scope", "scope.visual_core"),
             "track": meta.get("track", candidate.get("track", "track.emerging")),
             "evidence_level": "evidence.a", "confidence": meta["confidence"], "priority": meta["priority"],
             "independent_source_count": len(source_ids),
@@ -134,6 +135,11 @@ def build_bundle(review: dict[str, Any], collector: dict[str, Any], candidate_ru
     return {
         "schema_version": "0.2", "record_type": "verified_event_bundle",
         "verified_at": review["verified_at"],
+        # Preserve the collection window so downstream reports are anchored to
+        # the run itself, rather than inferred from whichever events survived
+        # editorial review.
+        "window_start": collector.get("window_start") or candidate_run.get("window_start"),
+        "window_end": collector.get("window_end") or candidate_run.get("window_end"),
         "summary": {
             "p1_reviewed": len(records),
             "verified_primary": sum(item["verification_status"] == "verified_primary" for item in records),

@@ -3,11 +3,53 @@
   "llm": {
     "enabled": false,
     "max_candidates": 25,
-    "prompt_version": "structure.v0.2",
+    "prompt_version": "structure.v0.3",
     "mode": "enrich_after_deterministic_prefilter"
   },
   "target_count": 25,
+  "feed_count": 40,
   "minimum_score": 7,
+  "content_completeness_gate": {
+    "minimum_full_text_chars": 180,
+    "minimum_excerpt_chars": 80,
+    "full_text_required_source_types": [
+      "wechat_official_account",
+      "social_post",
+      "podcast_episode"
+    ]
+  },
+  "p1_score_threshold": 16,
+  "source_type_selection_boosts": {
+    "wechat_official_account": 2
+  },
+  "source_name_selection_boosts": {
+    "机器之心": 1,
+    "新智元": 1,
+    "量子位": 1,
+    "晚点LatePost": 1,
+    "AI科技评论": 1
+  },
+  "p2_only_source_types_before_verification": [
+    "wechat_official_account",
+    "industry_media",
+    "professional_view",
+    "social_post"
+  ],
+  "feed_source_type_minimums": {
+    "wechat_official_account": 6
+  },
+  "wechat_ai_fallback": {
+    "route": "extended.ai_agent_tools",
+    "score": 5,
+    "terms": ["ai", "人工智能", "大模型"]
+  },
+  "same_event_rules": [
+    {
+      "name": "unitree_listing",
+      "entity_terms": ["宇树", "unitree"],
+      "event_terms": ["上市", "ipo", "开盘"]
+    }
+  ],
   "intelligence_type_precedence": [
     "type.industry_market",
     "type.company_strategy",
@@ -40,7 +82,7 @@
     "media": {"type.industry_market": 2},
     "industry_media": {"type.industry_market": 4},
     "company_news": {"type.company_strategy": 6, "type.product_release": 2},
-    "wechat_official_account": {"type.company_strategy": 2, "type.product_release": 2},
+    "wechat_official_account": {},
     "official_announcement": {"type.product_release": 6, "type.company_strategy": 2},
     "code_dataset": {"type.product_release": 5},
     "product_test": {"type.product_release": 5},
@@ -63,7 +105,7 @@
     "type.company_strategy": [
       "company", "strategy", "partnership", "acquisition", "investment", "reorganization",
       "leadership", "ipo", "listed", "ecosystem", "cloud capacity", "data center",
-      "合作", "收购", "投资", "战略", "组织调整", "高管", "上市", "大厂", "公司动态", "生态"
+      "合作", "联手", "收购", "投资", "战略", "组织", "组织调整", "高管", "上市", "大厂", "公司动态", "生态"
     ],
     "type.industry_market": [
       "market", "industry", "revenue", "earnings", "financial", "annual report", "quarterly",
@@ -80,7 +122,12 @@
     "frontier.embodied_ai": 5,
     "frontier.image_asset": 3,
     "visual_value.spatial_camera": 4,
-    "frontier.multimodal_agent": 2
+    "frontier.multimodal_agent": 2,
+    "extended.foundation_multimodal": 6,
+    "extended.ai_agent_tools": 6,
+    "extended.talent_organization": 4,
+    "extended.compute_data": 6,
+    "extended.open_source_ecosystem": 5
   },
   "route_minimums": {
     "visual_value.evaluation": 2,
@@ -89,7 +136,12 @@
     "frontier.embodied_ai": 3,
     "frontier.image_asset": 1,
     "visual_value.spatial_camera": 1,
-    "frontier.multimodal_agent": 0
+    "frontier.multimodal_agent": 0,
+    "extended.foundation_multimodal": 0,
+    "extended.ai_agent_tools": 0,
+    "extended.talent_organization": 0,
+    "extended.compute_data": 0,
+    "extended.open_source_ecosystem": 0
   },
   "primary_route_precedence": [
     "visual_value.evaluation",
@@ -98,19 +150,29 @@
     "frontier.embodied_ai",
     "visual_value.spatial_camera",
     "frontier.world_model",
+    "extended.open_source_ecosystem",
+    "extended.talent_organization",
+    "extended.ai_agent_tools",
+    "extended.compute_data",
+    "extended.foundation_multimodal",
     "frontier.multimodal_agent"
   ],
   "primary_route_markers": {
-    "visual_value.evaluation": ["benchmark", "evaluation", "evaluating", "eval:", "metric", "diagnosing", "auditing", "quality assessment", "rubric", "forensics"],
-    "frontier.video_generation": ["video generation", "video synthesis", "video diffusion", "text-to-video", "image-to-video", "long video", "long-form", "cross-shot", "sora", "runway", "kling", "可灵", "wan2", "wan 2", "dreamina", "即梦", "veo"],
-    "frontier.image_asset": ["image generation", "text-to-image", "text to image", "3d assets", "3d scene generation", "virtual try-on", "midjourney", "stable diffusion", "flux", "nano banana"],
-    "frontier.embodied_ai": ["embodied", "combodied", "robot", "robotic", "robotics", "vision-language-action", "vla", "manipulation", "humanoid", "unitree", "宇树"],
-    "visual_value.spatial_camera": ["camera motion", "camera control", "spatial reasoning", "spatial awareness", "geometric consistency"],
-    "frontier.world_model": ["world model", "world-model", "world modeling", "world-modeling", "world-action", "world action", "interactive world", "genie", "cosmos"],
+    "visual_value.evaluation": ["benchmark", "evaluation", "evaluating", "eval:", "metric", "diagnosing", "auditing", "quality assessment", "rubric", "forensics", "评测", "基准", "测试标准"],
+    "frontier.video_generation": ["video generation", "video synthesis", "video diffusion", "text-to-video", "image-to-video", "long video", "long-form", "cross-shot", "sora", "runway", "kling", "可灵", "wan2", "wan 2", "dreamina", "即梦", "veo", "视频生成", "ai视频", "文生视频", "图生视频", "视频创作"],
+    "frontier.image_asset": ["image generation", "text-to-image", "text to image", "3d assets", "3d scene generation", "virtual try-on", "midjourney", "stable diffusion", "flux", "nano banana", "图像生成", "文生图", "3d资产", "3d白模"],
+    "frontier.embodied_ai": ["embodied", "combodied", "robot", "robotic", "robotics", "vision-language-action", "vla", "manipulation", "humanoid", "unitree", "宇树", "具身智能", "机器人", "人形机器人"],
+    "visual_value.spatial_camera": ["camera motion", "camera control", "spatial reasoning", "spatial awareness", "geometric consistency", "空间推理", "空间一致性", "镜头控制", "运镜"],
+    "frontier.world_model": ["world model", "world-model", "world modeling", "world-modeling", "world-action", "world action", "interactive world", "genie", "cosmos", "世界模型"],
     "frontier.multimodal_agent": [
       "multimodal agent", "multimodal enterprise agent", "enterprise agent",
       "multimodal embedding", "gemini embedding", "agentic ai", "omni-modal"
-    ]
+    ],
+    "extended.foundation_multimodal": ["foundation model", "large language model", "multimodal model", "multimodal ai", "openai", "chatgpt", "gemini", "claude", "llama", "qwen", "deepseek", "基础模型", "多模态", "大模型"],
+    "extended.ai_agent_tools": ["ai agent", "agentic workflow", "agent platform", "coding agent", "openrouter", "cursor", "codex", "software factory", "developer tool", "ai产品", "ai工具", "ai助手", "智能体", "提示词", "prompt"],
+    "extended.talent_organization": ["人才", "实习生", "招聘", "薪酬", "期权", "员工激励", "组织管理", "团队结构", "talent", "hiring", "recruiting", "employee stock", "organization design"],
+    "extended.compute_data": ["ai compute", "ai chip", "gpu", "accelerator", "data center", "datacenter", "inference infrastructure", "training infrastructure", "算力", "芯片", "数据中心", "ai基础设施", "ai超级工厂", "英伟达"],
+    "extended.open_source_ecosystem": ["open source", "open-source", "model weights", "hugging face", "github", "repository", "developer ecosystem"]
   },
   "hard_exclude_title_terms": [
     "gis agents", "economic world model", "integrated sensing and communication",
@@ -141,7 +203,7 @@
       "benchmark": 7, "evaluation": 7, "eval": 5, "metric": 5,
       "diagnosing": 5, "auditing": 5, "quality assessment": 4,
       "physical fidelity": 5, "consistency metric": 5, "rubric": 4,
-      "forensics": 2
+      "forensics": 2, "评测": 7, "基准": 7, "测试标准": 5
     },
     "frontier.video_generation": {
       "video generation": 8, "video diffusion": 8, "video synthesis": 7,
@@ -150,36 +212,69 @@
       "audio-visual generation": 5, "video editing": 5,
       "identity replacement video": 5, "emotional video generation": 5,
       "sora": 7, "runway": 7, "kling": 7, "可灵": 7, "wan2": 7,
-      "wan 2": 7, "dreamina": 7, "即梦": 7, "veo": 7
+      "wan 2": 7, "dreamina": 7, "即梦": 7, "veo": 7,
+      "视频生成": 8, "ai视频": 7, "文生视频": 7, "图生视频": 7, "视频创作": 5
     },
     "frontier.image_asset": {
       "image generation": 7, "text-to-image": 7, "text to image": 7,
       "image-to-video": 3, "3d assets": 6, "3d scene generation": 6,
       "virtual try-on": 5, "subject-driven": 5, "visual generative models": 3,
-      "midjourney": 7, "stable diffusion": 7, "flux": 6, "nano banana": 7
+      "midjourney": 7, "stable diffusion": 7, "flux": 6, "nano banana": 7,
+      "图像生成": 7, "文生图": 7, "3d资产": 6, "3d白模": 5
     },
     "frontier.world_model": {
       "world model": 8, "world-model": 8, "world modeling": 8,
       "world-modeling": 8, "world-action": 8, "world action": 8,
       "interactive world": 7, "world foundation model": 6,
       "predictive latents": 5, "latent dynamics": 4, "imagined dynamics": 4,
-      "genie": 7, "cosmos": 7
+      "genie": 7, "cosmos": 7, "世界模型": 8
     },
     "frontier.embodied_ai": {
       "embodied": 8, "combodied": 8, "robot": 7, "robotic": 7, "vision-language-action": 7,
       "vla": 6, "manipulation": 5, "humanoid": 5, "loco-manipulation": 5,
-      "physical ai": 4, "robotics": 7, "unitree": 8, "宇树": 8
+      "physical ai": 4, "robotics": 7, "unitree": 8, "宇树": 8,
+      "具身智能": 8, "机器人": 7, "人形机器人": 7
     },
     "visual_value.spatial_camera": {
       "spatial reasoning": 7, "spatial grounding": 6, "spatial awareness": 6,
       "camera motion": 7, "camera control": 7, "4d": 5,
       "geometric consistency": 6, "geometry-aware": 5,
-      "physical reasoning": 6, "physical priors": 5, "physics": 4
+      "physical reasoning": 6, "physical priors": 5, "physics": 4,
+      "空间推理": 7, "空间一致性": 6, "镜头控制": 7, "运镜": 7
     },
     "frontier.multimodal_agent": {
       "multimodal agent": 7, "multimodal enterprise agent": 6,
       "enterprise agent": 5, "multimodal embedding": 4, "gemini embedding": 4,
       "agentic ai": 5, "evaluation agent": 4, "omni-modal": 5, "agentic rl": 4
+    },
+    "extended.foundation_multimodal": {
+      "foundation model": 7, "large language model": 6, "multimodal model": 7,
+      "multimodal ai": 6, "chatgpt": 7, "gemini": 7, "claude": 7,
+      "llama": 6, "qwen": 6, "deepseek": 6, "openai": 7,
+      "基础模型": 7, "多模态模型": 7, "多模态": 6, "大模型": 6
+    },
+    "extended.ai_agent_tools": {
+      "ai agent": 7, "agentic workflow": 7, "agent platform": 6, "coding agent": 7,
+      "openrouter": 7, "cursor": 7, "codex": 7, "software factory": 6,
+      "developer tool": 5, "ai development": 5, "智能体": 7, "开发工具": 5,
+      "ai产品": 6, "ai工具": 6, "ai助手": 6, "提示词": 5, "prompt": 5
+    },
+    "extended.talent_organization": {
+      "人才": 7, "实习生": 6, "招聘": 7, "薪酬": 6, "期权": 7,
+      "员工激励": 7, "组织管理": 6, "团队结构": 6,
+      "talent": 7, "hiring": 7, "recruiting": 7, "employee stock": 7,
+      "organization design": 6
+    },
+    "extended.compute_data": {
+      "ai compute": 8, "ai chip": 8, "gpu": 7, "accelerator": 6,
+      "data center": 7, "datacenter": 7, "inference infrastructure": 7,
+      "training infrastructure": 7, "算力": 8, "芯片": 7, "数据中心": 7,
+      "ai基础设施": 7, "ai超级工厂": 7, "英伟达": 6
+    },
+    "extended.open_source_ecosystem": {
+      "open source": 7, "open-source": 7, "model weights": 7,
+      "hugging face": 7, "github": 6, "repository": 5,
+      "developer ecosystem": 6, "开源": 7, "模型权重": 7, "开发者生态": 6
     }
   },
   "capability_rules": {

@@ -168,7 +168,12 @@ def select_review_candidates(candidates: dict[str, Any], config: dict[str, Any])
     """
     queue_config = config.get("review_queue") or {}
     maximum = int(queue_config.get("max_count", 10))
-    all_candidates = candidates["selected_candidates"]
+    all_candidates = [
+        item for item in candidates["selected_candidates"]
+        if item.get("front_display_eligible", True)
+        and ((item.get("hard_gates") or {}).get("content_completeness") or {}).get("status", "pass") == "pass"
+        and ((item.get("hard_gates") or {}).get("fact_wording_fidelity") or {}).get("status", "pass") == "pass"
+    ]
     selected = sorted(
         (item for item in all_candidates if item.get("verification_priority") == "priority.p1"),
         key=lambda item: (-item["score"], item["canonical_title"]),
@@ -235,19 +240,103 @@ def review_template(collection: dict[str, Any], candidates: dict[str, Any], run_
     }
 
 
-def write_review_instructions(run_dir: Path, count: int) -> None:
+def gated_review_template(collection: dict[str, Any], candidates: dict[str, Any], run_id: str) -> dict[str, Any]:
+    """Create a separate queue for records blocked before P1 editorial review."""
+    source_map = {item["source_id"]: item for item in collection["source_records"]}
+    records: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for item in (candidates.get("exclusions") or {}).get("content_incomplete", []):
+        source_id = item["source_id"]
+        source = source_map.get(source_id, {})
+        records.append({
+            "queue_id": f"gate_content_{source_id}",
+            "gate_type": "content_completeness",
+            "source_id": source_id,
+            "candidate_id": None,
+            "title": item.get("title") or source.get("raw_title"),
+            "url": source.get("canonical_url"),
+            "gate": item.get("gate"),
+            "review_status": "pending",
+            "decision": None,
+            "allowed_decisions": ["retry", "supply_verified_text", "exclude"],
+        })
+        seen.add(source_id)
+    fidelity_candidates: dict[str, dict[str, Any]] = {
+        item["candidate_id"]: item for item in candidates.get("gated_candidates", [])
+    }
+    for item in candidates.get("selected_candidates", []):
+        fidelity = ((item.get("hard_gates") or {}).get("fact_wording_fidelity") or {})
+        if fidelity.get("status") != "pass":
+            fidelity_candidates.setdefault(item["candidate_id"], item)
+    for candidate in fidelity_candidates.values():
+        source_id = candidate.get("primary_source_id")
+        if not source_id or source_id in seen:
+            continue
+        source = source_map.get(source_id, {})
+        fidelity = (candidate.get("hard_gates") or {}).get("fact_wording_fidelity") or {}
+        records.append({
+            "queue_id": f"gate_fidelity_{candidate['candidate_id']}",
+            "gate_type": "fact_wording_fidelity",
+            "source_id": source_id,
+            "candidate_id": candidate["candidate_id"],
+            "title": candidate.get("canonical_title") or source.get("raw_title"),
+            "url": source.get("canonical_url"),
+            "gate": fidelity,
+            "agent_analysis": candidate.get("llm_analysis"),
+            "review_status": "pending",
+            "decision": None,
+            "allowed_decisions": ["verify_and_rewrite_with_attribution", "watch", "exclude"],
+        })
+    return {
+        "version": "0.1",
+        "record_type": "pre_p1_gate_review",
+        "run_id": run_id,
+        "status": "waiting_for_review" if records else "not_required",
+        "count": len(records),
+        "records": records,
+    }
+
+
+def attach_harness_evidence(review: dict[str, Any], evidence: dict[str, Any]) -> dict[str, Any]:
+    """Attach machine-located evidence without converting it into human claims."""
+    evidence_map = {item["candidate_id"]: item for item in evidence.get("records", [])}
+    for record in review.get("records", []):
+        packet = evidence_map.get(record["candidate_id"])
+        if not packet:
+            continue
+        record["evidence_review_id"] = packet["evidence_review_id"]
+        record["suggested_evidence"] = packet.get("claim_reviews", [])
+        record["risk_flags"] = packet.get("risk_flags", [])
+        record["harness_confidence"] = packet.get("confidence")
+        record["agent_recommendation"] = packet.get("agent_recommendation")
+        record["verification_status"] = "pending"
+        record["claims"] = []
+        record["decision"] = "pending"
+    review["verification_harness"] = {
+        "status": evidence.get("status"),
+        "summary": evidence.get("summary", {}),
+        "evidence_file": "evidence-review.json",
+        "note": "suggested_evidence仅为机器定位结果，不等于人工核验后的claims。",
+    }
+    return review
+
+
+def write_review_instructions(run_dir: Path, count: int, gated_count: int = 0) -> None:
     text = f"""# P1 人工核验闸门
 
 本次共有 **{count} 条 P1 候选**。主流程已暂停，不会在核验完成前生成或发布周报。
 
+另有 **{gated_count} 条**因正文完整度或事实措辞保真未通过，已写入 `gated-review.json`。这些记录不会进入 `p1-review.json` 或P1深读；只有补齐正文或人工确认并按原文限定重写后，才能在后续运行中重新参与筛选。
+
 请编辑 `p1-review.json`，每条候选必须完成：
 
-1. 阅读并确认原始来源，将 `verification_status` 改为 `verified_primary`；
-2. 填写至少一条 `claims`，每条含 `text`、`kind`、`locator`；
-3. 填写 `limitation`；
-4. 将 `decision` 设为 `include`、`watch` 或 `exclude`，并填写 `decision_reason`；
-5. `include` 的记录必须填写完整 `event`；最终正式事件必须为 5—10 条；
-6. 全部完成后填写顶层 `verified_at`、`verified_by`，将 `review_status` 改为 `approved`。
+1. 先查看 `evidence-review.json` 及每条记录的 `suggested_evidence`；这些是机器定位建议，不等于核验结论；
+2. 阅读并确认原始来源，将 `verification_status` 改为 `verified_primary`；
+3. 将确认无误的证据整理到 `claims`，每条含 `text`、`kind`、`locator`；
+4. 填写 `limitation`；
+5. 将 `decision` 设为 `include`、`watch` 或 `exclude`，并填写 `decision_reason`；
+6. `include` 的记录必须填写完整 `event`；最终正式事件必须为 5—10 条；
+7. 全部完成后填写顶层 `verified_at`、`verified_by`，将 `review_status` 改为 `approved`。
 
 完成后运行：
 
@@ -279,6 +368,10 @@ def create_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
         "llm": None,
         "artifacts": {
             "collection": "collection.json", "candidates": "candidates.json", "review": "p1-review.json",
+            "gated_review": "gated-review.json",
+            "verification_candidates": "verification-candidates.json",
+            "evidence_review": "evidence-review.json",
+            "discussion_radar": "discussion-radar.json",
             "verified": "verified-events.json", "issue": "editorial-issue.json",
             "web_draft": "weekly-report.html", "report": "run-report.md",
         },
@@ -304,6 +397,24 @@ def create_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
             command(run_dir, "collect", cmd)
         command(run_dir, "validate_collection", [sys.executable, "scripts/validate-source-run.py", str(collection_path)])
 
+        radar_config = config.get("discussion_radar") or {"enabled": True, "required": False}
+        if radar_config.get("enabled", True):
+            update_state(run_dir, current_stage="discussion_radar")
+            try:
+                command(run_dir, "discussion_radar", [
+                    sys.executable,
+                    "processor/discussion_radar.py",
+                    "--input", str(collection_path),
+                    "--watchlist", config.get("observer_watchlist", "collector/observer_watchlist.v0.1.json"),
+                    "--output", str(run_dir / "discussion-radar.json"),
+                ])
+            except Exception as exc:
+                if radar_config.get("required", False):
+                    raise
+                log(run_dir, "discussion_radar", "optional_stage_failed", error=str(exc))
+        else:
+            log(run_dir, "discussion_radar", "optional_stage_skipped")
+
         update_state(run_dir, current_stage="structure")
         candidates_path = run_dir / "candidates.json"
         structure_cmd = [sys.executable, "processor/structure.py", "--input", str(collection_path), "--config", config["processor_config"], "--output", str(candidates_path)]
@@ -319,11 +430,30 @@ def create_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
             log(run_dir, "llm_structure", "llm_structure_completed", **(candidates.get("llm") or {}))
         collection = read_json(collection_path)
         template = review_template(collection, candidates, run_id, config)
+        gated_template = gated_review_template(collection, candidates, run_id)
         write_json(run_dir / "p1-review.json", template)
-        write_review_instructions(run_dir, len(template["records"]))
+        write_json(run_dir / "gated-review.json", gated_template)
+
+        update_state(run_dir, current_stage="verification_harness")
+        command(run_dir, "verification_harness", [
+            sys.executable,
+            "verification/verification_harness.py",
+            "--collection", str(collection_path),
+            "--candidates", str(candidates_path),
+            "--review", str(run_dir / "p1-review.json"),
+            "--verification-output", str(run_dir / "verification-candidates.json"),
+            "--evidence-output", str(run_dir / "evidence-review.json"),
+        ])
+        evidence = read_json(run_dir / "evidence-review.json")
+        template = attach_harness_evidence(template, evidence)
+        write_json(run_dir / "p1-review.json", template)
+        confidence_summary = evidence.get("summary", {})
+        log(run_dir, "verification_harness", "evidence_packet_ready", **confidence_summary)
+
+        write_review_instructions(run_dir, len(template["records"]), gated_template["count"])
         update_state(run_dir, status="waiting_for_review", current_stage="human_review", paused_reason="P1 primary-source verification required")
-        log(run_dir, "human_review", "workflow_paused", p1_candidates=len(template["records"]))
-        print(json.dumps({"run_id": run_id, "status": "waiting_for_review", "p1_candidates": len(template["records"]), "review_file": str(run_dir / "p1-review.json"), "next": f"python3 spectra_agent/run.py resume --run-id {run_id}"}, ensure_ascii=False, indent=2))
+        log(run_dir, "human_review", "workflow_paused", p1_candidates=len(template["records"]), gated_candidates=gated_template["count"])
+        print(json.dumps({"run_id": run_id, "status": "waiting_for_review", "p1_candidates": len(template["records"]), "gated_candidates": gated_template["count"], "review_file": str(run_dir / "p1-review.json"), "gated_review_file": str(run_dir / "gated-review.json"), "next": f"python3 spectra_agent/run.py resume --run-id {run_id}"}, ensure_ascii=False, indent=2))
         return 2
     except Exception as exc:
         update_state(run_dir, status="failed", current_stage="failed", error=str(exc))
@@ -356,6 +486,42 @@ def resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
         if not config["minimum_formal_events"] <= count <= config["maximum_formal_events"]:
             raise WorkflowError(f"formal event count outside configured boundary: {count}")
 
+        fact_selection_path = run_dir / "fact-selection.json"
+        update_state(run_dir, current_stage="fact_selection")
+        command(run_dir, "fact_selection", [
+            sys.executable, "editorial/fact_selection.py",
+            "--verified", str(verified_path),
+            "--review", str(review_path),
+            "--collection", str(run_dir / "collection.json"),
+            "--output", str(fact_selection_path),
+        ])
+
+        deep_story_config = config.get("deep_story_writer") or config.get("editorial_writer") or {}
+        editorial_drafts_path = run_dir / "deep-story-drafts.json"
+        if state.get("llm_requested") and deep_story_config.get("enabled", True):
+            update_state(run_dir, current_stage="deep_story")
+            # A retry must never reuse a draft bundle left by an earlier writer
+            # attempt that subsequently failed validation.
+            if editorial_drafts_path.exists():
+                editorial_drafts_path.unlink()
+            try:
+                deep_story_command = [
+                    llm_python(config), "editorial/editorial_writer.py",
+                    "--verified", str(verified_path),
+                    "--fact-selection", str(fact_selection_path),
+                    "--collection", str(run_dir / "collection.json"),
+                    "--output", str(editorial_drafts_path),
+                ]
+                if deep_story_config.get("model"):
+                    deep_story_command += ["--model", str(deep_story_config["model"])]
+                if deep_story_config.get("num_ctx"):
+                    deep_story_command += ["--num-ctx", str(deep_story_config["num_ctx"])]
+                command(run_dir, "deep_story", deep_story_command)
+            except WorkflowError:
+                if deep_story_config.get("required", False):
+                    raise
+                log(run_dir, "deep_story", "writer_failed_using_deterministic_fallback")
+
         update_state(run_dir, current_stage="generate")
         issue_path = run_dir / "editorial-issue.json"
         static_draft = run_dir / "weekly-report.html"
@@ -363,7 +529,21 @@ def resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
         draft_style = run_dir / "app" / "globals.css"
         draft_style.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(ROOT / "app" / "globals.css", draft_style)
-        command(run_dir, "generate", [sys.executable, "editorial/build-editorial-issue.py", "--verified", str(verified_path.relative_to(ROOT)), "--review", str(review_path.relative_to(ROOT)), "--output", str(issue_path.relative_to(ROOT)), "--static", str(static_draft.relative_to(ROOT))])
+        generate_command = [sys.executable, "editorial/build-editorial-issue.py", "--verified", str(verified_path.relative_to(ROOT)), "--review", str(review_path.relative_to(ROOT)), "--candidates", str((run_dir / "candidates.json").relative_to(ROOT)), "--collection", str((run_dir / "collection.json").relative_to(ROOT)), "--output", str(issue_path.relative_to(ROOT)), "--static", str(static_draft.relative_to(ROOT))]
+        if editorial_drafts_path.exists():
+            generate_command += ["--drafts", str(editorial_drafts_path.relative_to(ROOT))]
+        command(run_dir, "generate", generate_command)
+        translation_config = config.get("p2_translation") or {}
+        if state.get("llm_requested") and translation_config.get("enabled", True):
+            translation_checkpoint = run_dir / "p2-translation-checkpoint.json"
+            command(run_dir, "translate_p2", [
+                llm_python(config), "processor/translate_p2.py",
+                "--input", str(issue_path),
+                "--output", str(issue_path),
+                "--checkpoint", str(translation_checkpoint),
+                "--static", str(static_draft),
+                "--batch-size", str(translation_config.get("batch_size", 6)),
+            ])
         command(run_dir, "validate_issue", [sys.executable, "scripts/validate-editorial-issue.py", "--editorial", str(issue_path), "--verified", str(verified_path)])
         issue = read_json(issue_path)
         write_run_report(run_dir, read_json(run_dir / "collection.json"), read_json(run_dir / "candidates.json"), verified, issue)

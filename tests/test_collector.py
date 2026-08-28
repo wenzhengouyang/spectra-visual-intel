@@ -59,6 +59,75 @@ class CollectorContractTest(unittest.TestCase):
     def test_source_ids_are_stable_after_tracking_removal(self):
         self.assertEqual(MODULE.stable_id("https://example.com/a?utm_source=x"), MODULE.stable_id("https://example.com/a"))
 
+    def test_podcast_feed_records_audio_without_downloading_it(self):
+        source = {
+            "registry_id": "reg_podcast_test",
+            "adapter": "rss",
+            "source_name": "Test Podcast",
+            "source_type": "professional_view",
+            "publisher": "Publisher",
+            "url": "https://example.com/feed.xml",
+            "content_format": "podcast",
+            "rights_scope": "excerpt",
+            "audio_ingestion": "metadata_only",
+            "language": "en",
+        }
+        feed = b'''<?xml version="1.0"?><rss version="2.0"><channel><title>Test</title><item>
+          <title>AI agent interview</title><link>https://example.com/episode</link>
+          <pubDate>Mon, 10 Aug 2026 10:00:00 GMT</pubDate>
+          <description>Public show notes about an AI agent.</description>
+          <enclosure url="https://cdn.example.com/episode.mp3" type="audio/mpeg" length="100"/>
+        </item></channel></rss>'''
+        with patch.object(MODULE, "fetch_bytes", return_value=feed):
+            records, health = MODULE.collect_feed(source, self.ctx, [])
+        self.assertEqual(len(records), 1)
+        self.assertIsNone(records[0]["raw_text"])
+        self.assertIn("audio_enclosure:present_not_downloaded", records[0]["discovery_context"])
+        self.assertEqual(health["audio_enclosures"], 1)
+        self.assertEqual(health["feed_audio_entries"], 1)
+        self.assertEqual(health["audio_ingestion"], "metadata_only")
+        self.assertEqual(health["transcription"], "disabled_unless_official_public_transcript")
+
+    def test_podcast_feed_limits_public_show_notes_to_configured_excerpt(self):
+        source = {
+            "registry_id": "reg_podcast_test",
+            "adapter": "rss",
+            "source_name": "Test Podcast",
+            "source_type": "professional_view",
+            "publisher": "Publisher",
+            "url": "https://example.com/feed.xml",
+            "content_format": "podcast",
+            "rights_scope": "excerpt",
+            "max_excerpt_chars": 80,
+            "language": "en",
+        }
+        feed = ('''<?xml version="1.0"?><rss version="2.0"><channel><title>Test</title><item>
+          <title>AI interview</title><link>https://example.com/episode</link>
+          <pubDate>Mon, 10 Aug 2026 10:00:00 GMT</pubDate><description>''' +
+          ("Public show notes and transcript material. " * 20) +
+          '''</description></item></channel></rss>''').encode()
+        with patch.object(MODULE, "fetch_bytes", return_value=feed):
+            records, health = MODULE.collect_feed(source, self.ctx, [])
+        self.assertLessEqual(len(records[0]["raw_excerpt"]), 82)
+        self.assertTrue(records[0]["raw_excerpt"].endswith("…"))
+        self.assertEqual(health["truncated_excerpts"], 1)
+
+    def test_registry_includes_compliant_blog_and_podcast_sources(self):
+        path = Path(__file__).parents[1] / "collector" / "source_registry.v0.2.json"
+        config = json.loads(path.read_text(encoding="utf-8"))
+        expected = {
+            "reg_rss_sv101_podcast",
+            "reg_rss_simon_willison_blog",
+            "reg_rss_crossing_podcast",
+            "reg_rss_latent_space_podcast",
+        }
+        selected = {source["registry_id"]: source for source in config["sources"] if source["registry_id"] in expected}
+        self.assertEqual(set(selected), expected)
+        self.assertTrue(all(source["rights_scope"] == "excerpt" for source in selected.values()))
+        podcasts = [source for source in selected.values() if source["content_format"] == "podcast"]
+        self.assertTrue(all(source["audio_ingestion"] == "metadata_only" for source in podcasts))
+        self.assertTrue(all(source["transcript_ingestion"] == "official_public_only" for source in podcasts))
+
     def test_registry_is_valid_json(self):
         path = Path(__file__).parents[1] / "collector" / "source_registry.v0.2.json"
         config = json.loads(path.read_text(encoding="utf-8"))
@@ -68,6 +137,18 @@ class CollectorContractTest(unittest.TestCase):
             {"rss", "batch_index", "arxiv", "github_atom", "news_extractor_feed", "news_extractor_inbox", "werss_api", "official_ir_index", "hkex_title_search", "sec_submissions", "sitemap"},
         )
         self.assertEqual(config["watchlists"]["wechat_accounts"], "collector/wechat_watchlist.v0.1.json")
+        self.assertEqual(config["watchlists"]["core_observers"], "collector/observer_watchlist.v0.1.json")
+
+    def test_observer_watchlist_expands_only_public_automated_feeds(self):
+        config = {
+            "watchlists": {"core_observers": "collector/observer_watchlist.v0.1.json"},
+            "sources": [],
+        }
+        expanded = MODULE.expand_observer_sources(config)
+        self.assertGreaterEqual(len(expanded["sources"]), 5)
+        self.assertTrue(all(source["adapter"] == "rss" for source in expanded["sources"]))
+        self.assertTrue(all(source["url"].startswith("https://") for source in expanded["sources"]))
+        self.assertTrue(all(source["rights_scope"] == "excerpt" for source in expanded["sources"]))
 
     def test_werss_article_normalizes_to_source_record(self):
         source = {
@@ -93,6 +174,85 @@ class CollectorContractTest(unittest.TestCase):
         self.assertEqual(record["raw_excerpt"], "模型在时空一致性上获得提升。")
         self.assertEqual(record["canonical_url"], "https://mp.weixin.qq.com/s/example")
         self.assertEqual(record["rights_scope"], "excerpt")
+
+    def test_werss_full_text_enrichment_merges_skill_output_into_source_record(self):
+        source = {
+            "registry_id": "reg_werss", "adapter": "werss_api",
+            "source_name": "WeRSS", "source_type": "wechat_official_account",
+            "publisher": None, "url": "http://127.0.0.1:8001", "language": "zh-CN",
+            "watchlist": str(Path(__file__).parents[1] / "collector" / "wechat_watchlist.v0.1.json"),
+            "full_text_command": ["uv", "run"], "full_text_extract_limit": 3,
+            "full_text_min_chars": 50,
+        }
+        record = MODULE.normalize_werss_article({
+            "mp_id": "MP_WXS_1", "mp_name": "机器之心", "title": "视频生成模型的新进展",
+            "description": "一段导语", "url": "https://mp.weixin.qq.com/s/example",
+            "publish_time": 1786500000,
+        }, source, self.ctx)
+        extracted = MODULE.make_record(
+            source={**source, "adapter": "news_extractor", "source_name": "机器之心", "publisher": "机器之心"},
+            url=record["canonical_url"], title=record["raw_title"], ctx=self.ctx,
+            published_at=datetime.fromtimestamp(1786500000, tz=timezone.utc),
+            raw_text="这是完整正文。" * 20, rights_scope="full_text",
+        )
+        with patch.object(MODULE, "collect_news_extractor", return_value=([extracted], {"status": "success"})):
+            health = MODULE.enrich_werss_full_text([record], source, self.ctx)
+        self.assertEqual(health["extracted"], 1)
+        self.assertEqual(record["processing_status"], "text_extracted")
+        self.assertGreaterEqual(len(record["raw_text"]), 50)
+        self.assertEqual(record["rights_scope"], "full_text_internal_analysis")
+
+    def test_werss_full_text_failure_enters_dedicated_review_queue(self):
+        source = {
+            "registry_id": "reg_werss", "adapter": "werss_api",
+            "source_name": "WeRSS", "source_type": "wechat_official_account",
+            "publisher": None, "url": "http://127.0.0.1:8001", "language": "zh-CN",
+            "watchlist": str(Path(__file__).parents[1] / "collector" / "wechat_watchlist.v0.1.json"),
+            "full_text_command": ["uv", "run"], "full_text_extract_limit": 3,
+            "full_text_min_chars": 50, "full_text_retry_attempts": 2,
+        }
+        record = MODULE.normalize_werss_article({
+            "mp_id": "MP_WXS_1", "mp_name": "机器之心", "title": "待补抓文章",
+            "description": "一段导语", "url": "https://mp.weixin.qq.com/s/missing",
+            "publish_time": 1786500000,
+        }, source, self.ctx)
+        failed = MODULE.make_record(
+            source={**source, "adapter": "news_extractor", "source_name": "机器之心"},
+            url=record["canonical_url"], title=record["raw_title"], ctx=self.ctx,
+            access_status="failed", failure_reason="blocked", rights_scope="metadata_only",
+        )
+        with patch.object(MODULE, "collect_news_extractor", return_value=([failed], {"status": "failed", "error": "blocked"})) as mocked:
+            health = MODULE.enrich_werss_full_text([record], source, self.ctx)
+        self.assertEqual(mocked.call_count, 2)
+        self.assertEqual(record["processing_status"], "full_text_needs_review")
+        self.assertEqual(health["failed"], 1)
+        self.assertEqual(health["review_queue"][0]["review_status"], "pending")
+        self.assertEqual(health["review_queue"][0]["allowed_decisions"], ["retry", "supply_verified_text", "exclude"])
+
+        artifact = MODULE.build_full_text_review_artifact({
+            "run_id": "run_test", "collected_at": "2026-08-12T00:00:00Z",
+            "source_checks": [{"full_text_extraction": health}],
+        })
+        self.assertEqual(artifact["status"], "waiting_for_review")
+        self.assertEqual(artifact["count"], 1)
+
+    def test_werss_detail_text_is_preferred_when_cached_locally(self):
+        source = {
+            "registry_id": "reg_werss", "adapter": "werss_api",
+            "source_name": "WeRSS", "source_type": "wechat_official_account",
+            "publisher": None, "url": "http://127.0.0.1:8001", "language": "zh-CN",
+        }
+        record = MODULE.normalize_werss_article({
+            "mp_id": "MP_WXS_1", "mp_name": "机器之心", "title": "视频生成模型的新进展",
+            "description": "一段导语", "url": "https://mp.weixin.qq.com/s/example",
+            "publish_time": 1786500000,
+        }, source, self.ctx)
+        attached = MODULE.attach_werss_detail_text(
+            record, {"content_html": "<p>这是正文内容。</p>" * 30}, minimum_chars=50
+        )
+        self.assertTrue(attached)
+        self.assertEqual(record["processing_status"], "text_extracted")
+        self.assertIn("full_text:werss_detail", record["discovery_context"])
 
     def test_local_env_loads_export_prefixed_werss_password(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -323,7 +483,58 @@ class CollectorContractTest(unittest.TestCase):
                 os.environ["WERSS_PASSWORD"] = saved
         self.assertEqual(health["refresh_results"][0]["channel"], "weread")
         self.assertEqual(health["refresh_results"][0]["accepted"], 1)
+        self.assertFalse(any(path.endswith("/auth/qr/status") for path, _ in calls))
         self.assertFalse(any("/mps/update/" in path for path, _ in calls))
+
+    def test_werss_reports_expired_weread_as_degraded_cached_read(self):
+        source = {
+            "registry_id": "reg_werss_wechat_watchlist",
+            "adapter": "werss_api",
+            "source_name": "WeRSS 微信公众号订阅",
+            "source_type": "wechat_official_account",
+            "publisher": None,
+            "url": "http://127.0.0.1:8001",
+            "watchlist": str(Path(__file__).parents[1] / "collector/wechat_watchlist.v0.1.json"),
+            "password_env": "WERSS_PASSWORD",
+            "refresh_before_read": True,
+            "refresh_channel": "weread",
+            "verify_refresh_auth": True,
+            "page_size": 100,
+            "max_scan": 100,
+            "language": "zh-CN",
+        }
+        saved = os.environ.get("WERSS_PASSWORD")
+        os.environ["WERSS_PASSWORD"] = "test-only"
+
+        def fake_request(base_url, path, **kwargs):
+            if path.endswith("/auth/login"):
+                return {"access_token": "token"}
+            if path.startswith("/api/v1/wx/mps?"):
+                return {"list": [{"id": "MP_WXS_1", "mp_name": "机器之心"}]}
+            if path.endswith("/weread/mp/test"):
+                raise RuntimeError("WeRSS API error: Cookie expired")
+            if path.startswith("/api/v1/wx/articles?"):
+                return {"list": [{
+                    "mp_id": "MP_WXS_1", "mp_name": "机器之心",
+                    "title": "缓存中的视频生成文章", "description": "缓存摘要",
+                    "url": "https://mp.weixin.qq.com/s/cached",
+                    "publish_time": int(datetime(2026, 8, 10, tzinfo=timezone.utc).timestamp()),
+                }], "total": 1}
+            raise AssertionError(path)
+
+        try:
+            with patch.object(MODULE, "werss_request_json", side_effect=fake_request):
+                records, health = MODULE.collect_werss(source, self.ctx)
+        finally:
+            if saved is None:
+                os.environ.pop("WERSS_PASSWORD", None)
+            else:
+                os.environ["WERSS_PASSWORD"] = saved
+        self.assertEqual(len(records), 1)
+        self.assertEqual(health["status"], "degraded")
+        self.assertTrue(health["stale_cache_only"])
+        self.assertEqual(health["refresh_attempts"], 0)
+        self.assertIn("cached", health["warning"])
 
     def test_wechat_and_financial_watchlists_preserve_required_scope(self):
         root = Path(__file__).parents[1] / "collector"

@@ -15,6 +15,7 @@ import re
 from collections import Counter
 from datetime import datetime, timedelta
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -22,6 +23,7 @@ VERIFIED_PATH = ROOT / "verification/runs/p1-verified-events-v0.2.json"
 REVIEW_PATH = ROOT / "verification/p1-review.v0.1.json"
 OUTPUT_PATH = ROOT / "editorial/runs/issue-01-editorial-stories-v0.2.json"
 STATIC_PATH = ROOT / "visual-intelligence-prototype.html"
+REPORT_TIMEZONE = ZoneInfo("Asia/Shanghai")
 
 
 STORY_COPY = {
@@ -261,20 +263,181 @@ def section(text: str, claim_ids: list[str], statement_type: str) -> dict:
     return {"text": text, "claim_ids": claim_ids, "statement_type": statement_type}
 
 
+def reader_facing_text(value: str) -> str:
+    """Remove audit-note phrasing while preserving the underlying attribution."""
+    text = str(value or "").strip()
+    audit_phrases = (
+        "；该表述属于预测而非已验证结果",
+        "，该表述属于预测而非已验证结果",
+        "该表述属于预测而非已验证结果。",
+    )
+    for phrase in audit_phrases:
+        text = text.replace(phrase, "")
+    text = re.sub(r"；对“[^”]+”的更强表述不纳入正式结论", "", text)
+    text = re.sub(r"([。！？]){2,}", r"\1", text)
+    return text.strip()
+
+
+def build_article_body(copy: dict, event: dict, claim_ids: list[str]) -> dict:
+    """Project audit fields into a complete, reader-facing article."""
+    judgment_parts = [copy.get("why"), copy.get("take")]
+    judgment = "\n\n".join(part.strip() for part in judgment_parts if part and part.strip())
+    watch_items = [str(item).strip() for item in copy.get("watch", []) if str(item).strip()]
+    fact_parts = [reader_facing_text(copy["what"])]
+    how = reader_facing_text(copy.get("how") or "")
+    if how and how not in fact_parts[0]:
+        fact_parts.append(how)
+    return {
+        "lead": section(reader_facing_text(copy["what"]), claim_ids, "fact"),
+        "key_details": section(how, claim_ids, "fact") if how else None,
+        "full_text": section("\n\n".join(fact_parts), claim_ids, "fact"),
+        "judgment": section(judgment, claim_ids, "judgment"),
+        "evidence_boundary": section(event["limitations"], claim_ids, "judgment"),
+        "watch_next": watch_items,
+        "reading_mode": "complete_in_page",
+    }
+
+
 ROUTE_CATEGORY = {
     "frontier.video_generation": "视频生成",
     "frontier.image_asset": "图像与资产",
     "frontier.world_model": "世界模型",
     "frontier.embodied_ai": "具身智能",
     "frontier.multimodal_agent": "多模态 Agent",
+    "extended.foundation_multimodal": "基础模型与多模态",
+    "extended.ai_agent_tools": "AI Agent与工具",
+    "extended.compute_data": "算力与数据",
+    "extended.open_source_ecosystem": "开源生态",
+    "industry.marketing": "行业与市场",
+    "industry.short_drama": "行业与市场",
     "visual_value.evaluation": "评测与标准",
     "visual_value.spatial_camera": "空间与4D",
 }
+
+CORE_VISUAL_ROUTES = {
+    "frontier.video_generation",
+    "frontier.image_asset",
+    "frontier.world_model",
+    "frontier.embodied_ai",
+    "visual_value.evaluation",
+    "visual_value.spatial_camera",
+    "industry.marketing",
+    "industry.short_drama",
+}
+
+
+def domain_scope(route: str) -> str:
+    return "scope.visual_core" if route in CORE_VISUAL_ROUTES else "scope.ai_extended"
 
 # Editorial headlines may be shorter than the canonical event title, but they
 # must not introduce a claim that is absent from the verified evidence set.
 VERIFIED_HEADLINE_OVERRIDES = {
     "evt_20260812_tencent_q2_ai": "腾讯财报披露AI相关预付款用途与收入增长",
+    "evt_20260825_gemini_legal": "Google Cloud发布面向法律行业的Gemini Enterprise",
+}
+
+
+# P2 copy is intentionally conservative. These records have passed collection,
+# routing and deduplication, but have not crossed the human fact-check gate.
+# The summary may restate the source abstract; it must not present an LLM
+# judgment or an unlocated metric as a verified fact.
+P2_BRIEF_COPY = {
+    "cand_44472fd7bd4eb2c0": {
+        "headline": "AI算力开始被讨论为可定价与对冲的成本资产",
+        "summary": "TechCrunch介绍一家尝试为AI算力建立价格与风险管理工具的创业公司；具体产品机制、客户采用和市场规模仍待核验。",
+    },
+    "cand_a42476accc680e1d": {
+        "headline": "Cursor推出代码托管平台，开始挑战GitHub工作流",
+        "summary": "TechCrunch报道称Cursor正在推出面向开发者的代码托管平台。本条属于媒体报道，功能范围、迁移条件与正式可用性仍需回到产品页面确认。",
+    },
+    "cand_ea49e482210e94fb": {
+        "headline": "Google为Search与Gemini增加学习工具",
+        "summary": "媒体报道显示，Google继续把学习功能整合进Search与Gemini，希望强化学生使用场景；具体功能覆盖和开放范围仍待官方页面核验。",
+    },
+    "cand_bc9dea07f47970d2": {
+        "headline": "OpenAI推出面向青少年的ChatGPT安全版本",
+        "summary": "TechCrunch报道称该版本加入适龄安全措施、家长控制和学习工具；年龄识别、地区范围和实际保护机制仍需核验官方说明。",
+    },
+    "cand_af7cb51e34dcb994": {
+        "headline": "TerraPower把核能方案指向AI数据中心需求",
+        "summary": "TechCrunch讨论TerraPower核电项目争取数据中心订单的潜在优势；供电能力、建设周期和已签客户仍待进一步确认。",
+    },
+    "cand_2343530bb6c88adc": {
+        "headline": "个人创业者用Codex与ChatGPT搭建时尚品牌",
+        "summary": "Lenny's Newsletter案例标题显示，一名没有工程团队的个人创业者使用Codex与ChatGPT推进品牌上线；具体工作流和效果数据仍待阅读全文核验。",
+    },
+    "cand_9e4daa9d592a4bcf": {
+        "headline": "从业者实测Grok Bot、Grok 4.6与Cursor Origin",
+        "summary": "Lenny's Newsletter发布一篇工具体验文章，比较Grok与Cursor相关产品；本条属于个人观点，能力结论和测试条件需要结合原文理解。",
+    },
+    "cand_ff7acc40619d7c44": {
+        "headline": "Box用Gemini Embeddings 2扩展企业多模态Agent",
+        "summary": "Google Cloud官方文章介绍Box如何把企业内容检索从文本RAG扩展到多模态内容与Agent场景；实施范围和客户效果仍需继续核验。",
+    },
+    "cand_84f379a9c91c952d": {
+        "headline": "OpenAI在Hugging Face安全事件后增加模型防护措施",
+        "summary": "TechCrunch报道称新增措施包含更细的开发期模型监控，以及后训练阶段的对齐与安全要求；事件经过与措施边界仍待官方来源确认。",
+    },
+    "cand_863666dde927dac5": {
+        "headline": "MDD尝试拆分幅值与方向以加速视频生成",
+        "summary": "论文摘要提出在流匹配视频模型的去噪过程中组合轻量模型与缓存信息，以降低推理成本并校正轨迹偏差；具体加速和质量结果仍待正文核验。",
+    },
+    "cand_16af3af343f18b23": {
+        "headline": "动作条件JEPA被用于机器人执行前风险预测",
+        "summary": "论文提出先预测候选动作的任务进展与物理风险，再由针对不同机器人形态的安全屏障过滤动作；真实部署效果和安全保证仍待核验。",
+    },
+    "cand_90e235f15a2ca8ce": {
+        "headline": "GigaBrain-WBC-0.5探索人形机器人行为世界模型",
+        "summary": "论文提出让因果Transformer联合预测下一动作、状态和潜在行为指令，用于处理地形与物体交互中的全身控制；实验范围仍待正文确认。",
+    },
+    "cand_d67218552fe3fc7a": {
+        "headline": "PROBE评测机器人通过操作揭示被遮挡信息",
+        "summary": "论文把需要移动物体后才能回答的问题定义为操作驱动视觉问答，并构建模拟器与评测任务；任务规模和基线表现仍待二轮核验。",
+    },
+    "cand_91338786878ccac3": {
+        "headline": "RoomWright按使用任务生成可交互3D代码场景",
+        "summary": "论文提出围绕任务所需对象、可供性和状态规则生成3D代码场景，以服务具身交互；场景质量和策略训练收益仍待验证。",
+    },
+    "cand_b3a00295709cf065": {
+        "headline": "推理时注意力引导被用于VLA自动驾驶模型",
+        "summary": "论文尝试在不重新训练的情况下，把注意力引向安全关键交通参与者并观察轨迹变化；测试规模和安全外推边界仍需结合正文判断。",
+    },
+    "cand_e49d3112192a2a1e": {
+        "headline": "QWM尝试用世界模型增强离策略Q-learning",
+        "summary": "论文摘要提出QWM，将世界模型用于提升强化学习的样本效率，同时避免直接依赖想象轨迹训练策略与价值函数；具体实验结果仍待正文核验。",
+    },
+    "cand_695d7d880441abdd": {
+        "headline": "第一视角视频VLM综述梳理具身智能能力边界",
+        "summary": "这篇综述聚焦第一视角视频中的手—物交互、时间推理与多模态表示，并讨论其在可穿戴设备、人机交互和具身系统中的挑战。",
+    },
+    "cand_88fcd6266cfbbc44": {
+        "headline": "研究讨论连续控制世界模型的抽样验证风险",
+        "summary": "论文分析代码世界模型在有限抽样中遗漏低概率关键事件的风险，并给出漏检概率与采样预算之间的理论关系；实验边界仍待阅读全文确认。",
+    },
+    "cand_7bfa877782fd0637": {
+        "headline": "DiSCO探索黑盒文生图安全提示优化",
+        "summary": "论文提出无需访问模型内部的提示优化方法，通过安全与不安全图像分布的对比信号降低有害内容生成；效果数据尚未完成二轮核验。",
+    },
+    "cand_dec42b16eb491fc5": {
+        "headline": "对比逆动力学被用于稳定JEPA世界模型训练",
+        "summary": "论文尝试从环境转移数据本身构造反崩溃信号，减少对高斯分布约束等机制的依赖；方法收益与适用范围仍需结合正文评估。",
+    },
+    "cand_0857cebc3df02af3": {
+        "headline": "DA-WAM让未来表征直接参与自动驾驶决策",
+        "summary": "论文提出把预测表示学习、动作条件未来建模和轨迹评分放入同一框架，使预测结果服务于轨迹选择；基准结果仍待原文表格核验。",
+    },
+    "cand_8c556f21e113f776": {
+        "headline": "媒体关注MiniMax H3权重开放范围与许可限制",
+        "summary": "DeepLearning.AI文章称MiniMax H3权重可免费下载，但许可包含特殊限制。本条属于媒体转述，具体条款仍需回溯模型官方页面。",
+    },
+    "cand_1582a2b21e0e0bd7": {
+        "headline": "HarnessEval-W尝试让世界模型评测可解释",
+        "summary": "论文提出代理化评测流程，把视觉世界的物理、因果与状态判断拆成可检查的子问题，再汇总评估结论；评测覆盖与一致性仍待正文核验。",
+    },
+    "cand_3f36d0912c6917c3": {
+        "headline": "CL4D对齐动态点云与自然语言表示",
+        "summary": "论文提出直接处理动态点云的4D视觉编码器，并用对比学习对齐时空几何与文本描述；性能提升与对比设置尚未完成二轮核验。",
+    },
 }
 
 
@@ -393,6 +556,108 @@ EXPANDED_STORY_COPY = {
         "numbers": [("测试场景", "9", 0), ("图生视频模型", "6", 0), ("每组生成", "32", 0)],
         "reading": 6,
     },
+    "evt_20260818_hydra0": {
+        "what": (
+            "Hydra-0提出以动作流（action flow）作为通用控制接口：机器人动作不再只被表示为关节指令，"
+            "而被转换成图像中的像素运动，使世界模型能够在不同机器人形态、任务、环境与视频生成骨干之间学习动作后果。\n\n"
+            "作者报告，最佳配置相对动作条件基线将机器人运动误差降低90.4%、物体运动误差降低60.2%；"
+            "在RoboLab基准上，重放成功率与参考成功率的Pearson相关系数为r=0.96。模型还支持零样本组合与数据高效适配。"
+        ),
+        "why": (
+            "这条路线尝试解决具身数据难以跨硬件复用的问题：如果不同机器人的动作都能投影到同一视觉运动接口，"
+            "视频数据、机器人示范和世界模型预测就有机会进入同一训练与评估框架。\n\n"
+            "但r=0.96只表示两组成功率高度相关，并不代表任务成功率达到96%。论文结果仍是作者在特定基准上的报告，"
+            "真实机器人中的控制稳定性、延迟和跨形态泛化仍需独立复现。"
+        ),
+        "take": "值得优先观察动作流是否能成为视频世界模型与机器人控制之间的中间表示，并建立跨硬件可复用的动作—结果数据资产。",
+        "how": "模型把机器人动作编码为像素运动，并学习动作流条件下的未来视觉结果；逆向模式还能从目标物体流预测兼容的机器人运动，再映射为可执行动作。",
+        "watch": ["跨机器人形态的零样本组合能否在真实任务中复现？", "动作流接口的时延、精度与安全约束是否适合闭环控制？"],
+        "numbers": [("机器人运动误差", "-90.4%", 1), ("物体运动误差", "-60.2%", 1), ("RoboLab相关性", "r=0.96", 2)],
+        "reading": 6,
+    },
+    "evt_20260819_kuaishou_q2_ai": {
+        "what": (
+            "快手在2026年第二季度业绩公告中披露，AIGC短视频营销素材支出同比增长超过70%。"
+            "截至6月，平台短剧供给（同时包含真人短剧与AI生成短剧）较1月增长超过五倍；第二季度由短剧驱动的在线营销服务总支出同比增长超过100%。\n\n"
+            "产品与付费互动方面，快手披露当季用户发送的AI礼物超过600万次。Kling AI 3.0系列上线原生4K输出，"
+            "同时发布Kling 3.0 Turbo、Kling MCP与Kling CLI，用于提高生成效率并支持Agent批量编排内容。"
+        ),
+        "why": (
+            "这份披露的价值在于把视频生成的商业化从Demo和案例推进到公司经营口径：营销素材支出、短剧营销支出与AI礼物使用量"
+            "开始成为可持续跟踪的量化信号。它说明AIGC正同时进入广告生产、内容供给和直播付费互动。\n\n"
+            "需要避免过度归因：五倍的短剧供给同时包含真人与AI内容，不能全部视作AIGC增长；营销服务支出也不是快手收入同比增幅。"
+        ),
+        "take": "后续应连续跟踪AIGC素材支出、Kling调用或付费规模，以及AI礼物等原生消费场景，判断增长是一次性活动还是稳定业务结构。",
+        "how": "快手一端用Kling生成能力服务营销素材、短剧与直播礼物，另一端通过MCP和CLI把模型接入批量内容生产与Agent工作流。",
+        "watch": ["后续季度是否披露Kling收入、付费客户或调用量？", "短剧供给增长中AI生成内容的独立占比是多少？"],
+        "numbers": [("AIGC营销素材支出", ">70% YoY", 0), ("短剧营销支出", ">100% YoY", 1), ("AI礼物", ">600万次", 2)],
+        "visual_data": {
+            "type": "bar", "title": "快手披露的AIGC与短剧增长信号", "unit": "% / 万次",
+            "note": "三项指标口径不同，仅展示披露量级，不做横向业务规模比较。",
+            "series": [
+                {"label": "AIGC素材支出同比", "value": 70},
+                {"label": "短剧营销支出同比", "value": 100},
+                {"label": "AI礼物（万次）", "value": 600},
+            ],
+        },
+        "reading": 6,
+    },
+    "evt_20260819_sparsepr": {
+        "what": (
+            "SparsePR提出一种无需再训练的块稀疏注意力方案，组合Response-Coupled Partitioning与Probe-Fitted Residual Reconstruction。"
+            "前者让共享路由的查询与键值分组更匹配，后者用少量精确查询行拟合稀疏输出遗漏的残差。\n\n"
+            "论文作者报告，该方法在四个异构视频生成和世界模型上持续降低注意力重建误差；"
+            "在22.0%—26.0%的实际执行对密度下保持生成质量，并取得1.48—2.61倍端到端加速。"
+        ),
+        "why": (
+            "视频Transformer的长序列注意力是推理成本的重要来源。SparsePR的信号在于，它不要求重新训练基础模型，"
+            "更接近可插拔的推理优化，理论上能缩短从研究方法到现有模型部署验证的路径。\n\n"
+            "不过端到端加速高度依赖模型结构、硬件和算子实现；摘要没有展开四个模型的逐项结果，"
+            "因此不能直接把最高2.61倍视为所有视频模型都能获得的固定收益。"
+        ),
+        "take": "可以把SparsePR纳入视频模型推理优化候选，在典型长视频与高分辨率任务上同时测延迟、显存、吞吐和质量回退。",
+        "how": "方法先根据采样查询的键响应建立共享稀疏路由，再用少量精确行校准当前调用的仿射残差，从而补回硬稀疏丢失的信息。",
+        "watch": ["在主流视频模型与常用GPU上的真实加速是多少？", "长时序、复杂运动和高分辨率下的质量回退是否可控？"],
+        "numbers": [("执行对密度", "22%—26%", 2), ("端到端加速", "1.48—2.61×", 2), ("评估模型", "4个", 1)],
+        "reading": 6,
+    },
+    "evt_20260818_semcomp": {
+        "what": (
+            "SemComp-Bench把视频生成定义为“语义任务完成”：模型既要实现指令要求的最终结果，也要保留参考图像中与任务相关的高层语义。"
+            "评估不强制生成完整的中间步骤，也不把传统外观一致性作为唯一判断。\n\n"
+            "配套SemComp-Data覆盖六个领域，每个样本包含参考图像、详细指令、简短指令和结果导向视频。"
+            "基准使用VLM回答结构化二元问题，并分别报告Outcome Achievement与Generation Reliability。"
+        ),
+        "why": (
+            "当前视频评测常能回答画面是否好看、是否像参考图，却较难回答任务到底有没有完成。"
+            "对广告、教程、操作演示和交互内容而言，结果正确往往比复现每个中间动作更重要。\n\n"
+            "这一框架为结果导向视频提供了更直接的Bad Case结构，但VLM评审本身可能产生偏差，"
+            "六个领域的覆盖度和各模型分数仍需结合正文核验。"
+        ),
+        "take": "团队可借鉴OA与GR的拆分：先判断结果是否达成，再判断多次生成是否稳定达成，避免平均画质分掩盖任务失败。",
+        "how": "基准把任务目标拆成结构化二元问题，由VLM逐项判断结果达成与语义保留，再汇总为OA Score和GR Score。",
+        "watch": ["VLM评审与人工判断的一致性如何？", "哪些任务最容易出现画面合理但结果未完成的失败？"],
+        "numbers": [("覆盖领域", "6", 1), ("核心评分", "OA / GR", 2)],
+        "reading": 6,
+    },
+    "evt_20260817_tau0_vla": {
+        "what": (
+            "τ₀-VLA是一种分层机器人基础模型，把高层子任务生成改写为可扩展测试时计算问题。"
+            "高层策略先利用执行记忆生成子任务，遇到困难或关键选择时搜索替代方案，再由低层策略跨多种机器人形态执行。\n\n"
+            "论文披露模型使用40,115小时异构真实世界数据进行多模态联合训练。作者报告，"
+            "增加测试时计算在域内与分布偏移设置中提升下一子任务预测准确率，并带来更高的长时机器人操作闭环成功率。"
+        ),
+        "why": (
+            "长时机器人任务的瓶颈不仅是单个动作是否可靠，还包括先做什么、失败后如何调整以及何时需要更多推理。"
+            "τ₀-VLA允许模型把更多计算分配给困难决策，为具身系统提供了一条区别于单次前向预测的规划路线。\n\n"
+            "摘要尚未披露具体成功率、额外时延和计算成本。测试时搜索能否在真实机器人实时约束下带来净收益，仍是产品化关键。"
+        ),
+        "take": "可以重点评估“按难度分配推理预算”的机制，而不是只比较统一计算量下的平均成功率。",
+        "how": "高层世界模型利用执行记忆提出并比较子任务，低层VLA负责动作执行；当决策不确定时增加测试时搜索，再提交最终子任务。",
+        "watch": ["额外测试时计算带来的时延和成功率增益如何权衡？", "跨机器人形态与分布偏移下的闭环提升能否独立复现？"],
+        "numbers": [("训练数据", "40,115小时", 1)],
+        "reading": 6,
+    },
 }
 
 
@@ -407,7 +672,15 @@ def source_label(url: str) -> str:
         return "腾讯官方财报"
     if "huggingface.co" in url:
         return "Hugging Face 官方文章"
-    return "查看官方原文"
+    if "cloud.google.com" in url:
+        return "Google Cloud 官方文章"
+    if "techcrunch.com" in url:
+        return "TechCrunch 报道"
+    if "mp.weixin.qq.com" in url:
+        return "公众号原文"
+    if "simonwillison.net" in url:
+        return "作者原文"
+    return "查看来源"
 
 
 def generic_copy(event: dict, review_item: dict, rank: int) -> dict:
@@ -439,31 +712,159 @@ def generic_copy(event: dict, review_item: dict, rank: int) -> dict:
     return copy
 
 
-def build_timeline(events: list[dict], story_by_event: dict[str, dict]) -> list[dict]:
+def brief_source_status(source: dict) -> tuple[str, str]:
+    source_type = source.get("source_type")
+    if source_type == "paper_report":
+        return "论文摘要", "abstract_checked"
+    if source_type in {"professional_view", "media", "industry_media"}:
+        return "媒体转述", "secondary_source_pending"
+    if source_type in {"official_announcement", "company_news", "financial_report", "code_dataset"}:
+        return "官方来源", "source_checked"
+    return "来源摘要", "source_checked"
+
+
+def compact_brief_summary(value: str, limit: int = 360) -> str:
+    """Keep a P2 brief readable and prevent full articles entering translation."""
+    text = re.sub(r"\s+", " ", str(value or "")).strip()
+    if len(text) <= limit:
+        return text
+    prefix = text[:limit]
+    endings = [prefix.rfind(mark) for mark in ("。", "！", "？", ". ", "! ", "? ")]
+    cut = max(endings)
+    if cut >= int(limit * 0.55):
+        return prefix[:cut + 1].strip()
+    return prefix.rstrip(" ,，;；:：") + "…"
+
+
+def build_news_briefs(
+    candidate_run: dict,
+    collection: dict,
+    reviewed_ids: set[str],
+    window_end: str | None = None,
+) -> list[dict]:
+    source_map = {item["source_id"]: item for item in collection.get("source_records", [])}
+    briefs = []
+    end_date = report_date(window_end) if window_end else None
+    start_date = end_date - timedelta(days=6) if end_date else None
+    feed_candidates = candidate_run.get("feed_candidates") or candidate_run.get("selected_candidates", [])
+    for candidate in feed_candidates:
+        if not candidate.get("front_display_eligible", True):
+            continue
+        gates = candidate.get("hard_gates") or {}
+        if (gates.get("content_completeness") or {}).get("status") == "fail":
+            continue
+        if (gates.get("fact_wording_fidelity") or {}).get("status") == "fail":
+            continue
+        if candidate["candidate_id"] in reviewed_ids:
+            continue
+        # The collector uses a rolling 7x24-hour window, which can touch eight
+        # local calendar dates. The publication timeline intentionally shows
+        # exactly seven local dates ending on collection day, so keep boundary
+        # spillover records in the intelligence pool but outside this issue.
+        published_at = candidate.get("published_at")
+        if start_date and published_at:
+            candidate_date = report_date(published_at)
+            if not start_date <= candidate_date <= end_date:
+                continue
+        source = source_map.get(candidate["primary_source_id"])
+        if not source:
+            continue
+        copy = P2_BRIEF_COPY.get(candidate["candidate_id"], {})
+        llm_analysis = candidate.get("llm_analysis") or {}
+        summary = compact_brief_summary(
+            copy.get("summary") or llm_analysis.get("what") or source.get("raw_excerpt") or "来源已收录，核心事实仍待核验。"
+        )
+        headline = copy.get("headline") or candidate["canonical_title"]
+        source_badge, verification_status = brief_source_status(source)
+        tags = [ROUTE_CATEGORY.get(candidate["primary_route"], "视觉智能")]
+        for values in (candidate.get("tags") or {}).values():
+            for value in values:
+                if value not in tags:
+                    tags.append(value)
+        digest = hashlib.sha256(candidate["candidate_id"].encode()).hexdigest()[:12]
+        briefs.append({
+            "schema_version": "0.2",
+            "record_type": "news_brief",
+            "brief_id": f"brief_{digest}",
+            "candidate_id": candidate["candidate_id"],
+            "headline": headline,
+            "dek": summary,
+            "category": ROUTE_CATEGORY.get(candidate["primary_route"], "视觉智能"),
+            "domain_scope": candidate.get("domain_scope") or domain_scope(candidate["primary_route"]),
+            "intelligence_type": candidate.get("intelligence_type", "type.technology_breakthrough"),
+            "primary_tags": tags,
+            "priority": "priority.p2",
+            "score": candidate.get("score"),
+            "published_at": candidate.get("published_at"),
+            "reading_time_minutes": 1,
+            "source_badge": source_badge,
+            "verification_status": verification_status,
+            "accuracy_note": "根据来源标题与摘要整理，尚未完成P1级原文核验。",
+            "source_links": [{
+                "source_id": source["source_id"],
+                "label": source_badge,
+                "url": source["canonical_url"],
+                "role": "primary" if source_badge in {"论文摘要", "官方来源"} else "secondary",
+            }],
+            "source_count": len(candidate.get("source_ids", [])),
+        })
+    return sorted(briefs, key=lambda item: (item.get("published_at") or "", item["score"] or 0), reverse=True)
+
+
+def add_briefs_to_timeline(
+    timeline: list[dict],
+    briefs: list[dict],
+    story_by_event: dict[str, dict],
+) -> list[dict]:
+    brief_by_date: dict[str, list[dict]] = {}
+    for brief in briefs:
+        if not brief.get("published_at"):
+            continue
+        brief_by_date.setdefault(report_date(brief["published_at"]).strftime("%m.%d"), []).append(brief)
+    for day in timeline:
+        day_briefs = brief_by_date.get(day["date"], [])
+        day["brief_ids"] = [item["brief_id"] for item in day_briefs]
+        categories = [story_by_event[event_id]["category"] for event_id in day["event_ids"]]
+        categories.extend(item["category"] for item in day_briefs)
+        categories = list(dict.fromkeys(categories))
+        day["summary"] = (
+            "、".join(categories) + "出现值得关注的新信号。"
+            if categories else "完成检查，暂无达到阈值的事件。"
+        )
+    return timeline
+
+
+def report_date(value: str):
+    """Convert an ISO timestamp to the report's Asia/Shanghai calendar date."""
+    parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=REPORT_TIMEZONE)
+    return parsed.astimezone(REPORT_TIMEZONE).date()
+
+
+def build_timeline(
+    events: list[dict],
+    story_by_event: dict[str, dict],
+    window_end: str,
+) -> list[dict]:
     event_dates = {
-        item["event_id"]: datetime.fromisoformat(item["event_at"].replace("Z", "+00:00")).date()
+        item["event_id"]: report_date(item["event_at"])
         for item in events
     }
-    dates = list(event_dates.values())
-    start = min(dates)
-    end = max(max(dates), start + timedelta(days=6))
+    # A weekly issue always ends on the collection date. The old implementation
+    # extended forward from the latest event to fill seven slots, which could
+    # display future dates. Seven calendar days inclusive means end - 6 days.
+    end = report_date(window_end)
     start = end - timedelta(days=6)
     tones = ["purple", "blue", "cyan", "orange", "pink", "green", "muted"]
     timeline = []
     for offset in range(7):
         day = start + timedelta(days=offset)
-        # A rolling seven-day window can touch eight calendar dates when a
-        # source only provides day-level timestamps at the opening boundary.
-        # Keep every approved event by folding such boundary records into the
-        # nearest endpoint instead of silently dropping them from the timeline.
         day_events = [
             item for item in events
-            if min(end, max(start, event_dates[item["event_id"]])) == day
+            if event_dates[item["event_id"]] == day
         ]
-        represented_dates = sorted({event_dates[item["event_id"]] for item in day_events})
         date_label = day.strftime("%m.%d")
-        if represented_dates and (represented_dates[0] < start or represented_dates[-1] > end):
-            date_label = f"{represented_dates[0].strftime('%m.%d')}–{represented_dates[-1].strftime('%m.%d')}"
         categories = list(dict.fromkeys(ROUTE_CATEGORY.get(item["primary_route"], "视觉智能") for item in day_events))
         summary = "、".join(categories) + "出现值得关注的新信号。" if categories else "完成检查，暂无达到阈值的事件。"
         timeline.append({
@@ -477,18 +878,30 @@ def build_timeline(events: list[dict], story_by_event: dict[str, dict]) -> list[
 def build_trends(events: list[dict]) -> list[dict]:
     grouped: dict[str, list[dict]] = {}
     for event in events:
-        grouped.setdefault(event["primary_route"], []).append(event)
+        route = event["primary_route"]
+        # Evaluation is part of the video-model competition signal in the
+        # overview. Grouping it with video generation keeps every formal event
+        # represented without overloading the radar with near-duplicate axes.
+        trend_route = "frontier.video_generation" if route == "visual_value.evaluation" else route
+        grouped.setdefault(trend_route, []).append(event)
     tones = ["purple", "blue", "cyan", "orange"]
+    radar_positions = {
+        "industry.marketing": (80, 90),
+        "frontier.video_generation": (38, 86),
+        "frontier.world_model": (64, 73),
+        "frontier.embodied_ai": (42, 53),
+    }
     trends = []
     for index, (route, items) in enumerate(sorted(grouped.items(), key=lambda pair: (-len(pair[1]), pair[0]))[:4]):
-        category = ROUTE_CATEGORY.get(route, "视觉智能")
+        category = "视频生成与评测" if route == "frontier.video_generation" and any(item["primary_route"] == "visual_value.evaluation" for item in items) else ROUTE_CATEGORY.get(route, "视觉智能")
         names = "、".join(item["primary_entity"]["name"] for item in items[:3])
         count = len(items)
+        maturity, impact = radar_positions.get(route, (40 + index * 8, 68 + index * 5))
         trends.append({
             "trend_id": "trend_" + hashlib.sha256(route.encode()).hexdigest()[:12], "label": category,
             "headline": f"{category}形成本周集中信号", "summary": f"{names}共同构成{category}方向的本周证据，需要继续观察独立复现与产品化表现。",
             "status": "升温" if count >= 2 else "待验证", "score": min(95, 74 + count * 7),
-            "delta": f"+{6 + count * 4:02d}", "maturity": min(80, 30 + count * 12), "impact": min(90, 55 + count * 9),
+            "delta": f"+{6 + count * 4:02d}", "maturity": maturity, "impact": impact,
             "tone": tones[index], "event_ids": [item["event_id"] for item in items],
         })
     return trends
@@ -498,6 +911,9 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--verified", default=str(VERIFIED_PATH.relative_to(ROOT)))
     parser.add_argument("--review", default=str(REVIEW_PATH.relative_to(ROOT)))
+    parser.add_argument("--candidates")
+    parser.add_argument("--collection")
+    parser.add_argument("--drafts")
     parser.add_argument("--output", default=str(OUTPUT_PATH.relative_to(ROOT)))
     parser.add_argument("--static", default=str(STATIC_PATH.relative_to(ROOT)))
     args = parser.parse_args()
@@ -507,6 +923,10 @@ def main() -> None:
     static_path = ROOT / args.static if args.static else None
     verified = json.loads(verified_path.read_text())
     review = json.loads(review_path.read_text())
+    candidate_run = json.loads((ROOT / args.candidates).read_text()) if args.candidates else None
+    collection = json.loads((ROOT / args.collection).read_text()) if args.collection else None
+    draft_bundle = json.loads((ROOT / args.drafts).read_text()) if args.drafts else None
+    writer_drafts = {item["event_id"]: item for item in (draft_bundle or {}).get("drafts", [])}
     events = {item["event_id"]: item for item in verified["intelligence_events"]}
     claims = {item["claim_id"]: item for item in verified["evidence_claims"]}
     reviews = {
@@ -521,6 +941,19 @@ def main() -> None:
         event_id = event["event_id"]
         review_item = reviews[event_id]
         copy = STORY_COPY.get(event_id) or generic_copy(event, review_item, rank)
+        writer_draft = writer_drafts.get(event_id)
+        if writer_draft:
+            paragraphs = writer_draft["factual_paragraphs"]
+            copy.update({
+                "headline": writer_draft["headline"],
+                "dek": writer_draft["dek"],
+                "one_line_takeaway": writer_draft["one_line_takeaway"],
+                "what": paragraphs[0]["text"],
+                "how": "\n\n".join(item["text"] for item in paragraphs[1:]),
+                "why": writer_draft["judgment"],
+                "take": None,
+                "watch": writer_draft["watch_next"],
+            })
         claim_ids = event["claim_ids"]
         source = {
             "source_id": event["primary_source_id"],
@@ -541,6 +974,7 @@ def main() -> None:
             "dek": copy["dek"],
             "one_line_takeaway": copy["one_line_takeaway"],
             "category": copy["category"],
+            "domain_scope": event.get("domain_scope") or domain_scope(event["primary_route"]),
             "intelligence_type": (review_item.get("agent_analysis") or {}).get(
                 "intelligence_type", "type.technology_breakthrough"
             ),
@@ -552,6 +986,7 @@ def main() -> None:
             "under_the_hood": section(copy["how"], claim_ids, "fact"),
             "limitations": section(event["limitations"], claim_ids, "judgment"),
             "watch_next": copy["watch"],
+            "article_body": build_article_body(copy, event, claim_ids),
             "key_numbers": key_numbers,
             "visual_data": copy.get("visual_data"),
             "source_links": [source],
@@ -560,7 +995,7 @@ def main() -> None:
             "priority": event["priority"],
             "reading_time_minutes": copy["reading"],
             "editorial_status": "fact_checked",
-            "drafted_by": "llm",
+            "drafted_by": "deep_story_writer_llm" if writer_draft else "deterministic_template",
             "reviewer": None,
             "reviewed_at": None,
             "revision_note": "一手来源已核验；编辑判断仍需发布者确认。",
@@ -570,6 +1005,16 @@ def main() -> None:
         stories.append(story)
 
     story_by_event = {story["primary_event_id"]: story for story in stories}
+    reviewed_candidate_ids = {item["candidate_id"] for item in review.get("records", [])}
+    news_briefs = (
+        build_news_briefs(
+            candidate_run,
+            collection,
+            reviewed_candidate_ids,
+            verified.get("window_end"),
+        )
+        if candidate_run and collection else []
+    )
     top_event_ids = [item for item in verified["editorial_selection"]["top_event_ids"] if item in story_by_event][:5]
     top_story_ids = [story_by_event[event_id]["story_id"] for event_id in top_event_ids]
     # The verified bundle, rather than legacy hand-written copy, owns the issue
@@ -580,7 +1025,10 @@ def main() -> None:
         story["article_type"] = "deep_dive" if is_deep_dive else "brief"
         story["reading_time_minutes"] = max(story["reading_time_minutes"], 5) if is_deep_dive else 2
     exact_issue_one = set(events) == set(STORY_COPY)
-    timeline = [{**day, "story_ids": [story_by_event[event_id]["story_id"] for event_id in day["event_ids"]]} for day in TIMELINE] if exact_issue_one else build_timeline(list(events.values()), story_by_event)
+    fallback_window_end = max(item["event_at"] for item in events.values())
+    window_end_value = verified.get("window_end") or fallback_window_end
+    timeline = [{**day, "story_ids": [story_by_event[event_id]["story_id"] for event_id in day["event_ids"]]} for day in TIMELINE] if exact_issue_one else build_timeline(list(events.values()), story_by_event, window_end_value)
+    timeline = add_briefs_to_timeline(timeline, news_briefs, story_by_event)
     trends = TRENDS if exact_issue_one else build_trends(list(events.values()))
     trend_labels = "、".join(trend["label"] for trend in trends)
     industry_count = sum(
@@ -593,7 +1041,10 @@ def main() -> None:
         "evt_20260818_hydra0",
         "evt_20260819_kuaishou_q2_ai",
     }
-    if current_signal_set.issubset(events):
+    reviewed_thesis = verified.get("editorial_selection", {}).get("weekly_thesis")
+    if reviewed_thesis:
+        weekly_thesis = reviewed_thesis
+    elif current_signal_set.issubset(events):
         weekly_thesis = (
             "8月12—19日，腾讯披露AI相关预付款用途，快手披露AIGC短视频营销素材支出同比增长超过70%；"
             "技术侧，CaliBench、GaussianDWM++与Hydra-0分别指向物理校准、可控4D驾驶场景和机器人控制。"
@@ -607,8 +1058,12 @@ def main() -> None:
         f"事实：本周正式事件集中在{trend_labels}，并包含{industry_count}条行业市场信号；"
         "判断：下一阶段竞争将进一步转向可验证的时空稳定性、动作响应与真实任务价值。"
     )
-    period_start = datetime.fromisoformat(min(item["event_at"] for item in events.values()).replace("Z", "+00:00")).date()
-    period_end = datetime.fromisoformat(max(item["event_at"] for item in events.values()).replace("Z", "+00:00")).date()
+    if exact_issue_one:
+        period_start = report_date(min(item["event_at"] for item in events.values()))
+        period_end = report_date(max(item["event_at"] for item in events.values()))
+    else:
+        period_end = report_date(window_end_value)
+        period_start = period_end - timedelta(days=6)
     issue_year, issue_week, _ = period_end.isocalendar()
 
     output = {
@@ -625,10 +1080,16 @@ def main() -> None:
             "thesis_dek": f"本周{len(stories)}个正式事件经过原文核验，形成{len(trends)}条值得持续观察的趋势判断。",
             "lead_story_id": top_story_ids[0],
             "top_story_ids": top_story_ids,
-            "brief_story_ids": [story["story_id"] for story in stories if story["article_type"] == "brief"],
+            "brief_story_ids": [
+                story["story_id"]
+                for story in stories
+                if story.get("article_type") == "brief"
+            ],
+            "news_brief_ids": [item["brief_id"] for item in news_briefs],
             "story_count": len(stories),
+            "total_intelligence_count": len(stories) + len(news_briefs),
             "deep_dive_count": sum(story["article_type"] == "deep_dive" for story in stories),
-            "brief_count": sum(story["article_type"] == "brief" for story in stories),
+            "brief_count": len(news_briefs),
             "reviewed_count": verified["summary"]["p1_reviewed"],
             "watchlist_count": verified["summary"]["watchlist_events"],
             "excluded_count": verified["summary"].get("excluded_events", 0),
@@ -638,6 +1099,7 @@ def main() -> None:
             "trend_radar": trends,
         },
         "editorial_stories": stories,
+        "news_briefs": news_briefs,
         "evidence_claims": [claims[claim_id] for story in stories for claim_id in events[story["primary_event_id"]]["claim_ids"]],
     }
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -645,7 +1107,7 @@ def main() -> None:
     if static_path and static_path.exists():
         html = static_path.read_text()
         css_path = os.path.relpath(ROOT / "app" / "globals.css", static_path.parent)
-        html = re.sub(r'href="[^"]*app/globals\.css(?:\?v=\d+)?"', f'href="{css_path}?v=14"', html, count=1)
+        html = re.sub(r'href="[^"]*app/globals\.css(?:\?v=\d+)?"', f'href="{css_path}?v=18"', html, count=1)
         payload = json.dumps(output, ensure_ascii=False, separators=(",", ":")).replace("<", "\\u003c")
         embedded = f'<!-- ISSUE_DATA_START --><script id="issue-data" type="application/json">{payload}</script><!-- ISSUE_DATA_END -->'
         html, replacements = re.subn(r"<!-- ISSUE_DATA_START -->.*?<!-- ISSUE_DATA_END -->", lambda _: embedded, html, count=1, flags=re.S)

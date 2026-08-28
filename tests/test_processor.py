@@ -22,6 +22,26 @@ def record(title, name="arXiv", source_type="paper_report", sid="src_test"):
 
 
 class ProcessorTest(unittest.TestCase):
+    def test_wechat_without_full_text_fails_content_completeness_gate(self):
+        item = record("实测飞猪 AI：真正的突围才刚刚开始？", name="AI科技评论", source_type="wechat_official_account")
+        item["raw_excerpt"] = ""
+        gate = MODULE.content_completeness_gate(item, CONFIG)
+        self.assertEqual(gate["status"], "fail")
+
+    def test_structured_paper_abstract_passes_content_completeness_gate(self):
+        item = record("A new video generation benchmark")
+        item["raw_excerpt"] = "We present a sufficiently detailed benchmark abstract with tasks, metrics, comparisons, limitations, and evaluation results."
+        gate = MODULE.content_completeness_gate(item, CONFIG)
+        self.assertEqual(gate["status"], "pass")
+
+    def test_attribution_detection_requires_preserved_qualifier(self):
+        self.assertTrue(MODULE.requires_attribution("Company says its model wins"))
+        self.assertFalse(MODULE.preserves_attribution("该模型已经超过所有对手"))
+        self.assertTrue(MODULE.preserves_attribution("公司称该模型超过对手"))
+
+    def test_company_name_alone_is_not_attribution(self):
+        self.assertFalse(MODULE.preserves_attribution("该公司模型已经超过对手"))
+
     def test_vertical_embodied_application_is_demoted_not_deleted(self):
         result = MODULE.score_record(record("Surgical World Model for Robot Learning"), CONFIG)
         self.assertEqual(result["hard_exclude"], [])
@@ -55,6 +75,21 @@ class ProcessorTest(unittest.TestCase):
         candidates = MODULE.aggregate([a, b])
         self.assertEqual(len(candidates), 1)
 
+    def test_cross_publisher_same_event_rule_collapses_wechat_rewrites(self):
+        titles = [
+            "宇树上市，机器人公司进入新阶段",
+            "宇树上市开盘后，王兴兴谈下一步",
+            "Unitree IPO draws attention to humanoid robots",
+        ]
+        scored = [
+            MODULE.score_record(record(title, name=f"公众号{index}", source_type="wechat_official_account", sid=f"src_unitree_{index}"), CONFIG)
+            for index, title in enumerate(titles)
+        ]
+        candidates = MODULE.aggregate(scored)
+        self.assertEqual(len(candidates), 1)
+        self.assertEqual(candidates[0]["aggregation"]["method"], "same_event_rule")
+        self.assertEqual(candidates[0]["aggregation"]["source_count"], 3)
+
     def test_financial_report_is_industry_market(self):
         item = record("Quarterly earnings show video generation revenue growth", source_type="financial_report")
         item["raw_excerpt"] = "The company reports revenue, customer adoption and commercial growth."
@@ -81,6 +116,78 @@ class ProcessorTest(unittest.TestCase):
         scored = MODULE.score_record(item, CONFIG)
         candidate = MODULE.aggregate([scored])[0]
         self.assertEqual(candidate["intelligence_type"], "type.technology_breakthrough")
+
+    def test_extended_ai_routes_are_separate_from_visual_core(self):
+        cases = {
+            "Gemini launches a new multimodal model": "extended.foundation_multimodal",
+            "Cursor launches a coding agent developer tool": "extended.ai_agent_tools",
+            "New AI chip targets data center inference infrastructure": "extended.compute_data",
+            "Hugging Face releases open-source model weights": "extended.open_source_ecosystem",
+        }
+        for index, (title, expected_route) in enumerate(cases.items()):
+            with self.subTest(title=title):
+                scored = MODULE.score_record(record(title, sid=f"src_extended_{index}"), CONFIG)
+                candidate = MODULE.aggregate([scored])[0]
+                self.assertEqual(candidate["primary_route"], expected_route)
+                self.assertEqual(candidate["domain_scope"], "scope.ai_extended")
+
+    def test_visual_route_remains_in_core_scope(self):
+        scored = MODULE.score_record(record("A new video generation model", sid="src_visual_core"), CONFIG)
+        candidate = MODULE.aggregate([scored])[0]
+        self.assertEqual(candidate["domain_scope"], "scope.visual_core")
+
+    def test_chinese_wechat_topics_are_routed_before_llm(self):
+        cases = {
+            "写2000字提示词，不如先一键生成3D白模！AI视频创作进入预演时代": "frontier.video_generation",
+            "冷战核废墟变8吉瓦AI超级工厂！英伟达追加投资": "extended.compute_data",
+            "实测飞猪 AI：真正的突围才刚刚开始？": "extended.ai_agent_tools",
+        }
+        for index, (title, expected_route) in enumerate(cases.items()):
+            with self.subTest(title=title):
+                item = record(title, name="公众号", source_type="wechat_official_account", sid=f"src_wechat_{index}")
+                scored = MODULE.score_record(item, CONFIG)
+                self.assertEqual(scored["primary_route"], expected_route)
+                self.assertGreaterEqual(scored["score"], CONFIG["minimum_score"])
+
+    def test_wechat_source_cannot_become_p1_before_original_verification(self):
+        candidate = {
+            "score": 30,
+            "track": "track.emerging",
+            "source_types": ["wechat_official_account"],
+            "selection_reason": "score_and_balanced_quota",
+        }
+        self.assertEqual(MODULE.candidate_priority(candidate, CONFIG), "priority.p2")
+
+    def test_single_case_cannot_be_generalized_to_industry_trend(self):
+        candidate = {"aggregation": {"source_count": 1}}
+        analysis = {
+            "canonical_title": "AI视频行业进入预演时代",
+            "what": "AI视频行业进入预演时代。",
+            "proposed_claims": ["3D白模正在普遍替代传统提示词。"],
+        }
+        self.assertTrue(MODULE.single_case_generalization_failed(candidate, analysis))
+        analysis["what"] = "文章展示该平台的3D白模预演功能。"
+        analysis["canonical_title"] = "该产品展示3D白模预演功能"
+        analysis["proposed_claims"] = ["该产品提供3D白模预演功能。"]
+        self.assertFalse(MODULE.single_case_generalization_failed(candidate, analysis))
+
+    def test_uncertain_source_requires_attribution(self):
+        self.assertTrue(MODULE.requires_attribution("神秘模型仿佛实现了自我进化"))
+        self.assertTrue(MODULE.preserves_attribution("文章称模型可能支持跨本体协作"))
+
+    def test_feed_preserves_relevant_wechat_minimum(self):
+        config = dict(CONFIG)
+        config["feed_count"] = 3
+        config["feed_source_type_minimums"] = {"wechat_official_account": 2}
+        candidates = [
+            {"candidate_id": "paper", "canonical_title": "paper", "primary_route": "frontier.video_generation", "score": 20, "track": "track.emerging", "source_types": ["paper_report"], "selection_reason": "score_and_balanced_quota", "matched_signals": []},
+            {"candidate_id": "wx1", "canonical_title": "wx1", "primary_route": "extended.ai_agent_tools", "score": 10, "track": "track.emerging", "source_types": ["wechat_official_account"], "matched_signals": []},
+            {"candidate_id": "wx2", "canonical_title": "wx2", "primary_route": "frontier.embodied_ai", "score": 9, "track": "track.emerging", "source_types": ["wechat_official_account"], "matched_signals": []},
+            {"candidate_id": "media", "canonical_title": "media", "primary_route": "extended.ai_agent_tools", "score": 15, "track": "track.emerging", "source_types": ["industry_media"], "matched_signals": []},
+        ]
+        feed = MODULE.build_feed_candidates(candidates, config)
+        self.assertEqual(len(feed), 3)
+        self.assertEqual(sum("wechat_official_account" in item["source_types"] for item in feed), 2)
 
     def test_llm_enrichment_is_schema_checked_and_attached(self):
         source = record("A Benchmark for Physical Fidelity in Video Generation")

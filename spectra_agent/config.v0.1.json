@@ -10,11 +10,27 @@
   },
   "collector_python": ".venv-collector/bin/python",
   "llm_python": ".venv-llm/bin/python",
+  "p2_translation": {
+    "enabled": true,
+    "batch_size": 6
+  },
+  "deep_story_writer": {
+    "enabled": true,
+    "required": false,
+    "model": "qwen3:14b",
+    "num_ctx": 16384,
+    "prompt_version": "deep_story_writer.v0.1"
+  },
   "werss_service": {
     "enabled": true,
     "health_url": "http://127.0.0.1:8001/api/docs"
   },
   "collection_config": "collector/source_registry.v0.2.json",
+  "observer_watchlist": "collector/observer_watchlist.v0.1.json",
+  "discussion_radar": {
+    "enabled": true,
+    "required": false
+  },
   "processor_config": "processor/config.v0.1.json",
   "static_page": "visual-intelligence-prototype.html",
   "runs_dir": "spectra_agent/runs",
