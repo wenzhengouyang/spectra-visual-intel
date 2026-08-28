@@ -370,6 +370,10 @@ VERIFIED_HEADLINE_OVERRIDES = {
 # The summary may restate the source abstract; it must not present an LLM
 # judgment or an unlocated metric as a verified fact.
 P2_BRIEF_COPY = {
+    "cand_8054a194921a8a82": {
+        "headline": "烤过头了？为何机器人披萨制作系统仍频频失败",
+        "summary": "BBC报道关注机器人披萨制作系统持续遭遇的落地问题；当前采集记录只有来源标题，具体失败环节、案例范围与原因仍待阅读全文核验。",
+    },
     "cand_44472fd7bd4eb2c0": {
         "headline": "AI算力开始被讨论为可定价与对冲的成本资产",
         "summary": "TechCrunch介绍一家尝试为AI算力建立价格与风险管理工具的创业公司；具体产品机制、客户采用和市场规模仍待核验。",

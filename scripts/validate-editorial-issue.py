@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from collections import Counter
 from pathlib import Path
 
@@ -81,6 +82,10 @@ def main() -> None:
         require(brief.get("domain_scope") in {"scope.visual_core", "scope.ai_extended"}, f"{brief['brief_id']} has invalid domain scope")
         require(brief["verification_status"] != "fact_checked", f"{brief['brief_id']} must retain its pending verification boundary")
         require(brief["source_links"] and all(link["url"].startswith("https://") for link in brief["source_links"]), f"{brief['brief_id']} needs source links")
+        require(
+            not re.search(r"[\u4e00-\u9fff][a-z]{3,}\b", brief["headline"]),
+            f"{brief['brief_id']} headline contains a partial Chinese-English translation fragment",
+        )
 
     timeline_ids = [story_id for day in editorial["presentation"]["timeline_days"] for story_id in day["story_ids"]]
     timeline_brief_ids = [brief_id for day in editorial["presentation"]["timeline_days"] for brief_id in day.get("brief_ids", [])]
