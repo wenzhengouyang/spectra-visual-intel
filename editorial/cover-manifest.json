@@ -1,0 +1,67 @@
+{
+  "schema_version": "0.1",
+  "covers": [
+    {
+      "event_id": "evt_20260825_gemini_enterprise_legal",
+      "url": "https://storage.googleapis.com/gweb-cloudblog-publish/images/Gemini_Enterprise_for_legal.max-2500x2500.jpg",
+      "kind": "official",
+      "label": "官方图片",
+      "credit": "Google Cloud",
+      "source_url": "https://cloud.google.com/blog/products/ai-machine-learning/introducing-gemini-enterprise-for-legal"
+    },
+    {
+      "event_id": "evt_20260826_confal_wm",
+      "url": "https://confal-wm.github.io/assets/figures/overview_introduction.png",
+      "kind": "official",
+      "label": "论文项目图",
+      "credit": "ConfAL-WM project",
+      "source_url": "https://confal-wm.github.io/"
+    },
+    {
+      "event_id": "evt_20260826_wall_ss",
+      "url": "assets/editorial/story-wall-ss-v1.jpg",
+      "kind": "editorial",
+      "label": "编辑配图",
+      "credit": "SPECTRA",
+      "source_url": null
+    },
+    {
+      "event_id": "evt_20260827_spatialcrafter",
+      "url": "https://fangchuan.github.io/SpatialCrafter/assets/methodology.png",
+      "kind": "official",
+      "label": "论文项目图",
+      "credit": "SpatialCrafter project",
+      "source_url": "https://fangchuan.github.io/SpatialCrafter/"
+    },
+    {
+      "event_id": "evt_20260827_pawbench",
+      "url": "assets/editorial/story-pawbench-v1.jpg",
+      "kind": "editorial",
+      "label": "编辑配图",
+      "credit": "SPECTRA",
+      "source_url": null
+    },
+    {
+      "event_id": "evt_20260827_nvidia_hf_report",
+      "url": "assets/editorial/story-nvidia-hf-report-v1.jpg",
+      "kind": "editorial",
+      "label": "编辑配图",
+      "credit": "SPECTRA",
+      "source_url": null
+    },
+    {
+      "event_id": "evt_20260827_pythian_ai_ops",
+      "url": "https://storage.googleapis.com/gweb-cloudblog-publish/images/pythian-ai-framework-blog-header.max-2500x2500.png",
+      "kind": "official",
+      "label": "官方图片",
+      "credit": "Google Cloud / Pythian",
+      "source_url": "https://cloud.google.com/blog/topics/startups/how-pythians-internal-ai-playbook-delivers-customer-roi"
+    }
+  ],
+  "fallbacks": {
+    "行业与市场": "assets/editorial/industry-market-v1.jpg",
+    "产品与公司": "assets/editorial/product-company-v1.jpg",
+    "技术突破": "assets/editorial/technology-breakthrough-v1.jpg",
+    "default": "assets/editorial/technology-breakthrough-v1.jpg"
+  }
+}

@@ -12,6 +12,19 @@ SPEC.loader.exec_module(MODULE)
 
 
 class EditorialTimelineTest(unittest.TestCase):
+    def test_cover_manifest_resolves_specific_asset_and_safe_fallback(self):
+        manifest = {
+            "covers": [{"event_id": "evt_1", "url": "assets/editorial/one.jpg", "kind": "editorial"}],
+            "fallbacks": {"技术突破": "assets/editorial/technology.jpg", "default": "assets/editorial/default.jpg"},
+        }
+
+        specific = MODULE.resolve_cover_image(manifest, "evt_1", "type.technology_breakthrough")
+        fallback = MODULE.resolve_cover_image(manifest, "evt_2", "type.technology_breakthrough")
+
+        self.assertEqual(specific["url"], "assets/editorial/one.jpg")
+        self.assertEqual(fallback["url"], "assets/editorial/technology.jpg")
+        self.assertEqual(fallback["kind"], "editorial_fallback")
+
     def test_reader_facing_text_removes_audit_language_but_keeps_attribution(self):
         text = "按照王兴兴的判断，若闭环跑通，迭代速度可能提升；该表述属于预测而非已验证结果。"
 
