@@ -112,12 +112,35 @@ python3 spectra_agent/run.py run --llm
 
 结构化阶段执行两道前置硬门槛：`content_completeness` 检查正文是否满足来源类型要求，`fact_wording_fidelity` 检查来源归因、不确定措辞以及单一案例是否被错误升级为行业趋势。只有两道门槛均为 `pass` 的候选才能进入 `p1-review.json`。失败或仍为 `pending_llm` 的记录统一写入同一运行目录的 `gated-review.json`，等待补正文、按原文限定重写、观察或剔除；它们不会进入P1深读或后续正式事件生成。
 
-通过结构化硬门槛后，`verification/verification_harness.py` 会在人工审核前运行：从完整正文定位每条候选主张的对应证据，检查数字、归因和单一案例趋势化风险，并在有多来源时给出一致性提示。它输出 `verification-candidates.json` 和 `evidence-review.json`，同时把机器建议写入 `p1-review.json.suggested_evidence`。所有结果状态仍为 `provisional_unverified` 或 `waiting_for_human_review`；Harness不会自动填入正式 `claims`、不会批准事件，也不会触发发布。
+通过结构化硬门槛后，`verification/verification_harness.py` 会在人工审核前运行：从完整正文定位每条候选主张的对应证据，检查数字、归因和单一案例趋势化风险，并在有多来源时给出一致性提示。随后 `p1_fact_expander.py` 使用 `qwen3:8b` 为每个 P1 提议 8—12 条原子事实；只有原文引文精确命中、数字一致且保留来源归因的事实才会写入 `p1-review.json.suggested_evidence`。每条建议都必须由人工设为 `keep/modify/drop`，或明确批准全部建议，系统才会生成正式 `claims`。所有建议仍为 `pending_human_review`，不会自动批准事件或触发发布。
+
+P1 人工事实审核通过后，`fact_selection` 只从 `verified_events` 生成 Writer 可见事实包。至少包含 8 条人工核验事实的事件进入 `p1_long_pipeline.py`：系统启动独立后台 worker，本机 `qwen3:14b` 按事件串行生成长篇正文，随后由程序执行重复句清理、段落—claim 映射、数字新增检查、来源归因检查、事实重合度检查和判断边界检查。每个事件在 `p1-long-editorial-checkpoint.json` 中记录 queued/running/retryable_failure/completed/manual_review 状态；中断后复用已完成稿，单篇最多尝试两次。未达到 8 条事实的事件自动降为快速解读；最终失败稿进入 `manual_editorial_review`。审计写入 `p1-long-editorial-audit.json`，后台结束后仍保持 `publish_status=not_published`。
 
 当前主流程为：
 
 ```text
 collect → validate_collection → discussion_radar → structure
-→ validate_structure → verification_harness → waiting_for_review
-→ human review → verified-events → editorial
+→ validate_structure → verification_harness → p1_fact_expansion → waiting_for_review
+→ fact-level human review → verified-events → p1 editorial queue/worker → p2_localizer
+→ validate_issue → local draft
 ```
+
+`p2_localizer` 使用 `qwen3:8b` 将仍为英文的 P2 标题与摘要忠实转为中文。它保留原文字段，双向检查数字、单位和数量级，并检查来源归因与不确定措辞是否丢失。通过校验的短讯不会改变原有 P2 待核验状态；失败内容从页面数据中隔离并进入 `p2-localization-review.json`，不得进入网页。
+
+## 连续运行验收
+
+每个完成的新流程运行会写入 `acceptance-metrics.json`，并更新
+`spectra_agent/runs/acceptance-summary.json` 与 `.md`。统计只纳入显式加入验收队列且采集窗口不同的运行，
+避免用同一批数据反复回放冒充稳定性。指标包括来源成功率、P1 Writer 自动通过率、Writer 降级率、
+事实级人工修改率和编辑人工调整篇数。
+
+手动将一个既有完成运行作为验收基线：
+
+```bash
+.venv-llm/bin/python spectra_agent/acceptance_metrics.py \
+  --include-run <run-id> --rounds 3
+```
+
+累计三个不同采集窗口后，报告状态才会从 `collecting` 变为 `ready_for_decision`。这只表示可以人工评估
+是否启用自动发布，不会自行修改发布开关。P1 Writer 不再使用事件 ID 对应的人工正文覆盖；模型稿未通过
+程序审计时必须降为快速解读，并计入 Writer 降级率。

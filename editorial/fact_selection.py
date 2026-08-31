@@ -184,6 +184,14 @@ def build_fact_selection(verified: dict[str, Any], review: dict[str, Any],
             },
             "allowed_judgment": reader_judgment,
         }
+        if len(selected_facts) >= 8:
+            reader_packet["writing_profile"] = {
+                "mode": "long_form",
+                "min_fact_units": 8,
+                "min_fact_characters": 300,
+                "min_characters": 600,
+                "max_characters": 1000,
+            }
         audit_packet = {
             "limitations": item["limitation"],
             "embedded_claim_audit_notes": embedded_audit_notes,

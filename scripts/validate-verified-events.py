@@ -19,8 +19,11 @@ source_ids = {item["source_id"] for item in json.loads(Path(args.collection).rea
 source_ids.update(item["source_id"] for item in data["additional_source_records"])
 if not records:
     errors.append("核验记录不能为空")
-if not 5 <= len(events) <= 10:
-    errors.append(f"正式事件应为5—10条，实际{len(events)}")
+attainable_minimum = min(5, len(records))
+if not attainable_minimum <= len(events) <= 10:
+    errors.append(
+        f"正式事件本轮应为{attainable_minimum}—10条，实际{len(events)}"
+    )
 if sum(item["decision"] == "include" for item in records) != len(events):
     errors.append("include决策数量与正式事件数量不一致")
 if not all(item["verification_status"] == "verified_primary" for item in records):

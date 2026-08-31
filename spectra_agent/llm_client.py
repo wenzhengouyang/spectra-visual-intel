@@ -100,6 +100,7 @@ class OllamaSettings:
     timeout_seconds: int
     num_ctx: int = 8192
     think: bool = False
+    num_predict: int = 3072
 
     @classmethod
     def from_environment(cls, *, load_env_file: bool = True) -> "OllamaSettings":
@@ -117,6 +118,7 @@ class OllamaSettings:
             timeout_seconds=_positive_int("OLLAMA_TIMEOUT", 600),
             num_ctx=_positive_int("OLLAMA_NUM_CTX", 8192),
             think=os.environ.get("OLLAMA_THINK", "false").strip().lower() in {"1", "true", "yes", "on"},
+            num_predict=_positive_int("OLLAMA_NUM_PREDICT", 3072),
         )
 
 
@@ -245,7 +247,11 @@ class OllamaChatClient:
             ],
             "format": schema,
             "think": self.settings.think,
-            "options": {"temperature": 0, "num_ctx": self.settings.num_ctx},
+            "options": {
+                "temperature": 0,
+                "num_ctx": self.settings.num_ctx,
+                "num_predict": self.settings.num_predict,
+            },
         }
         request = Request(
             f"{self.settings.base_url}/api/chat",

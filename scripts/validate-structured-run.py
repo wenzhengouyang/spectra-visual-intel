@@ -15,8 +15,29 @@ config = json.loads(Path(args.config).read_text(encoding="utf-8"))
 selected = data["selected_candidates"]
 feed = data.get("feed_candidates", selected)
 errors = []
-if not 12 <= len(selected) <= 30:
-    errors.append(f"人工核验短名单应为12—30，实际{len(selected)}")
+configured_minimum = int(config.get("minimum_candidate_count", 12))
+configured_maximum = int(config.get("candidate_count", 30))
+llm_completed = (data.get("llm") or {}).get("status") == "completed"
+if llm_completed:
+    # A hard fidelity gate must take precedence over an editorial volume
+    # target. Once LLM analysis is complete, only analyzed, front-eligible
+    # candidates that passed wording fidelity are safely attainable. Do not
+    # force a run to refill the shortlist with rejected facts merely to reach
+    # the nominal minimum.
+    safe_analyzed = [
+        item for item in selected + data.get("overflow_candidates", [])
+        if item.get("llm_analysis")
+        and item.get("front_display_eligible", True)
+        and ((item.get("hard_gates") or {}).get("fact_wording_fidelity") or {}).get("status") == "pass"
+    ]
+    attainable_minimum = min(configured_minimum, len(safe_analyzed))
+else:
+    attainable_minimum = configured_minimum
+if not attainable_minimum <= len(selected) <= configured_maximum:
+    errors.append(
+        f"人工核验短名单目标为{configured_minimum}—{configured_maximum}，"
+        f"本轮安全可达下限{attainable_minimum}，实际{len(selected)}"
+    )
 if len({item["candidate_id"] for item in selected}) != len(selected):
     errors.append("candidate_id不唯一")
 if len({item["candidate_id"] for item in feed}) != len(feed):
@@ -81,7 +102,6 @@ present_fixture = [item for item in data["fixture_recall"] if item["present_in_i
 if not all(item["selected"] for item in present_fixture):
     errors.append("已在输入中出现的样刊回归信号未全部保留")
 routes = Counter(item["primary_route"] for item in selected)
-llm_completed = (data.get("llm") or {}).get("status") == "completed"
 if llm_completed:
     # After the LLM fidelity gate, an overflow candidate without llm_analysis
     # is not an immediately attainable replacement. Counting it here can make

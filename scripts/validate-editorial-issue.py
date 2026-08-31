@@ -6,11 +6,17 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import sys
 from collections import Counter
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from processor.p2_localizer import validate_localized_brief
+
+
 EDITORIAL_PATH = ROOT / "editorial/runs/issue-01-editorial-stories-v0.2.json"
 VERIFIED_PATH = ROOT / "verification/runs/p1-verified-events-v0.2.json"
 
@@ -29,15 +35,21 @@ def main() -> None:
     verified = json.loads(Path(args.verified).read_text())
     stories = editorial["editorial_stories"]
     news_briefs = editorial.get("news_briefs", [])
+    issue = editorial["issue"]
     story_ids = {story["story_id"] for story in stories}
     news_brief_ids = {brief["brief_id"] for brief in news_briefs}
     event_ids = {event["event_id"] for event in verified["intelligence_events"]}
     claim_ids = {claim["claim_id"] for claim in verified["evidence_claims"]}
 
-    require(5 <= len(stories) <= 10, "expected 5-10 editorial stories")
+    attainable_minimum = min(5, len(event_ids))
+    require(
+        attainable_minimum <= len(stories) <= 10,
+        f"expected {attainable_minimum}-10 editorial stories for this verified event set",
+    )
     counts = Counter(story["article_type"] for story in stories)
-    require(counts["deep_dive"] == min(5, len(stories)), "top five stories must be deep dives")
-    require(counts["brief"] == max(0, len(stories) - 5), "remaining stories must be briefs")
+    require(counts["deep_dive"] == len(issue["top_story_ids"]), "deep dives must match the readiness-qualified top stories")
+    require(counts["deep_dive"] <= min(5, len(stories)), "at most five stories may be deep dives")
+    require(counts["brief"] == len(stories) - counts["deep_dive"], "non-deep stories must be quick reads")
     require(len(story_ids) == len(stories), "story IDs must be unique")
     require({story["primary_event_id"] for story in stories} == event_ids, "stories must cover all formal events exactly once")
 
@@ -46,7 +58,7 @@ def main() -> None:
         cover = story.get("cover_image") or {}
         cover_url = cover.get("url") or ""
         require(cover_url.startswith("https://") or cover_url.startswith("assets/"), f"{story['story_id']} needs a safe cover image")
-        require(cover.get("kind") in {"official", "editorial", "editorial_fallback"}, f"{story['story_id']} has invalid cover kind")
+        require(cover.get("kind") in {"official", "editorial", "editorial_fallback", "editorial_diagram"}, f"{story['story_id']} has invalid cover kind")
         require(bool(cover.get("label")), f"{story['story_id']} needs a cover label")
         if cover_url.startswith("assets/"):
             require((ROOT / cover_url).exists(), f"{story['story_id']} local cover asset is missing")
@@ -65,8 +77,7 @@ def main() -> None:
             require(article_section and article_section.get("text"), f"{story['story_id']} article_body.{field} is required")
             require(set(article_section.get("claim_ids", [])) <= claim_ids, f"{story['story_id']} article_body.{field} has unknown claims")
 
-    issue = editorial["issue"]
-    require(len(issue["top_story_ids"]) == min(5, len(stories)), "top story selection must contain up to 5 stories")
+    require(len(issue["top_story_ids"]) <= min(5, len(stories)), "top story selection must contain at most 5 stories")
     require(set(issue["top_story_ids"]) <= story_ids, "top story selection contains unknown stories")
     require(
         set(issue.get("brief_story_ids", []))
@@ -94,6 +105,8 @@ def main() -> None:
             not re.search(r"[\u4e00-\u9fff][a-z]{3,}\b", brief["headline"]),
             f"{brief['brief_id']} headline contains a partial Chinese-English translation fragment",
         )
+        localization_errors = validate_localized_brief(brief)
+        require(not localization_errors, f"{brief['brief_id']} failed localization checks: {localization_errors}")
 
     timeline_ids = [story_id for day in editorial["presentation"]["timeline_days"] for story_id in day["story_ids"]]
     timeline_brief_ids = [brief_id for day in editorial["presentation"]["timeline_days"] for brief_id in day.get("brief_ids", [])]

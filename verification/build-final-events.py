@@ -71,8 +71,11 @@ def validate_review(review: dict[str, Any], candidates: dict[str, Any]) -> list[
             else:
                 event_ids.append(event["event_id"])
     included = sum(item.get("decision") == "include" for item in records)
-    if not 5 <= included <= 10:
-        errors.append(f"included events must be 5-10, got {included}")
+    attainable_minimum = min(5, len(records))
+    if not attainable_minimum <= included <= 10:
+        errors.append(
+            f"included events must be {attainable_minimum}-10 for this review queue, got {included}"
+        )
     return errors
 
 

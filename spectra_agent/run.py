@@ -27,6 +27,11 @@ try:
 except ImportError:  # `python -m unittest` imports this file as spectra_agent.run
     from spectra_agent.llm_client import load_local_env
 
+try:
+    from acceptance_metrics import distinct_completed_runs, metrics_for_run, rolling_summary, write_outputs
+except ImportError:
+    from spectra_agent.acceptance_metrics import distinct_completed_runs, metrics_for_run, rolling_summary, write_outputs
+
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG = ROOT / "spectra_agent/config.v0.1.json"
@@ -328,6 +333,8 @@ def attach_harness_evidence(review: dict[str, Any], evidence: dict[str, Any]) ->
             continue
         record["evidence_review_id"] = packet["evidence_review_id"]
         record["suggested_evidence"] = packet.get("claim_reviews", [])
+        record["approve_all_suggested_facts"] = False
+        record["fact_review_instructions"] = "逐条设置 human_fact_decision=keep/modify/drop，或明确将 approve_all_suggested_facts 设为 true。"
         record["risk_flags"] = packet.get("risk_flags", [])
         record["harness_confidence"] = packet.get("confidence")
         record["agent_recommendation"] = packet.get("agent_recommendation")
@@ -343,6 +350,97 @@ def attach_harness_evidence(review: dict[str, Any], evidence: dict[str, Any]) ->
     return review
 
 
+def materialize_fact_decisions(review: dict[str, Any]) -> dict[str, Any]:
+    """Convert explicit fact-level human decisions into formal review claims."""
+    for record in review.get("records", []):
+        if record.get("decision") != "include" or record.get("claims"):
+            continue
+        suggestions = record.get("suggested_evidence") or []
+        approve_all = record.get("approve_all_suggested_facts") is True
+        claims = []
+        pending = []
+        for index, item in enumerate(suggestions, 1):
+            decision = "keep" if approve_all else item.get("human_fact_decision", "pending")
+            if approve_all and (
+                item.get("support_status") != "supported"
+                or item.get("numeric_match") is False
+                or item.get("risk_flags")
+            ):
+                raise WorkflowError(
+                    f"{record['candidate_id']}: approve_all_suggested_facts cannot include risky fact {index}; review it individually"
+                )
+            if decision == "pending":
+                pending.append(index)
+                continue
+            if decision == "drop":
+                continue
+            if decision not in {"keep", "modify"}:
+                raise WorkflowError(f"{record['candidate_id']}: invalid human_fact_decision at fact {index}")
+            text = item.get("claim") if decision == "keep" else item.get("human_fact_text")
+            kind = (item.get("kind") or "reported_fact") if decision == "keep" else item.get("human_fact_kind")
+            if not text or not kind:
+                raise WorkflowError(f"{record['candidate_id']}: modified fact {index} requires text and kind")
+            claims.append({
+                "text": text,
+                "kind": kind,
+                "locator": item.get("locator"),
+                "quote_excerpt": item.get("evidence_text"),
+            })
+        if pending and not approve_all:
+            raise WorkflowError(
+                f"{record['candidate_id']}: fact-level review incomplete; pending facts: {pending}"
+            )
+        record["claims"] = claims
+    return review
+
+
+def materialize_review_metadata(review: dict[str, Any], candidates: dict[str, Any],
+                                collection: dict[str, Any]) -> dict[str, Any]:
+    """Fill non-factual event routing metadata after facts are approved."""
+    candidate_map = {item["candidate_id"]: item for item in candidates.get("selected_candidates", [])}
+    source_map = {item["source_id"]: item for item in collection.get("source_records", [])}
+    event_types = {
+        "type.product_release": "event.product_release",
+        "type.industry_market": "event.market",
+        "type.technology_breakthrough": "event.research",
+        "type.company_strategy": "event.company_strategy",
+    }
+    confidences = {
+        "high": "confidence.high",
+        "medium": "confidence.medium",
+        "low": "confidence.low",
+    }
+    for record in review.get("records", []):
+        if record.get("decision") != "include":
+            continue
+        candidate = candidate_map.get(record.get("candidate_id"))
+        source = source_map.get(record.get("source_id"), {})
+        if not candidate:
+            raise WorkflowError(f"{record.get('candidate_id')}: structured candidate is missing")
+        existing_event = record.get("event") or {}
+        record["verification_status"] = "verified_primary"
+        risks = record.get("risk_flags") or []
+        if not record.get("limitation"):
+            record["limitation"] = (
+                "仅确认人工保留的原文事实；风险标记不作为独立结论。"
+                if risks else "仅确认人工保留的原文事实，不外推未被证据支持的效果、因果或趋势。"
+            )
+        entity_name = existing_event.get("entity_name") or source.get("publisher") or candidate.get("canonical_title") or record.get("title")
+        record["event"] = {
+            "event_id": "evt_" + record["candidate_id"].removeprefix("cand_"),
+            "canonical_title": existing_event.get("canonical_title") or candidate.get("canonical_title") or record.get("title"),
+            "event_type": event_types.get(candidate.get("intelligence_type"), "event.research"),
+            "primary_route": candidate.get("primary_route"),
+            "secondary_routes": candidate.get("secondary_routes") or [],
+            "priority": "priority.p1",
+            "confidence": confidences.get(record.get("harness_confidence"), "confidence.medium"),
+            "entity_name": entity_name,
+            "tags": candidate.get("tags") or {},
+            "track": candidate.get("track", "track.emerging"),
+        }
+    return review
+
+
 def write_review_instructions(run_dir: Path, count: int, gated_count: int = 0) -> None:
     text = f"""# P1 人工核验闸门
 
@@ -354,10 +452,10 @@ def write_review_instructions(run_dir: Path, count: int, gated_count: int = 0) -
 
 1. 先查看 `evidence-review.json` 及每条记录的 `suggested_evidence`；这些是机器定位建议，不等于核验结论；
 2. 阅读并确认原始来源，将 `verification_status` 改为 `verified_primary`；
-3. 将确认无误的证据整理到 `claims`，每条含 `text`、`kind`、`locator`；
+3. 对每条 `suggested_evidence` 设置 `human_fact_decision=keep/modify/drop`；修改时填写 `human_fact_text` 与 `human_fact_kind`。如果逐条确认后全部保留，可明确将记录级 `approve_all_suggested_facts` 设为 `true`；系统随后自动生成 `claims`；
 4. 填写 `limitation`；
 5. 将 `decision` 设为 `include`、`watch` 或 `exclude`，并填写 `decision_reason`；
-6. `include` 的记录必须填写完整 `event`；最终正式事件必须为 5—10 条；
+6. `include` 的记录会依据结构化候选自动补齐 `event` 路由元数据，不需要人工重复填写；
 7. 全部完成后填写顶层 `verified_at`、`verified_by`，将 `review_status` 改为 `approved`。
 
 完成后运行：
@@ -393,6 +491,9 @@ def create_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
             "gated_review": "gated-review.json",
             "verification_candidates": "verification-candidates.json",
             "evidence_review": "evidence-review.json",
+            "p1_fact_expansion_checkpoint": "p1-fact-expansion-checkpoint.json",
+            "p1_long_editorial_checkpoint": "p1-long-editorial-checkpoint.json",
+            "p1_long_editorial_audit": "p1-long-editorial-audit.json",
             "discussion_radar": "discussion-radar.json",
             "verified": "verified-events.json", "issue": "editorial-issue.json",
             "web_draft": "weekly-report.html", "report": "run-report.md",
@@ -466,7 +567,28 @@ def create_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
             "--verification-output", str(run_dir / "verification-candidates.json"),
             "--evidence-output", str(run_dir / "evidence-review.json"),
         ])
-        evidence = read_json(run_dir / "evidence-review.json")
+        evidence_path = run_dir / "evidence-review.json"
+        fact_expander_config = config.get("p1_fact_expander") or {}
+        if state.get("llm_requested") and fact_expander_config.get("enabled", True):
+            update_state(run_dir, current_stage="p1_fact_expansion")
+            fact_expansion_command = [
+                llm_python(config), "verification/p1_fact_expander.py",
+                "--evidence", str(evidence_path),
+                "--collection", str(run_dir / "collection.json"),
+                "--output", str(evidence_path),
+                "--checkpoint", str(run_dir / "p1-fact-expansion-checkpoint.json"),
+            ]
+            if fact_expander_config.get("model"):
+                fact_expansion_command += ["--model", str(fact_expander_config["model"])]
+            if fact_expander_config.get("num_ctx"):
+                fact_expansion_command += ["--num-ctx", str(fact_expander_config["num_ctx"])]
+            try:
+                command(run_dir, "p1_fact_expansion", fact_expansion_command)
+            except WorkflowError:
+                if fact_expander_config.get("required", False):
+                    raise
+                log(run_dir, "p1_fact_expansion", "fact_expansion_failed_using_harness_claims")
+        evidence = read_json(evidence_path)
         template = attach_harness_evidence(template, evidence)
         write_json(run_dir / "p1-review.json", template)
         confidence_summary = evidence.get("summary", {})
@@ -495,7 +617,89 @@ def resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
     if args.review:
         shutil.copyfile(ROOT / args.review, review_path)
         log(run_dir, "human_review", "review_imported", source=args.review)
-    review = read_json(review_path)
+    if not review_path.exists() and args.retry:
+        # Recover a run that failed after structure output was persisted but
+        # before the review packet was materialized. Reuse collection,
+        # candidates and LLM checkpoints; do not repeat collection or model
+        # structuring merely to recreate downstream review artifacts.
+        collection_path = run_dir / "collection.json"
+        candidates_path = run_dir / "candidates.json"
+        if not collection_path.exists() or not candidates_path.exists():
+            raise WorkflowError("cannot recover pre-review run: collection.json or candidates.json is missing")
+        update_state(run_dir, status="running", current_stage="validate_structure", error=None)
+        command(run_dir, "validate_structure", [
+            sys.executable, "scripts/validate-structured-run.py", str(candidates_path)
+        ])
+        collection = read_json(collection_path)
+        candidates = read_json(candidates_path)
+        template = review_template(collection, candidates, run_dir.name, config)
+        gated_template = gated_review_template(collection, candidates, run_dir.name)
+        write_json(review_path, template)
+        write_json(run_dir / "gated-review.json", gated_template)
+
+        update_state(run_dir, current_stage="verification_harness")
+        command(run_dir, "verification_harness", [
+            sys.executable,
+            "verification/verification_harness.py",
+            "--collection", str(collection_path),
+            "--candidates", str(candidates_path),
+            "--review", str(review_path),
+            "--verification-output", str(run_dir / "verification-candidates.json"),
+            "--evidence-output", str(run_dir / "evidence-review.json"),
+        ])
+        evidence_path = run_dir / "evidence-review.json"
+        fact_expander_config = config.get("p1_fact_expander") or {}
+        if state.get("llm_requested") and fact_expander_config.get("enabled", True):
+            update_state(run_dir, current_stage="p1_fact_expansion")
+            fact_expansion_command = [
+                llm_python(config), "verification/p1_fact_expander.py",
+                "--evidence", str(evidence_path),
+                "--collection", str(collection_path),
+                "--output", str(evidence_path),
+                "--checkpoint", str(run_dir / "p1-fact-expansion-checkpoint.json"),
+            ]
+            if fact_expander_config.get("model"):
+                fact_expansion_command += ["--model", str(fact_expander_config["model"])]
+            if fact_expander_config.get("num_ctx"):
+                fact_expansion_command += ["--num-ctx", str(fact_expander_config["num_ctx"])]
+            try:
+                command(run_dir, "p1_fact_expansion", fact_expansion_command)
+            except WorkflowError:
+                if fact_expander_config.get("required", False):
+                    raise
+                log(run_dir, "p1_fact_expansion", "fact_expansion_failed_using_harness_claims")
+        evidence = read_json(evidence_path)
+        template = attach_harness_evidence(template, evidence)
+        write_json(review_path, template)
+        write_review_instructions(run_dir, len(template["records"]), gated_template["count"])
+        update_state(
+            run_dir,
+            status="waiting_for_review",
+            current_stage="human_review",
+            paused_reason="P1 primary-source verification required",
+            error=None,
+        )
+        log(
+            run_dir, "human_review", "workflow_recovered_and_paused",
+            p1_candidates=len(template["records"]), gated_candidates=gated_template["count"],
+        )
+        print(json.dumps({
+            "run_id": run_dir.name,
+            "status": "waiting_for_review",
+            "p1_candidates": len(template["records"]),
+            "gated_candidates": gated_template["count"],
+            "review_file": str(review_path),
+            "gated_review_file": str(run_dir / "gated-review.json"),
+            "publish_status": "not_published",
+        }, ensure_ascii=False, indent=2))
+        return 2
+    review = materialize_fact_decisions(read_json(review_path))
+    review = materialize_review_metadata(
+        review,
+        read_json(run_dir / "candidates.json"),
+        read_json(run_dir / "collection.json"),
+    )
+    write_json(review_path, review)
     if review.get("review_status") != "approved" or not review.get("verified_at") or not review.get("verified_by"):
         raise WorkflowError("review is not approved: set review_status, verified_at and verified_by")
     try:
@@ -505,7 +709,11 @@ def resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
         command(run_dir, "validate_verified", [sys.executable, "scripts/validate-verified-events.py", "--verified", str(verified_path), "--collection", str(run_dir / "collection.json")])
         verified = read_json(verified_path)
         count = verified["summary"]["included_events"]
-        if not config["minimum_formal_events"] <= count <= config["maximum_formal_events"]:
+        approved_count = sum(
+            item.get("decision") == "include" for item in review.get("records", [])
+        )
+        attainable_minimum = min(config["minimum_formal_events"], approved_count)
+        if not attainable_minimum <= count <= config["maximum_formal_events"]:
             raise WorkflowError(f"formal event count outside configured boundary: {count}")
 
         fact_selection_path = run_dir / "fact-selection.json"
@@ -520,29 +728,65 @@ def resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
 
         deep_story_config = config.get("deep_story_writer") or config.get("editorial_writer") or {}
         editorial_drafts_path = run_dir / "deep-story-drafts.json"
+        editorial_audit_path = run_dir / "p1-long-editorial-audit.json"
+        background_mode = deep_story_config.get("generation_mode") == "serial_background"
+        if state.get("llm_requested") and background_mode and not args.editorial_worker:
+            update_state(
+                run_dir,
+                status="waiting_for_editorial",
+                current_stage="p1_editorial_queued",
+                paused_reason="qwen3:14b P1 editorial worker is running",
+                error=None,
+            )
+            worker_log = (run_dir / "p1-editorial-worker.log").open("a", encoding="utf-8")
+            worker_command = [
+                sys.executable, str(ROOT / "spectra_agent/run.py"),
+                "--config", args.config,
+                "resume", "--run-id", run_dir.name, "--retry", "--editorial-worker",
+            ]
+            process = subprocess.Popen(
+                worker_command, cwd=ROOT, stdout=worker_log, stderr=worker_log,
+                start_new_session=True,
+            )
+            worker_log.close()
+            update_state(run_dir, editorial_worker_pid=process.pid)
+            log(run_dir, "p1_editorial_queued", "background_worker_started", pid=process.pid)
+            print(json.dumps({
+                "run_id": run_dir.name,
+                "status": "waiting_for_editorial",
+                "worker_pid": process.pid,
+                "checkpoint": str(run_dir / "p1-long-editorial-checkpoint.json"),
+                "publish_status": "not_published",
+            }, ensure_ascii=False, indent=2))
+            return 0
         if state.get("llm_requested") and deep_story_config.get("enabled", True):
-            update_state(run_dir, current_stage="deep_story")
+            update_state(run_dir, current_stage="p1_editorial_background")
             # A retry must never reuse a draft bundle left by an earlier writer
             # attempt that subsequently failed validation.
             if editorial_drafts_path.exists():
                 editorial_drafts_path.unlink()
             try:
                 deep_story_command = [
-                    llm_python(config), "editorial/editorial_writer.py",
+                    llm_python(config), "editorial/p1_long_pipeline.py",
                     "--verified", str(verified_path),
                     "--fact-selection", str(fact_selection_path),
-                    "--collection", str(run_dir / "collection.json"),
                     "--output", str(editorial_drafts_path),
+                    "--audit-output", str(editorial_audit_path),
+                    "--checkpoint", str(run_dir / "p1-long-editorial-checkpoint.json"),
                 ]
                 if deep_story_config.get("model"):
                     deep_story_command += ["--model", str(deep_story_config["model"])]
                 if deep_story_config.get("num_ctx"):
                     deep_story_command += ["--num-ctx", str(deep_story_config["num_ctx"])]
-                command(run_dir, "deep_story", deep_story_command)
+                if deep_story_config.get("num_predict"):
+                    deep_story_command += ["--num-predict", str(deep_story_config["num_predict"])]
+                if deep_story_config.get("max_attempts"):
+                    deep_story_command += ["--max-attempts", str(deep_story_config["max_attempts"])]
+                command(run_dir, "p1_editorial_background", deep_story_command)
             except WorkflowError:
                 if deep_story_config.get("required", False):
                     raise
-                log(run_dir, "deep_story", "writer_failed_using_deterministic_fallback")
+                log(run_dir, "p1_editorial_background", "writer_failed_using_quick_read_fallback")
 
         update_state(run_dir, current_stage="generate")
         issue_path = run_dir / "editorial-issue.json"
@@ -551,17 +795,25 @@ def resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
         if editorial_drafts_path.exists():
             generate_command += ["--drafts", str(editorial_drafts_path.relative_to(ROOT))]
         command(run_dir, "generate", generate_command)
-        translation_config = config.get("p2_translation") or {}
-        if state.get("llm_requested") and translation_config.get("enabled", True):
-            translation_checkpoint = run_dir / "p2-translation-checkpoint.json"
-            command(run_dir, "translate_p2", [
-                llm_python(config), "processor/translate_p2.py",
+        localizer_config = config.get("p2_localizer") or config.get("p2_translation") or {}
+        localization_review = run_dir / "p2-localization-review.json"
+        if state.get("llm_requested") and localizer_config.get("enabled", True):
+            localization_checkpoint = run_dir / "p2-localization-checkpoint.json"
+            update_state(run_dir, current_stage="p2_localizer")
+            localize_command = [
+                llm_python(config), "processor/p2_localizer.py",
                 "--input", str(issue_path),
                 "--output", str(issue_path),
-                "--checkpoint", str(translation_checkpoint),
+                "--checkpoint", str(localization_checkpoint),
+                "--review-queue", str(localization_review),
                 "--static", str(static_draft),
-                "--batch-size", str(translation_config.get("batch_size", 6)),
-            ])
+                "--batch-size", str(localizer_config.get("batch_size", 6)),
+            ]
+            if localizer_config.get("model"):
+                localize_command += ["--model", str(localizer_config["model"])]
+            if localizer_config.get("num_ctx"):
+                localize_command += ["--num-ctx", str(localizer_config["num_ctx"])]
+            command(run_dir, "p2_localizer", localize_command)
         command(run_dir, "validate_issue", [sys.executable, "scripts/validate-editorial-issue.py", "--editorial", str(issue_path), "--verified", str(verified_path)])
         issue = read_json(issue_path)
         write_run_report(run_dir, read_json(run_dir / "collection.json"), read_json(run_dir / "candidates.json"), verified, issue)
@@ -574,8 +826,30 @@ def resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
             publish_status="not_published",
             completed_at=utc_now(),
         )
+        acceptance = metrics_for_run(run_dir)
+        if acceptance:
+            write_json(run_dir / "acceptance-metrics.json", acceptance)
+            runs_dir = ROOT / "spectra_agent" / "runs"
+            acceptance_summary = rolling_summary(distinct_completed_runs(runs_dir, 3), 3)
+            write_outputs(
+                acceptance_summary,
+                runs_dir / "acceptance-summary.json",
+                runs_dir / "acceptance-summary.md",
+            )
         log(run_dir, "complete", "workflow_completed", events=count, stories=len(issue["editorial_stories"]))
-        print(json.dumps({"run_id": run_dir.name, "status": "completed", "formal_events": count, "stories": len(issue["editorial_stories"]), "issue": str(issue_path), "static_draft": str(static_draft), "publish_status": "not_published"}, ensure_ascii=False, indent=2))
+        print(json.dumps({
+            "run_id": run_dir.name,
+            "status": "completed",
+            "formal_events": count,
+            "stories": len(issue["editorial_stories"]),
+            "p2_briefs": len(issue.get("news_briefs", [])),
+            "p2_localization_blocked": (issue.get("localization") or {}).get("blocked_briefs", 0),
+            "p2_localization_review": str(localization_review) if localization_review.exists() else None,
+            "p1_editorial_audit": str(editorial_audit_path) if editorial_audit_path.exists() else None,
+            "issue": str(issue_path),
+            "static_draft": str(static_draft),
+            "publish_status": "not_published",
+        }, ensure_ascii=False, indent=2))
         return 0
     except Exception as exc:
         update_state(run_dir, status="failed", current_stage="failed", error=str(exc))
@@ -592,7 +866,10 @@ def write_run_report(run_dir: Path, collection: dict[str, Any], candidates: dict
         f"- P1人工核验：{verified['summary']['p1_reviewed']}",
         f"- 正式事件：{verified['summary']['included_events']}",
         f"- 观察事件：{verified['summary']['watchlist_events']}",
-        f"- 情报文章：{len(issue['editorial_stories'])}", f"- 失败来源：{len(failed)}", "",
+        f"- 情报文章：{len(issue['editorial_stories'])}",
+        f"- P2短讯：{len(issue.get('news_briefs', []))}",
+        f"- P2中文化拦截：{(issue.get('localization') or {}).get('blocked_briefs', 0)}",
+        f"- 失败来源：{len(failed)}", "",
         "## 失败来源", "",
     ]
     lines.extend(f"- {item['registry_id']}：{item.get('error', 'unknown error')}" for item in failed)
@@ -611,6 +888,11 @@ def show_status(args: argparse.Namespace, config: dict[str, Any]) -> int:
         review = read_json(run_dir / "p1-review.json")
         result["p1_candidates"] = len(review["records"])
         result["next"] = f"complete {run_dir / 'p1-review.json'}, then run resume"
+    elif state["status"] == "waiting_for_editorial":
+        result["worker_pid"] = state.get("editorial_worker_pid")
+        result["checkpoint"] = str(run_dir / "p1-long-editorial-checkpoint.json")
+        result["worker_log"] = str(run_dir / "p1-editorial-worker.log")
+        result["recovery"] = f"if the worker stops, run: python3 spectra_agent/run.py resume --run-id {run_dir.name} --retry"
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0
 
@@ -633,6 +915,7 @@ def parser() -> argparse.ArgumentParser:
     resume.add_argument("--run-id")
     resume.add_argument("--review", help="import an approved review JSON before resuming")
     resume.add_argument("--retry", action="store_true", help="retry a failed resume after correcting its input")
+    resume.add_argument("--editorial-worker", action="store_true", help=argparse.SUPPRESS)
     return root
 
 

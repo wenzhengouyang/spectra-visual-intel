@@ -11,9 +11,11 @@ import argparse
 import hashlib
 import json
 import re
+import textwrap
 from collections import Counter
 from datetime import datetime, timedelta
 from pathlib import Path
+from xml.sax.saxutils import escape as xml_escape
 from zoneinfo import ZoneInfo
 
 
@@ -35,10 +37,83 @@ def load_cover_manifest(path: Path = COVER_MANIFEST_PATH) -> dict:
     return manifest
 
 
-def resolve_cover_image(manifest: dict, event_id: str, intelligence_type: str) -> dict:
+def semantic_cover_motif(headline: str, category: str) -> str:
+    text = f"{headline} {category}".lower()
+    if any(term in text for term in ("法律", "legal", "合规")):
+        return "document"
+    if any(term in text for term in ("治理", "数据层", "安全", "governance")):
+        return "layers"
+    if any(term in text for term in ("运营", "组织", "客户回报", "roi")):
+        return "workflow"
+    if any(term in text for term in ("芯片", "算力", "集群", "gpu")):
+        return "compute"
+    return "signal"
+
+
+def write_semantic_cover(headline: str, category: str, credit: str, target_dir: Path) -> str:
+    """Create a deterministic, topic-specific editorial diagram for sources without art."""
+    target_dir.mkdir(parents=True, exist_ok=True)
+    digest = hashlib.sha256(f"{headline}|{category}|{credit}".encode()).hexdigest()[:12]
+    filename = f"story-auto-{digest}.svg"
+    target = target_dir / filename
+    accent_by_motif = {
+        "document": "#9aaee8", "layers": "#72c1bd", "workflow": "#c5a3e6",
+        "compute": "#e0a36f", "signal": "#94a3b8",
+    }
+    motif = semantic_cover_motif(headline, category)
+    accent = accent_by_motif[motif]
+    lines = textwrap.wrap(headline, width=18, break_long_words=False)[:3]
+    title = "".join(
+        f'<text x="112" y="{430 + index * 82}" class="title">{xml_escape(line)}</text>'
+        for index, line in enumerate(lines)
+    )
+    motif_markup = {
+        "document": '<rect x="980" y="150" width="330" height="470" rx="20" class="shape"/><path d="M1040 260h210M1040 330h210M1040 400h150" class="line"/><circle cx="1145" cy="530" r="64" class="node"/>',
+        "layers": '<path d="M970 250l190-100 190 100-190 100zM970 390l190-100 190 100-190 100zM970 530l190-100 190 100-190 100z" class="shape"/><circle cx="1160" cy="390" r="34" class="node"/>',
+        "workflow": '<circle cx="1160" cy="390" r="175" class="shape"/><circle cx="1160" cy="215" r="38" class="node"/><circle cx="1315" cy="470" r="38" class="node"/><circle cx="1005" cy="470" r="38" class="node"/><path d="M1198 225c85 25 135 82 125 178M1288 504c-63 67-141 78-220 22M1028 426c-9-85 31-151 100-190" class="line"/>',
+        "compute": '<rect x="990" y="220" width="210" height="210" rx="18" class="shape"/><path d="M1040 270h110v110h-110zM1200 325h120M1200 365h120M1200 405h120M1095 430v105M1055 430v105M1135 430v105" class="line"/><g class="nodes"><circle cx="1260" cy="325" r="12"/><circle cx="1320" cy="325" r="12"/><circle cx="1260" cy="365" r="12"/><circle cx="1320" cy="365" r="12"/><circle cx="1260" cy="405" r="12"/><circle cx="1320" cy="405" r="12"/></g>',
+        "signal": '<path d="M990 560l90-210 95 90 165-250" class="line strong"/><circle cx="1080" cy="350" r="28" class="node"/><circle cx="1175" cy="440" r="28" class="node"/><circle cx="1340" cy="190" r="28" class="node"/>',
+    }[motif]
+    svg = f'''<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+<title id="title">{xml_escape(headline)}</title><desc id="desc">SPECTRA根据文章主题生成的编辑示意图</desc>
+<style>.bg{{fill:#0c1118}}.grid{{stroke:#26303c;stroke-width:1}}.shape{{fill:none;stroke:{accent};stroke-width:5}}.line{{fill:none;stroke:{accent};stroke-width:5;stroke-linecap:round;stroke-linejoin:round}}.strong{{stroke-width:9}}.node{{fill:#0c1118;stroke:{accent};stroke-width:7}}.nodes{{fill:{accent}}}.kicker{{fill:{accent};font:700 25px system-ui,sans-serif;letter-spacing:4px}}.title{{fill:#eef2f7;font:700 57px system-ui,sans-serif}}.credit{{fill:#7f8b9a;font:500 22px system-ui,sans-serif}}</style>
+<rect width="1600" height="900" class="bg"/><path d="M0 150h1600M0 300h1600M0 450h1600M0 600h1600M0 750h1600M200 0v900M400 0v900M600 0v900M800 0v900M1000 0v900M1200 0v900M1400 0v900" class="grid"/>
+<text x="112" y="118" class="kicker">{xml_escape(category.upper())} / VERIFIED INTELLIGENCE</text>{title}
+<text x="112" y="790" class="credit">来源：{xml_escape(credit)} · SPECTRA 编辑示意</text>{motif_markup}
+</svg>'''
+    target.write_text(svg, encoding="utf-8")
+    return f"assets/editorial/{filename}"
+
+
+def resolve_cover_image(
+    manifest: dict,
+    event_id: str,
+    intelligence_type: str,
+    *,
+    source_url: str = "",
+    headline: str = "",
+    category: str = "",
+    credit: str = "",
+    generated_dirs: list[Path] | None = None,
+) -> dict:
     for item in manifest.get("covers", []):
         if item.get("event_id") == event_id:
             return {key: value for key, value in item.items() if key != "event_id"}
+    if source_url:
+        for item in manifest.get("covers", []):
+            if item.get("source_url") == source_url:
+                return {key: value for key, value in item.items() if key != "event_id"}
+    if headline and generated_dirs:
+        relative_url = ""
+        for target_dir in generated_dirs:
+            relative_url = write_semantic_cover(headline, category or "视觉智能", credit or "已核验来源", target_dir)
+        return {
+            "url": relative_url,
+            "kind": "editorial_diagram",
+            "label": "主题示意图",
+            "credit": "SPECTRA",
+            "source_url": source_url or None,
+        }
     fallback_key = {
         "type.industry_market": "行业与市场",
         "type.company_strategy": "产品与公司",
@@ -319,6 +394,16 @@ def build_article_body(copy: dict, event: dict, claim_ids: list[str]) -> dict:
         "lead": section(reader_facing_text(copy["what"]), claim_ids, "fact"),
         "key_details": section(how, claim_ids, "fact") if how else None,
         "full_text": section("\n\n".join(fact_parts), claim_ids, "fact"),
+        "fact_points": [
+            reader_facing_text(item)
+            for item in copy.get("fact_points", [])
+            if reader_facing_text(item)
+        ],
+        "summary_paragraphs": [
+            reader_facing_text(item)
+            for item in copy.get("summary_paragraphs", [])
+            if reader_facing_text(item)
+        ],
         "judgment": section(judgment, claim_ids, "judgment"),
         "evidence_boundary": section(event["limitations"], claim_ids, "judgment"),
         "watch_next": watch_items,
@@ -810,6 +895,11 @@ def generic_copy(event: dict, review_item: dict, rank: int) -> dict:
         "one_line_takeaway": reason,
         "category": ROUTE_CATEGORY.get(event["primary_route"], "视觉智能"),
         "what": fact,
+        "fact_points": list(dict.fromkeys(
+            reader_facing_text(item.get("text", ""))
+            for item in claims
+            if reader_facing_text(item.get("text", ""))
+        )),
         "why": reason,
         "take": f"这条信号值得围绕{entity}的真实能力边界、成本与工作流适配继续验证。" if rank < 5 else None,
         "how": claims[-1]["text"] if claims else fact,
@@ -822,6 +912,19 @@ def generic_copy(event: dict, review_item: dict, rank: int) -> dict:
     }
     copy.update(EXPANDED_STORY_COPY.get(event["event_id"], {}))
     return copy
+
+
+def publication_deep_event_ids(
+    selected_event_ids: list[str],
+    writer_drafts: dict[str, dict],
+    draft_bundle: dict | None,
+) -> list[str]:
+    """Only model drafts that crossed readiness and validation may ship as deep stories."""
+    selected = selected_event_ids[:5]
+    if draft_bundle is None:
+        # Preserve deterministic legacy fixtures that predate the Writer.
+        return selected
+    return [event_id for event_id in selected if event_id in writer_drafts]
 
 
 def brief_source_status(source: dict) -> tuple[str, str]:
@@ -1062,6 +1165,7 @@ def main() -> None:
                 "dek": writer_draft["dek"],
                 "one_line_takeaway": writer_draft["one_line_takeaway"],
                 "what": paragraphs[0]["text"],
+                "fact_points": [item["text"] for item in paragraphs],
                 "how": "\n\n".join(item["text"] for item in paragraphs[1:]),
                 "why": writer_draft["judgment"],
                 "take": None,
@@ -1103,7 +1207,19 @@ def main() -> None:
             "article_body": build_article_body(copy, event, claim_ids),
             "key_numbers": key_numbers,
             "visual_data": copy.get("visual_data"),
-            "cover_image": resolve_cover_image(cover_manifest, event_id, intelligence_type),
+            "cover_image": resolve_cover_image(
+                cover_manifest,
+                event_id,
+                intelligence_type,
+                source_url=source["url"],
+                headline=copy["headline"],
+                category=copy["category"],
+                credit=source["label"],
+                generated_dirs=[
+                    ROOT / "assets/editorial",
+                    static_path.parent / "assets/editorial" if static_path else ROOT / "assets/editorial",
+                ],
+            ),
             "source_links": [source],
             "primary_tags": copy["tags"],
             "confidence": event["confidence"],
@@ -1130,11 +1246,13 @@ def main() -> None:
         )
         if candidate_run and collection else []
     )
-    top_event_ids = [item for item in verified["editorial_selection"]["top_event_ids"] if item in story_by_event][:5]
+    selected_top_event_ids = [
+        item for item in verified["editorial_selection"]["top_event_ids"] if item in story_by_event
+    ][:5]
+    top_event_ids = publication_deep_event_ids(selected_top_event_ids, writer_drafts, draft_bundle)
     top_story_ids = [story_by_event[event_id]["story_id"] for event_id in top_event_ids]
-    # The verified bundle, rather than legacy hand-written copy, owns the issue
-    # hierarchy. This also guarantees that an issue with exactly five formal
-    # events presents all five as deep dives.
+    # Readiness and Writer validation own the deep/quick split. Sparse events
+    # remain useful, but must not be padded into artificial deep stories.
     for story in stories:
         is_deep_dive = story["primary_event_id"] in top_event_ids
         story["article_type"] = "deep_dive" if is_deep_dive else "brief"
@@ -1193,7 +1311,7 @@ def main() -> None:
             "weekly_thesis": weekly_thesis,
             "trend_one_line": trend_one_line,
             "thesis_dek": f"本周{len(stories)}个正式事件经过原文核验，形成{len(trends)}条值得持续观察的趋势判断。",
-            "lead_story_id": top_story_ids[0],
+            "lead_story_id": top_story_ids[0] if top_story_ids else stories[0]["story_id"],
             "top_story_ids": top_story_ids,
             "brief_story_ids": [
                 story["story_id"]

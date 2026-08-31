@@ -45,16 +45,23 @@ fact_selection（确定性节点）
   输出：fact-selection.json（锁定的写作事实白名单）
   ↓
 deep_story writer（新增，可选 LLM，当前优先）
-  仅使用 fact-selection + 完整 verified_text 生成原创中文文章
+  仅使用 fact-selection 中的 fact_units、evidence_context 与 allowed_judgment 生成原创中文文章
   不增加新事实、不弱化归因、不整篇复制来源
-  输出：deep-story-drafts.json；正文不完整的事件进入 blocked，不硬凑深读
+  先执行深读就绪度检查：至少3条独立核验事实、3个原子事实、150字事实包和2段证据上下文
+  不足的事件自动降为快速解读；Writer失败的事件也不得以兜底模板冒充深读
+  输出：deep-story-drafts.json；失败内容进入 blocked，不硬凑深读
   ↓
 editorial renderer
   合并 P1 深读、P2 短讯、趋势雷达和一周时间轴
   输出：editorial-issue.json + weekly-report.html
   ↓
+p2_localizer（qwen3:8b）
+  将英文P2标题与摘要忠实转为中文，保留原文和P2待核验状态
+  双向检查数字与单位，并检查来源归因和不确定措辞
+  失败短讯进入 p2-localization-review.json，不进入页面
+  ↓
 validate_issue
-  校验事件覆盖、来源链接、claim 引用、时间窗与页面数据
+  校验事件覆盖、来源链接、claim 引用、时间窗、中文短讯与页面数据
   ↓
 人工确认后发布
   GitHub Pages；钉钉推送仍属于后续出口，不在当前自动发布范围内

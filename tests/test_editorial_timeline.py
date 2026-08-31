@@ -1,4 +1,5 @@
 import importlib.util
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -12,6 +13,15 @@ SPEC.loader.exec_module(MODULE)
 
 
 class EditorialTimelineTest(unittest.TestCase):
+    def test_future_issues_do_not_use_event_specific_manual_story_overrides(self):
+        self.assertFalse(hasattr(MODULE, "BLOG_SUMMARY_OVERRIDES"))
+
+    def test_only_readiness_qualified_writer_drafts_ship_as_deep_stories(self):
+        selected = ["evt_ready", "evt_sparse", "evt_failed"]
+        writer_drafts = {"evt_ready": {"event_id": "evt_ready"}}
+        actual = MODULE.publication_deep_event_ids(selected, writer_drafts, {"drafts": list(writer_drafts.values())})
+        self.assertEqual(actual, ["evt_ready"])
+
     def test_cover_manifest_resolves_specific_asset_and_safe_fallback(self):
         manifest = {
             "covers": [{"event_id": "evt_1", "url": "assets/editorial/one.jpg", "kind": "editorial"}],
@@ -24,6 +34,45 @@ class EditorialTimelineTest(unittest.TestCase):
         self.assertEqual(specific["url"], "assets/editorial/one.jpg")
         self.assertEqual(fallback["url"], "assets/editorial/technology.jpg")
         self.assertEqual(fallback["kind"], "editorial_fallback")
+
+    def test_cover_manifest_reuses_official_asset_by_source_url_across_event_ids(self):
+        manifest = {
+            "covers": [{
+                "event_id": "evt_old",
+                "url": "https://cdn.example.com/legal.jpg",
+                "kind": "official",
+                "source_url": "https://example.com/legal",
+            }],
+            "fallbacks": {"产品与公司": "assets/editorial/product.jpg"},
+        }
+
+        cover = MODULE.resolve_cover_image(
+            manifest,
+            "evt_new",
+            "type.product_release",
+            source_url="https://example.com/legal",
+        )
+
+        self.assertEqual(cover["url"], "https://cdn.example.com/legal.jpg")
+        self.assertEqual(cover["kind"], "official")
+
+    def test_missing_official_cover_generates_topic_specific_svg(self):
+        with tempfile.TemporaryDirectory() as directory:
+            cover = MODULE.resolve_cover_image(
+                {"covers": [], "fallbacks": {}},
+                "evt_compute",
+                "type.industry_market",
+                source_url="https://example.com/compute",
+                headline="从芯片到万卡集群",
+                category="算力与数据",
+                credit="已核验来源",
+                generated_dirs=[Path(directory)],
+            )
+            svg = Path(directory) / Path(cover["url"]).name
+
+            self.assertEqual(cover["kind"], "editorial_diagram")
+            self.assertTrue(svg.exists())
+            self.assertIn("从芯片到万卡集群", svg.read_text(encoding="utf-8"))
 
     def test_reader_facing_text_removes_audit_language_but_keeps_attribution(self):
         text = "按照王兴兴的判断，若闭环跑通，迭代速度可能提升；该表述属于预测而非已验证结果。"
