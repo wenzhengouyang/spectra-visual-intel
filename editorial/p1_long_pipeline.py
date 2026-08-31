@@ -88,7 +88,10 @@ def build_bundle(verified: dict[str, Any], selection: dict[str, Any], client,
                 call_record = {"event_id": event_id, "attempt": attempt, **metadata}
                 calls.append(call_record)
                 cleaned, actions = clean(raw)
-                audit = audit_article(cleaned, facts, reader.get("allowed_judgment", ""))
+                audit = audit_article(
+                    cleaned, facts, reader.get("allowed_judgment", ""),
+                    reader.get("writing_profile", {}),
+                )
                 audit_record = {
                     "event_id": event_id, "status": audit["status"],
                     "attempt": attempt, "cleaning_actions": actions,

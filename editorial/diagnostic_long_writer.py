@@ -39,15 +39,18 @@ SCHEMA = {
 }
 
 
-INSTRUCTIONS = """你是SPECTRA中文情报编辑。请把输入的锁定事实写成一篇原创中文长篇深读。
+INSTRUCTIONS = """你是SPECTRA的中文情报编辑，读者是AI产品策略、模型与内容行业从业者。请把输入的锁定事实写成原创、专业、清晰的博客式情报文章。
 只能使用fact_units中的事实；evidence_context只帮助理解对应事实，不能引入新事实。
-正文写4—6个事实自然段，合计650—900个中文字符，不设段落小标题。每段围绕一组相近事实展开。每条事实最多出现一次，不得重复标题、摘要或前文，不得把allowed_judgment写入正文段落。
-所有“公司称、论文作者报告、据其所知、将会”等归因与限定必须保留，不得把来源主张写成独立证实的结果。
-不得新增数字、实体、效果、因果或行业趋势。judgment只能改写allowed_judgment，控制在一到两句。
-不要输出事实编号、审计语言、What/Why/How。输出严格符合JSON Schema。"""
+正文写3—5个自然段，不设段落小标题：第一段交代事件主体、发生了什么及具体问题；中间段按产品构成、运行机制、数据结果或适用范围组织；最后一段补充发布状态、限制或后续安排。不得把每条fact_unit单独写成一段。
+正文长度遵守writing_profile的min_characters与max_characters。每段包含2—4个相互关联的完整句子，用句号形成正常节奏，避免用分号串联事实，不使用项目符号、编号、问答体或What/Why/How。
+同一来源在一个段落中通常只归因一次。所有“公司称、论文作者报告、据其所知、将会”等归因与限定必须保留，但不得让连续句子或连续段落都以同一种归因开头。
+每条事实最多出现一次，标题、摘要与正文不得机械重复。不得新增数字、实体、效果、因果或行业趋势。
+judgment只能改写allowed_judgment，控制在一到两句；allowed_judgment为空时judgment必须返回空字符串。不要输出事实编号或“人工确认、已核验、证据边界”等审计语言。
+输出严格符合JSON Schema。"""
 
 
-def audit_article(result: dict, facts: list[dict], allowed_judgment: str = "") -> dict:
+def audit_article(result: dict, facts: list[dict], allowed_judgment: str = "",
+                  writing_profile: dict | None = None) -> dict:
     all_fact_text = " ".join(f["text"] for f in facts)
     allowed_numbers = normalized_numbers(all_fact_text)
     allowed_tokens = meaningful_tokens(all_fact_text)
@@ -85,8 +88,11 @@ def audit_article(result: dict, facts: list[dict], allowed_judgment: str = "") -
     for index, paragraph in enumerate(result.get("paragraphs") or []):
         if judgment and judgment in paragraph:
             errors.append(f"paragraph[{index}] repeats editorial judgment")
-    if not 650 <= len(article) <= 1100:
-        errors.append(f"article length outside 650-1100: {len(article)}")
+    profile = writing_profile or {}
+    minimum = int(profile.get("min_characters", 450))
+    maximum = int(profile.get("max_characters", 1000))
+    if not minimum <= len(article) <= maximum:
+        errors.append(f"article length outside {minimum}-{maximum}: {len(article)}")
     for field in ("headline", "dek"):
         value = str(result.get(field) or "")
         extra = normalized_numbers(value) - allowed_numbers
@@ -107,6 +113,8 @@ def audit_article(result: dict, facts: list[dict], allowed_judgment: str = "") -
         extra = normalized_numbers(judgment_value) - normalized_numbers(allowed_judgment)
         if extra:
             errors.append(f"judgment unsupported numbers: {sorted(extra)}")
+    elif judgment_value:
+        errors.append("judgment not allowed when allowed_judgment is empty")
     return {
         "status": "passed" if not errors else "needs_review",
         "article_characters": len(article),
@@ -128,6 +136,7 @@ def generate_long_story(reader: dict, event_id: str, client=None) -> tuple[dict,
             for f in reader["fact_units"] if f.get("evidence_context")
         ],
         "allowed_judgment": reader["allowed_judgment"],
+        "writing_profile": reader.get("writing_profile", {}),
     }
     return (client or create_llm_client()).generate_json(
         instructions=INSTRUCTIONS,
@@ -151,7 +160,10 @@ def main() -> int:
     plan = next(item for item in plan_bundle["selections"] if item["event_id"] == args.event_id)
     reader = plan["reader_packet"]
     result, metadata = generate_long_story(reader, args.event_id)
-    audit = audit_article(result, reader["fact_units"], reader.get("allowed_judgment", ""))
+    audit = audit_article(
+        result, reader["fact_units"], reader.get("allowed_judgment", ""),
+        reader.get("writing_profile", {}),
+    )
     output = {
         "schema_version": "0.1",
         "record_type": "diagnostic_long_story",

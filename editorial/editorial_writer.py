@@ -265,8 +265,6 @@ def deep_story_readiness(fact_plan: dict[str, Any]) -> dict[str, Any]:
         reasons.append("verified_fact_envelope_too_short")
     if evidence_count < 2:
         reasons.append("insufficient_evidence_context")
-    if not str(reader.get("allowed_judgment") or "").strip():
-        reasons.append("allowed_judgment_missing")
     return {
         "status": "ready" if not reasons else "quick_read",
         "ready": not reasons,

@@ -134,6 +134,17 @@ class EditorialWriterTest(unittest.TestCase):
         self.assertTrue(result["ready"])
         self.assertEqual(result["status"], "ready")
 
+    def test_deep_story_readiness_does_not_require_editorial_judgment(self):
+        facts = [
+            {"claim_id": f"clm_{index}", "text": "这是一条经过确认且足够具体的正式事实内容。" * 3,
+             "atomic_units": ["正式事实"], "evidence_context": "对应证据上下文"}
+            for index in range(3)
+        ]
+        result = deep_story_readiness({"reader_packet": {
+            "fact_units": facts, "allowed_judgment": "",
+        }})
+        self.assertTrue(result["ready"])
+
     def test_deep_story_readiness_demotes_sparse_event(self):
         result = deep_story_readiness({"reader_packet": {
             "fact_units": [{

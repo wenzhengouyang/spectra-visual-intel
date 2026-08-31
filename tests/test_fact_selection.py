@@ -2,13 +2,18 @@ import json
 import unittest
 from pathlib import Path
 
-from editorial.fact_selection import build_fact_selection, validate_fact_selection
+from editorial.fact_selection import build_fact_selection, split_judgment_layers, validate_fact_selection
 
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 class FactSelectionTest(unittest.TestCase):
+    def test_human_review_confirmation_never_becomes_reader_judgment(self):
+        reader, audit = split_judgment_layers("人工确认事实与证据可用。")
+        self.assertEqual(reader, "")
+        self.assertEqual(audit, ["人工确认事实与证据可用"])
+
     @classmethod
     def setUpClass(cls):
         run = ROOT / "spectra_agent" / "runs" / "harness-live-20260826"

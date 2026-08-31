@@ -43,6 +43,7 @@ AUDIT_ONLY_PATTERNS = (
     "不应上升为行业趋势",
     "仍需交叉验证",
     "保留归因和预测边界",
+    "人工确认事实与证据可用",
 )
 
 
@@ -232,8 +233,8 @@ def validate_fact_selection(bundle: dict[str, Any], verified: dict[str, Any]) ->
         reader = item.get("reader_packet") or {}
         audit = item.get("audit_packet") or {}
         actual[event_id] = {fact["claim_id"] for fact in reader.get("fact_units", [])}
-        if not reader.get("allowed_judgment") or not audit.get("limitations"):
-            raise ValueError(f"{event_id}: judgment and limitations are required")
+        if "allowed_judgment" not in reader or not audit.get("limitations"):
+            raise ValueError(f"{event_id}: judgment field and limitations are required")
     if set(actual) != set(expected):
         raise ValueError("fact selection must cover every verified event exactly once")
     for event_id, claim_ids in actual.items():
