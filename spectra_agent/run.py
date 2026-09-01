@@ -617,11 +617,17 @@ def resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
     if args.review:
         shutil.copyfile(ROOT / args.review, review_path)
         log(run_dir, "human_review", "review_imported", source=args.review)
-    if not review_path.exists() and args.retry:
+    recoverable_pre_review_stage = state.get("current_stage") in {
+        "validate_structure",
+        "verification_harness",
+        "p1_fact_expansion",
+    }
+    if args.retry and (not review_path.exists() or recoverable_pre_review_stage):
         # Recover a run that failed after structure output was persisted but
-        # before the review packet was materialized. Reuse collection,
-        # candidates and LLM checkpoints; do not repeat collection or model
-        # structuring merely to recreate downstream review artifacts.
+        # before the review packet was fully materialized.  An interrupted
+        # fact-expansion stage may already have a preliminary p1-review.json;
+        # rebuild it from persisted evidence and checkpoints without repeating
+        # collection or model structuring.
         collection_path = run_dir / "collection.json"
         candidates_path = run_dir / "candidates.json"
         if not collection_path.exists() or not candidates_path.exists():

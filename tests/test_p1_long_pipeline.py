@@ -3,6 +3,7 @@ import tempfile
 from pathlib import Path
 
 from editorial.p1_long_pipeline import build_bundle
+from editorial.diagnostic_long_writer import audit_article, backfill_verified_facts
 
 
 class FakeClient:
@@ -13,6 +14,17 @@ class FakeClient:
     def generate_json(self, **kwargs):
         self.calls += 1
         return self.result, {"model": "qwen3:14b", "usage": {"total_tokens": 100}}
+
+
+class SequenceClient:
+    def __init__(self, *results):
+        self.results = list(results)
+        self.calls = 0
+
+    def generate_json(self, **kwargs):
+        result = self.results[self.calls]
+        self.calls += 1
+        return result, {"model": "qwen3:14b", "usage": {"total_tokens": 100}}
 
 
 def verified(event_id="evt_1"):
@@ -124,6 +136,56 @@ class P1LongPipelineTest(unittest.TestCase):
         self.assertEqual(first.calls, 1)
         self.assertEqual(second.calls, 0)
         self.assertEqual(first_bundle["drafts"], second_bundle["drafts"])
+
+    def test_second_attempt_patches_only_failed_paragraph(self):
+        initial = valid_result()
+        original_paragraphs = list(initial["paragraphs"])
+        initial["paragraphs"][0] = (
+            initial["paragraphs"][0]
+            .replace("公司文章称，", "")
+            .replace("据公司文章介绍，", "")
+            .replace("公司文章", "产品说明")
+        )
+        revision = {
+            "revision": {
+                "event_id": "evt_1",
+                "patches": [{
+                    "target": "paragraph", "paragraph_index": 0,
+                    "text": original_paragraphs[0],
+                }],
+            },
+        }
+        client = SequenceClient(initial, revision)
+        bundle, audit = build_bundle(verified(), selection(8), client)
+        self.assertEqual(client.calls, 2)
+        self.assertEqual(len(bundle["drafts"]), 1)
+        record = audit["records"][0]
+        self.assertEqual(record["status"], "passed")
+        self.assertEqual(record["initial_draft"]["paragraphs"][1:], record["draft"]["paragraphs"][1:])
+        self.assertEqual(record["revision_history"][0]["patches"][0]["paragraph_index"], 0)
+
+    def test_sentence_audit_rejects_unsupported_effect_claim(self):
+        result = valid_result()
+        result["paragraphs"][0] += "这将显著提升法律团队效率。"
+        audit = audit_article(
+            result, selection(8)["selections"][0]["reader_packet"]["fact_units"],
+            selection(8)["selections"][0]["reader_packet"]["allowed_judgment"],
+            selection(8)["selections"][0]["reader_packet"]["writing_profile"],
+        )
+        self.assertEqual(audit["status"], "needs_review")
+        self.assertTrue(any("unsupported inference '显著'" in error for error in audit["errors"]))
+        self.assertTrue(audit["sentence_claim_mapping"])
+
+    def test_length_backfill_uses_verified_fact_units_only(self):
+        draft = {
+            "paragraphs": ["公司文章称，产品进入预览阶段。", "系统继承既有访问权限。"]
+        }
+        inserted = backfill_verified_facts(
+            draft, {("paragraph", 0)}, [fact(index) for index in range(8)], 120, 500
+        )
+        self.assertTrue(inserted)
+        self.assertGreaterEqual(len("\n".join(draft["paragraphs"])), 120)
+        self.assertTrue(any(fact(index)["text"] in draft["paragraphs"][0] for index in range(8)))
 
 
 if __name__ == "__main__":

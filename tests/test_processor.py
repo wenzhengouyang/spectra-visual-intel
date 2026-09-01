@@ -1,6 +1,7 @@
 import importlib.util
 import json
 import sys
+import tempfile
 import unittest
 from unittest import mock
 from pathlib import Path
@@ -226,6 +227,70 @@ class ProcessorTest(unittest.TestCase):
         self.assertEqual(enriched["llm"]["status"], "completed")
         self.assertEqual(enriched["selected_candidates"][0]["llm_analysis"]["recommended_disposition"], "p1")
         self.assertEqual(enriched["selected_candidates"][0]["intelligence_type"], "type.technology_breakthrough")
+
+    def test_llm_checkpoint_reuse_does_not_resend_completed_candidate(self):
+        sources = [record("First", sid="src_first"), record("Second", sid="src_second")]
+        source_payload = {"source_records": sources}
+
+        def candidate(name):
+            return {
+                "candidate_id": f"cand_{name}", "canonical_title": name,
+                "intelligence_type": "type.technology_breakthrough",
+                "intelligence_type_signals": ["source_type:paper_report"],
+                "primary_route": "visual_value.evaluation", "secondary_routes": [],
+                "track": "track.emerging", "score": 14, "matched_signals": ["benchmark"],
+                "source_ids": [f"src_{name}"],
+            }
+
+        selected = [candidate("first"), candidate("second")]
+
+        def analysis(item):
+            return {
+                "candidate_id": item["candidate_id"], "canonical_title": item["canonical_title"],
+                "intelligence_type": "type.technology_breakthrough",
+                "intelligence_type_reason": "论文介绍了可核验的技术方法。",
+                "primary_route": "visual_value.evaluation", "secondary_routes": [],
+                "track": "track.emerging", "same_event_group": item["candidate_id"],
+                "what": "发布了新的评测方法。", "why": "可用于后续原文核验。",
+                "importance_score": 60, "novelty_score": 60, "strategy_relevance_score": 60,
+                "confidence": "medium", "proposed_claims": ["发布了评测方法"],
+                "missing_evidence": ["需核验原文"], "verification_questions": ["方法如何定义？"],
+                "recommended_disposition": "p1", "source_ids": item["source_ids"],
+                "disposition_reason": "与评测方向相关，仍需人工核验。",
+            }
+
+        class FakeClient:
+            calls = []
+
+            def generate_json(self, **kwargs):
+                ids = [item["candidate_id"] for item in json.loads(kwargs["input_text"])["candidates"]]
+                self.calls.append(ids)
+                by_id = {item["candidate_id"]: item for item in selected}
+                return {"analyses": [analysis(by_id[cid]) for cid in ids]}, {
+                    "provider": "mock", "model": "mock-model", "usage": {}
+                }
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            checkpoint_path = Path(temp_dir) / "checkpoint.json"
+            checkpoint_path.write_text(json.dumps({
+                "analyses": [analysis(selected[0])],
+                "input_fingerprints": {
+                    selected[0]["candidate_id"]: MODULE.hashlib.sha256(
+                        MODULE._llm_input([selected[0]], source_payload).encode("utf-8")
+                    ).hexdigest(),
+                },
+                "batches": [],
+            }))
+            client = FakeClient()
+            result = {"selected_candidates": selected, "summary": {}}
+            enriched = MODULE.enrich_with_llm(
+                result, source_payload, client=client, max_candidates=2,
+                prompt_version="test.v1", batch_size=3, checkpoint_path=checkpoint_path,
+            )
+
+        self.assertEqual(client.calls, [["cand_second"]])
+        self.assertEqual(enriched["llm"]["reused_candidate_count"], 1)
+        self.assertEqual(enriched["llm"]["new_batch_count"], 1)
 
     def test_llm_rejects_unknown_source_reference(self):
         selected = [{"candidate_id": "cand_test", "source_ids": ["src_allowed"]}]

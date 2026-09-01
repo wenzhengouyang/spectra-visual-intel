@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import difflib
 import json
 import os
@@ -21,6 +22,13 @@ from editorial.editorial_writer import (  # noqa: E402
 )
 
 LONG_FORM_ATTRIBUTION_MARKERS = ATTRIBUTION_MARKERS + ("论文", "研究团队")
+
+
+class LongRevisionError(ValueError):
+    def __init__(self, message: str, revision: dict, metadata: dict):
+        super().__init__(message)
+        self.revision = revision
+        self.metadata = metadata
 
 
 SCHEMA = {
@@ -49,6 +57,171 @@ judgment只能改写allowed_judgment，控制在一到两句；allowed_judgment�
 输出严格符合JSON Schema。"""
 
 
+REVISION_SCHEMA = {
+    "type": "object",
+    "additionalProperties": False,
+    "properties": {
+        "revision": {
+            "type": "object",
+            "additionalProperties": False,
+            "properties": {
+                "event_id": {"type": "string"},
+                "patches": {
+                    "type": "array", "minItems": 1,
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": False,
+                        "properties": {
+                            "target": {
+                                "type": "string",
+                                "enum": ["headline", "dek", "paragraph", "judgment"],
+                            },
+                            "paragraph_index": {"type": "integer", "minimum": -1},
+                            "text": {"type": "string"},
+                        },
+                        "required": ["target", "paragraph_index", "text"],
+                    },
+                },
+            },
+            "required": ["event_id", "patches"],
+        },
+    },
+    "required": ["revision"],
+}
+
+
+REVISION_INSTRUCTIONS = """你正在修订一篇已经完成初稿、但未通过程序审计的中文情报文章。
+只能使用locked_writer_input中的fact_units和evidence_context。audit_errors指出了失败位置。
+只返回失败字段或失败段落的补丁，绝对不得重写完整文章，也不得修改allowed_targets之外的位置。
+逐项满足target_requirements：require_attribution为true时，修订段落必须明确保留“据公司介绍、论文称、研究团队报告”等与事实一致的归因。修订段落保持正常的2—4句阅读节奏。
+若某句缺少claim支持或包含未经支持的效果、因果、趋势、价值判断，删除该句或严格改写为fact_units明确提供的事实。
+所有paragraph补丁合计必须达到minimum_total_characters_for_paragraph_patches，保证修订后正文不少于final_article_min_characters。只能用尚未充分表达的fact_units增加信息，不得重复原句凑字数。
+不得新增数字、主体、效果、因果、行业趋势或后续计划。输出严格符合JSON Schema。"""
+
+
+UNSUPPORTED_INFERENCE_MARKERS = (
+    "确保", "有助于", "帮助", "提升", "改善", "推动", "促进", "重塑", "引领", "加速",
+    "意味着", "表明", "体现", "凸显", "反映", "标志着", "证明", "显示出", "显著",
+    "领先地位", "重要进展", "可复制", "奠定基础", "满足更多", "广泛应用", "规模化",
+    "行业趋势", "增长趋势", "实际应用价值", "高效且实用", "后续安排可能", "预计将",
+)
+
+
+def sentence_parts(text: str) -> list[str]:
+    return [part.strip() for part in re.split(r"(?<=[。！？!?])", text or "") if part.strip()]
+
+
+def ranked_claims(text: str, facts: list[dict], minimum_score: float = 0.08) -> list[tuple[float, str]]:
+    tokens = meaningful_tokens(text)
+    ranked = []
+    for fact in facts:
+        fact_tokens = meaningful_tokens(fact["text"])
+        score = len(tokens & fact_tokens) / max(1, len(tokens))
+        if score >= minimum_score:
+            ranked.append((score, fact["claim_id"]))
+    return sorted(ranked, reverse=True)
+
+
+def revision_targets(errors: list[str], draft: dict) -> set[tuple[str, int]]:
+    targets: set[tuple[str, int]] = set()
+    for error in errors:
+        for match in re.finditer(r"paragraph\[(\d+)\]", error):
+            targets.add(("paragraph", int(match.group(1))))
+        for field in ("headline", "dek", "judgment"):
+            if error.startswith(field + " ") or error.startswith(field + ":"):
+                targets.add((field, -1))
+    if any(error.startswith("article length outside") for error in errors):
+        paragraphs = draft.get("paragraphs") or []
+        if paragraphs:
+            shortest = sorted(range(len(paragraphs)), key=lambda index: len(paragraphs[index]))[:2]
+            targets.update(("paragraph", index) for index in shortest)
+    return targets
+
+
+def apply_long_revision(draft: dict, revision: dict, allowed: set[tuple[str, int]],
+                        event_id: str, requirements: dict[tuple[str, int], dict] | None = None,
+                        paragraph_patch_minimum: int = 0) -> dict:
+    if revision.get("event_id") != event_id:
+        raise ValueError(f"revision returned wrong event_id for {event_id}")
+    revised = copy.deepcopy(draft)
+    seen: set[tuple[str, int]] = set()
+    for patch in revision.get("patches") or []:
+        target = patch.get("target")
+        index = int(patch.get("paragraph_index", -1))
+        key = (target, index)
+        if key not in allowed:
+            raise ValueError(f"{event_id}: revision attempted out-of-scope patch {target}[{index}]")
+        if key in seen:
+            raise ValueError(f"{event_id}: duplicate revision patch {target}[{index}]")
+        seen.add(key)
+        if target == "paragraph":
+            paragraphs = revised.get("paragraphs") or []
+            if not 0 <= index < len(paragraphs):
+                raise ValueError(f"{event_id}: revision paragraph index out of range")
+            paragraphs[index] = patch["text"]
+        else:
+            if index != -1:
+                raise ValueError(f"{event_id}: non-paragraph patch must use paragraph_index -1")
+            revised[target] = patch["text"]
+    if not seen:
+        raise ValueError(f"{event_id}: revision returned no applicable patches")
+    requirements = requirements or {}
+    for target, index in allowed:
+        requirement = requirements.get((target, index)) or {}
+        if (target, index) not in seen:
+            raise ValueError(f"{event_id}: revision omitted required patch {target}[{index}]")
+        value = revised["paragraphs"][index] if target == "paragraph" else str(revised.get(target) or "")
+        minimum = int(requirement.get("minimum_characters", 0))
+        if len(value) < minimum:
+            raise ValueError(
+                f"{event_id}: revision patch {target}[{index}] shorter than required {minimum} characters"
+            )
+        if requirement.get("require_attribution") and not any(
+            marker in value for marker in LONG_FORM_ATTRIBUTION_MARKERS
+        ):
+            raise ValueError(f"{event_id}: revision patch paragraph[{index}] still lacks attribution")
+    patched_paragraph_characters = sum(
+        len(revised["paragraphs"][index]) for target, index in allowed if target == "paragraph"
+    )
+    if patched_paragraph_characters < paragraph_patch_minimum:
+        raise ValueError(
+            f"{event_id}: paragraph patches total {patched_paragraph_characters} characters; "
+            f"requires {paragraph_patch_minimum}"
+        )
+    return revised
+
+
+def backfill_verified_facts(revised: dict, allowed: set[tuple[str, int]], facts: list[dict],
+                            minimum_article: int, maximum_article: int) -> list[str]:
+    """Fill a small post-revision length gap with untouched verified fact units only."""
+    paragraph_indexes = [index for target, index in allowed if target == "paragraph"]
+    if not paragraph_indexes:
+        return []
+    inserted: list[str] = []
+    paragraphs = revised.get("paragraphs") or []
+    article = "\n".join(paragraphs)
+    ranked = []
+    article_tokens = meaningful_tokens(article)
+    for fact in facts:
+        fact_text = str(fact.get("text") or "").strip()
+        fact_tokens = meaningful_tokens(fact_text)
+        represented = len(fact_tokens & article_tokens) / max(1, len(fact_tokens))
+        if fact_text and represented < 0.55:
+            ranked.append((represented, fact["claim_id"], fact_text))
+    for _, claim_id, fact_text in sorted(ranked):
+        current_length = len("\n".join(paragraphs))
+        if current_length >= minimum_article:
+            break
+        if current_length + len(fact_text) > maximum_article:
+            continue
+        target_index = min(paragraph_indexes, key=lambda index: len(paragraphs[index]))
+        separator = "" if paragraphs[target_index].endswith(("。", "！", "？")) else "。"
+        paragraphs[target_index] = paragraphs[target_index] + separator + fact_text
+        inserted.append(claim_id)
+        article_tokens.update(meaningful_tokens(fact_text))
+    return inserted
+
+
 def audit_article(result: dict, facts: list[dict], allowed_judgment: str = "",
                   writing_profile: dict | None = None) -> dict:
     all_fact_text = " ".join(f["text"] for f in facts)
@@ -56,6 +229,7 @@ def audit_article(result: dict, facts: list[dict], allowed_judgment: str = "",
     allowed_tokens = meaningful_tokens(all_fact_text)
     errors = []
     mappings = []
+    sentence_mappings = []
     for index, paragraph in enumerate(result.get("paragraphs") or []):
         extra = normalized_numbers(paragraph) - allowed_numbers
         if extra:
@@ -63,13 +237,7 @@ def audit_article(result: dict, facts: list[dict], allowed_judgment: str = "",
         tokens = meaningful_tokens(paragraph)
         if len(tokens & allowed_tokens) / max(1, len(tokens)) < 0.18:
             errors.append(f"paragraph[{index}] low fact overlap")
-        ranked = []
-        for fact in facts:
-            fact_tokens = meaningful_tokens(fact["text"])
-            score = len(tokens & fact_tokens) / max(1, len(tokens))
-            if score >= 0.08:
-                ranked.append((score, fact["claim_id"]))
-        ranked.sort(reverse=True)
+        ranked = ranked_claims(paragraph, facts)
         mapped = [claim_id for _, claim_id in ranked[:4]]
         mappings.append({"paragraph_index": index, "claim_ids": mapped})
         if not mapped:
@@ -79,6 +247,35 @@ def audit_article(result: dict, facts: list[dict], allowed_judgment: str = "",
             marker in paragraph for marker in LONG_FORM_ATTRIBUTION_MARKERS
         ):
             errors.append(f"paragraph[{index}] source attribution missing")
+        for sentence_index, sentence in enumerate(sentence_parts(paragraph)):
+            sentence_ranked = ranked_claims(sentence, facts)
+            sentence_claim_ids = [claim_id for _, claim_id in sentence_ranked[:3]]
+            sentence_mappings.append({
+                "paragraph_index": index,
+                "sentence_index": sentence_index,
+                "text": sentence,
+                "claim_ids": sentence_claim_ids,
+            })
+            if not sentence_claim_ids:
+                errors.append(
+                    f"paragraph[{index}] sentence[{sentence_index}] lacks claim support: {sentence}"
+                )
+                continue
+            sentence_support = " ".join(
+                fact["text"] for fact in facts if fact["claim_id"] in sentence_claim_ids
+            )
+            sentence_extra = normalized_numbers(sentence) - normalized_numbers(sentence_support)
+            if sentence_extra:
+                errors.append(
+                    f"paragraph[{index}] sentence[{sentence_index}] unsupported numbers: "
+                    f"{sorted(sentence_extra)}"
+                )
+            for marker in UNSUPPORTED_INFERENCE_MARKERS:
+                if marker in sentence and marker not in sentence_support:
+                    errors.append(
+                        f"paragraph[{index}] sentence[{sentence_index}] unsupported inference "
+                        f"'{marker}': {sentence}"
+                    )
         for earlier_index, earlier in enumerate((result.get("paragraphs") or [])[:index]):
             ratio = difflib.SequenceMatcher(None, paragraph, earlier).ratio()
             if ratio >= 0.62:
@@ -101,6 +298,20 @@ def audit_article(result: dict, facts: list[dict], allowed_judgment: str = "",
         tokens = meaningful_tokens(value)
         if not tokens or len(tokens & allowed_tokens) / max(1, len(tokens)) < 0.18:
             errors.append(f"{field} low fact overlap")
+        for sentence_index, sentence in enumerate(sentence_parts(value)):
+            sentence_ranked = ranked_claims(sentence, facts)
+            sentence_claim_ids = [claim_id for _, claim_id in sentence_ranked[:3]]
+            if not sentence_claim_ids:
+                errors.append(f"{field} sentence[{sentence_index}] lacks claim support: {sentence}")
+                continue
+            sentence_support = " ".join(
+                fact["text"] for fact in facts if fact["claim_id"] in sentence_claim_ids
+            )
+            for marker in UNSUPPORTED_INFERENCE_MARKERS:
+                if marker in sentence and marker not in sentence_support:
+                    errors.append(
+                        f"{field} sentence[{sentence_index}] unsupported inference '{marker}': {sentence}"
+                    )
     judgment_value = str(result.get("judgment") or "")
     if allowed_judgment:
         judgment_tokens = meaningful_tokens(judgment_value)
@@ -120,6 +331,7 @@ def audit_article(result: dict, facts: list[dict], allowed_judgment: str = "",
         "article_characters": len(article),
         "paragraph_count": len(result.get("paragraphs") or []),
         "paragraph_claim_mapping": mappings,
+        "sentence_claim_mapping": sentence_mappings,
         "errors": errors,
     }
 
@@ -144,6 +356,110 @@ def generate_long_story(reader: dict, event_id: str, client=None) -> tuple[dict,
         schema_name="spectra_minimal_long_story",
         schema=SCHEMA,
     )
+
+
+def revise_long_story(reader: dict, event_id: str, draft: dict, audit: dict,
+                      client=None) -> tuple[dict, dict, dict]:
+    allowed = revision_targets(audit.get("errors") or [], draft)
+    if not allowed:
+        raise ValueError(f"{event_id}: audit failure has no safely patchable location")
+    profile = reader.get("writing_profile", {})
+    minimum_article = int(profile.get("min_characters", 450))
+    paragraphs = draft.get("paragraphs") or []
+    paragraph_targets = {index for target, index in allowed if target == "paragraph"}
+    unchanged_characters = sum(
+        len(text) for index, text in enumerate(paragraphs) if index not in paragraph_targets
+    )
+    paragraph_patch_minimum = max(0, minimum_article - unchanged_characters)
+    attribution_targets = {
+        int(match.group(1))
+        for error in audit.get("errors") or []
+        for match in re.finditer(r"paragraph\[(\d+)\] source attribution missing", error)
+    }
+    fact_map = {fact["claim_id"]: fact for fact in reader["fact_units"]}
+    for mapping in audit.get("paragraph_claim_mapping") or []:
+        index = int(mapping.get("paragraph_index", -1))
+        if index in paragraph_targets and any(
+            fact_map.get(claim_id, {}).get("attribution_required")
+            for claim_id in mapping.get("claim_ids") or []
+        ):
+            attribution_targets.add(index)
+    unchanged_claim_ids = {
+        claim_id
+        for mapping in audit.get("paragraph_claim_mapping") or []
+        if int(mapping.get("paragraph_index", -1)) not in paragraph_targets
+        for claim_id in mapping.get("claim_ids") or []
+    }
+    preferred_expansion_fact_ids = [
+        fact["claim_id"] for fact in reader["fact_units"]
+        if fact["claim_id"] not in unchanged_claim_ids
+    ]
+    requirements = {
+        (target, index): {
+            "require_attribution": target == "paragraph" and index in attribution_targets,
+            "minimum_characters": 40 if target == "paragraph" else 1,
+        }
+        for target, index in allowed
+    }
+    payload = {
+        "locked_writer_input": {
+            "event_id": event_id,
+            "fact_units": [
+                {
+                    "fact_id": fact["claim_id"], "text": fact["text"],
+                    "attribution_required": fact["attribution_required"],
+                }
+                for fact in reader["fact_units"]
+            ],
+            "evidence_context": [
+                {"fact_id": fact["claim_id"], "text": fact["evidence_context"]}
+                for fact in reader["fact_units"] if fact.get("evidence_context")
+            ],
+            "allowed_judgment": reader.get("allowed_judgment", ""),
+            "writing_profile": profile,
+        },
+        "failed_draft": draft,
+        "audit_errors": audit.get("errors") or [],
+        "allowed_targets": [
+            {"target": target, "paragraph_index": index}
+            for target, index in sorted(allowed)
+        ],
+        "target_requirements": [
+            {"target": target, "paragraph_index": index, **requirements[(target, index)]}
+            for target, index in sorted(allowed)
+        ],
+        "final_article_min_characters": minimum_article,
+        "minimum_total_characters_for_paragraph_patches": paragraph_patch_minimum,
+        "preferred_expansion_fact_ids": preferred_expansion_fact_ids,
+    }
+    response, metadata = (client or create_llm_client()).generate_json(
+        instructions=REVISION_INSTRUCTIONS,
+        input_text=json.dumps(payload, ensure_ascii=False),
+        schema_name="spectra_minimal_long_story_patch_revision",
+        schema=REVISION_SCHEMA,
+    )
+    revision = response.get("revision") or {}
+    try:
+        revised = apply_long_revision(
+            draft, revision, allowed, event_id, requirements, 0
+        )
+    except ValueError as exc:
+        raise LongRevisionError(str(exc), revision, metadata) from exc
+    inserted = backfill_verified_facts(
+        revised, allowed, reader["fact_units"], minimum_article,
+        int(profile.get("max_characters", 1000)),
+    )
+    if inserted:
+        revision["programmatic_backfill_fact_ids"] = inserted
+    patched_characters = sum(
+        len(revised["paragraphs"][index]) for index in paragraph_targets
+    )
+    if patched_characters < paragraph_patch_minimum:
+        raise LongRevisionError(
+            f"{event_id}: paragraph patches total {patched_characters} characters; "
+            f"requires {paragraph_patch_minimum}", revision, metadata,
+        )
+    return revised, metadata, revision
 
 
 def main() -> int:

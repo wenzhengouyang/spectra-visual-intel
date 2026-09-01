@@ -15,7 +15,9 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from spectra_agent.llm_client import create_llm_client  # noqa: E402
-from editorial.diagnostic_long_writer import audit_article, generate_long_story  # noqa: E402
+from editorial.diagnostic_long_writer import (  # noqa: E402
+    audit_article, generate_long_story, revise_long_story,
+)
 from editorial.finalize_diagnostic_long_stories import clean  # noqa: E402
 
 
@@ -28,13 +30,17 @@ def write_checkpoint(path: Path | None, payload: dict[str, Any]) -> None:
 
 
 def build_bundle(verified: dict[str, Any], selection: dict[str, Any], client,
-                 checkpoint_path: Path | None = None, max_attempts: int = 2) -> tuple[dict, dict]:
+                 checkpoint_path: Path | None = None, max_attempts: int = 2,
+                 event_ids: list[str] | None = None) -> tuple[dict, dict]:
     plans = {item["event_id"]: item for item in selection["selections"]}
     event_map = {item["event_id"]: item for item in verified["intelligence_events"]}
+    requested_event_ids = set(event_ids) if event_ids is not None else None
     event_ids = [
         event_id for event_id in verified.get("editorial_selection", {}).get("top_event_ids", [])
         if event_id in event_map
     ][:5]
+    if requested_event_ids is not None:
+        event_ids = [event_id for event_id in event_ids if event_id in requested_event_ids]
     drafts, blocked, demoted, records, calls = [], [], [], [], []
     checkpoint = {"schema_version": "0.1", "record_type": "p1_long_job_checkpoint", "jobs": {}}
     if checkpoint_path and checkpoint_path.exists():
@@ -78,23 +84,52 @@ def build_bundle(verified: dict[str, Any], selection: dict[str, Any], client,
         attempt = int(cached.get("attempts", 0))
         last_error = None
         completed_draft = None
-        audit_record = None
+        audit_record = cached.get("audit_record")
+        initial_draft = cached.get("initial_draft")
+        latest_draft = cached.get("revised_draft") or initial_draft
+        latest_audit = (audit_record or {}).get("audit")
+        revision_history = list(cached.get("revision_history") or [])
         while attempt < max_attempts:
             attempt += 1
-            jobs[event_id] = {"status": "running", "attempts": attempt}
+            phase = "initial_generation" if latest_draft is None else "targeted_revision"
+            jobs[event_id] = {
+                **jobs.get(event_id, {}), "status": "running", "attempts": attempt, "phase": phase,
+            }
             write_checkpoint(checkpoint_path, checkpoint)
             try:
-                raw, metadata = generate_long_story(reader, event_id, client)
-                call_record = {"event_id": event_id, "attempt": attempt, **metadata}
+                revision = None
+                if latest_draft is None:
+                    raw, metadata = generate_long_story(reader, event_id, client)
+                    cleaned, actions = clean(raw)
+                    initial_draft = cleaned
+                else:
+                    raw, metadata, revision = revise_long_story(
+                        reader, event_id, latest_draft, latest_audit or {}, client
+                    )
+                    # The patch is already constrained to audited locations. Running the
+                    # whole-article cleaner here can reinsert an unfixed dek into a repaired
+                    # paragraph and silently undo the targeted edit.
+                    cleaned, actions = raw, []
+                    revision_history.append({
+                        "attempt": attempt, "audit_errors": (latest_audit or {}).get("errors", []),
+                        "patches": revision.get("patches") or [],
+                        "programmatic_backfill_fact_ids": (
+                            revision.get("programmatic_backfill_fact_ids") or []
+                        ),
+                    })
+                call_record = {"event_id": event_id, "attempt": attempt, "phase": phase, **metadata}
                 calls.append(call_record)
-                cleaned, actions = clean(raw)
                 audit = audit_article(
                     cleaned, facts, reader.get("allowed_judgment", ""),
                     reader.get("writing_profile", {}),
                 )
+                latest_draft, latest_audit = cleaned, audit
                 audit_record = {
                     "event_id": event_id, "status": audit["status"],
                     "attempt": attempt, "cleaning_actions": actions,
+                    "initial_draft": initial_draft,
+                    "revised_draft": cleaned if revision is not None else None,
+                    "revision_history": revision_history,
                     "draft": cleaned, "audit": audit,
                 }
                 if audit["status"] != "passed":
@@ -102,6 +137,9 @@ def build_bundle(verified: dict[str, Any], selection: dict[str, Any], client,
                     jobs[event_id] = {
                         "status": "retryable_failure", "attempts": attempt,
                         "error": last_error, "audit_record": audit_record,
+                        "initial_draft": initial_draft,
+                        "revised_draft": cleaned if revision is not None else None,
+                        "revision_history": revision_history,
                     }
                     write_checkpoint(checkpoint_path, checkpoint)
                     continue
@@ -126,14 +164,27 @@ def build_bundle(verified: dict[str, Any], selection: dict[str, Any], client,
                 jobs[event_id] = {
                     "status": "completed", "attempts": attempt,
                     "draft": completed_draft, "audit_record": audit_record,
-                    "llm_call": call_record,
+                    "llm_call": call_record, "initial_draft": initial_draft,
+                    "revised_draft": cleaned if revision is not None else None,
+                    "revision_history": revision_history,
                 }
                 write_checkpoint(checkpoint_path, checkpoint)
                 break
             except Exception as exc:
                 last_error = str(exc)
+                failed_revision = getattr(exc, "revision", None)
+                if failed_revision:
+                    revision_history.append({
+                        "attempt": attempt,
+                        "audit_errors": (latest_audit or {}).get("errors", []),
+                        "patches": failed_revision.get("patches") or [],
+                        "patch_validation_error": last_error,
+                    })
                 jobs[event_id] = {
                     "status": "retryable_failure", "attempts": attempt, "error": last_error,
+                    "audit_record": audit_record, "initial_draft": initial_draft,
+                    "revised_draft": latest_draft if latest_draft != initial_draft else None,
+                    "revision_history": revision_history,
                 }
                 write_checkpoint(checkpoint_path, checkpoint)
         if completed_draft is None:
@@ -158,7 +209,7 @@ def build_bundle(verified: dict[str, Any], selection: dict[str, Any], client,
     bundle = {
         "schema_version": "0.2",
         "record_type": "deep_story_draft_bundle",
-        "prompt_version": "p1_long_writer.v0.1",
+        "prompt_version": "p1_long_writer.v0.2",
         "generation_mode": "serial_background_local_14b",
         "drafts": drafts,
         "blocked": blocked,
@@ -186,6 +237,7 @@ def main() -> int:
     parser.add_argument("--num-predict", type=int, default=1200)
     parser.add_argument("--checkpoint", required=True)
     parser.add_argument("--max-attempts", type=int, default=2)
+    parser.add_argument("--event-id", action="append", dest="event_ids")
     args = parser.parse_args()
     os.environ["SPECTRA_MODEL"] = args.model
     os.environ["OLLAMA_NUM_CTX"] = str(args.num_ctx)
@@ -193,7 +245,7 @@ def main() -> int:
     bundle, audit = build_bundle(
         json.loads(Path(args.verified).read_text(encoding="utf-8")),
         json.loads(Path(args.fact_selection).read_text(encoding="utf-8")),
-        create_llm_client(), Path(args.checkpoint), args.max_attempts,
+        create_llm_client(), Path(args.checkpoint), args.max_attempts, args.event_ids,
     )
     Path(args.output).write_text(json.dumps(bundle, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     Path(args.audit_output).write_text(json.dumps(audit, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

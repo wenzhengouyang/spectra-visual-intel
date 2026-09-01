@@ -790,6 +790,30 @@ def validate_llm_analyses(payload: dict[str, Any], selected: list[dict[str, Any]
     return analyses
 
 
+def _build_llm_batches(
+    selected: list[dict[str, Any]],
+    source_payload: dict[str, Any],
+    *,
+    batch_size: int,
+    max_input_chars: int,
+) -> list[list[dict[str, Any]]]:
+    """Batch small candidates while keeping long full-text items isolated."""
+    batches: list[list[dict[str, Any]]] = []
+    current: list[dict[str, Any]] = []
+    for item in selected:
+        proposed = [*current, item]
+        exceeds_count = len(proposed) > batch_size
+        exceeds_chars = bool(current) and len(_llm_input(proposed, source_payload)) > max_input_chars
+        if exceeds_count or exceeds_chars:
+            batches.append(current)
+            current = [item]
+        else:
+            current = proposed
+    if current:
+        batches.append(current)
+    return batches
+
+
 def enrich_with_llm(
     result: dict[str, Any],
     source_payload: dict[str, Any],
@@ -806,9 +830,12 @@ def enrich_with_llm(
             f"LLM candidate limit exceeded: {len(selected)} > {max_candidates}; "
             "tighten deterministic prefiltering first"
         )
-    configured_batch_size = batch_size or int(os.environ.get("SPECTRA_LLM_BATCH_SIZE", str(len(selected))))
+    configured_batch_size = batch_size or int(os.environ.get("SPECTRA_LLM_BATCH_SIZE", "3"))
     if configured_batch_size < 1:
         raise ValueError("SPECTRA_LLM_BATCH_SIZE must be at least 1")
+    max_input_chars = int(os.environ.get("SPECTRA_LLM_BATCH_INPUT_CHARS", "9000"))
+    if max_input_chars < 1000:
+        raise ValueError("SPECTRA_LLM_BATCH_INPUT_CHARS must be at least 1000")
     analyses: list[dict[str, Any]] = []
     batches: list[dict[str, Any]] = []
     completed: dict[str, dict[str, Any]] = {}
@@ -825,13 +852,11 @@ def enrich_with_llm(
         completed = {item["candidate_id"]: item for item in checkpoint.get("analyses", [])}
         completed_fingerprints = checkpoint.get("input_fingerprints", {})
         batches = checkpoint.get("batches", [])
-    for start in range(0, len(selected), configured_batch_size):
-        chunk = selected[start:start + configured_batch_size]
-        reusable = []
-        for item in chunk:
-            candidate_id = item["candidate_id"]
-            if candidate_id not in completed:
-                continue
+    reusable_by_id: dict[str, dict[str, Any]] = {}
+    pending: list[dict[str, Any]] = []
+    for item in selected:
+        candidate_id = item["candidate_id"]
+        if candidate_id in completed:
             saved_fingerprint = completed_fingerprints.get(candidate_id)
             legacy_has_extracted_text = any(
                 (source_map.get(source_id) or {}).get("processing_status") == "text_extracted"
@@ -840,11 +865,25 @@ def enrich_with_llm(
             if saved_fingerprint == current_fingerprints[candidate_id] or (
                 saved_fingerprint is None and not legacy_has_extracted_text
             ):
-                reusable.append(completed[candidate_id])
-        if len(reusable) == len(chunk):
-            analyses.extend(reusable)
-            print(json.dumps({"event": "llm_batch_reused", "completed": len(analyses), "total": len(selected)}, ensure_ascii=False), flush=True)
-            continue
+                reusable_by_id[candidate_id] = completed[candidate_id]
+                continue
+        pending.append(item)
+    analyses.extend(reusable_by_id.values())
+    if reusable_by_id:
+        print(json.dumps({
+            "event": "llm_checkpoint_reused",
+            "reused": len(reusable_by_id),
+            "pending": len(pending),
+            "total": len(selected),
+        }, ensure_ascii=False), flush=True)
+
+    new_batch_count = 0
+    for chunk in _build_llm_batches(
+        pending,
+        source_payload,
+        batch_size=configured_batch_size,
+        max_input_chars=max_input_chars,
+    ):
         llm_payload, metadata = client.generate_json(
             instructions=LLM_INSTRUCTIONS,
             input_text=_llm_input(chunk, source_payload),
@@ -853,14 +892,20 @@ def enrich_with_llm(
         )
         chunk_analyses = validate_llm_analyses(llm_payload, chunk)
         analyses.extend(chunk_analyses)
+        new_batch_count += 1
         batches.append({"index": len(batches) + 1, "candidate_count": len(chunk), **metadata})
         if checkpoint_path:
+            analysis_by_id = {item["candidate_id"]: item for item in analyses}
             checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
             checkpoint_path.write_text(json.dumps({
                 "prompt_version": prompt_version,
                 "candidate_ids": [item["candidate_id"] for item in selected],
                 "input_fingerprints": current_fingerprints,
-                "analyses": analyses,
+                "analyses": [
+                    analysis_by_id[item["candidate_id"]]
+                    for item in selected
+                    if item["candidate_id"] in analysis_by_id
+                ],
                 "batches": batches,
             }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         print(json.dumps({
@@ -929,6 +974,9 @@ def enrich_with_llm(
         "prompt_version": prompt_version,
         "candidate_count": len(selected),
         "batch_size": configured_batch_size,
+        "batch_input_char_limit": max_input_chars,
+        "reused_candidate_count": len(selected) - len(pending),
+        "new_batch_count": new_batch_count,
         "batch_count": len(batches),
         "batches": batches,
         "provider": metadata.get("provider"),
@@ -1056,7 +1104,7 @@ def main() -> int:
                 client=create_llm_client(),
                 max_candidates=max_candidates,
                 prompt_version=llm_config.get("prompt_version", "structure.v0.2"),
-                batch_size=int(os.environ.get("SPECTRA_LLM_BATCH_SIZE", "1")),
+                batch_size=int(os.environ.get("SPECTRA_LLM_BATCH_SIZE", "3")),
                 checkpoint_path=Path(args.llm_checkpoint) if args.llm_checkpoint else None,
             )
         except (LLMConfigurationError, LLMProviderError) as exc:
