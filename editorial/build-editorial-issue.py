@@ -1061,6 +1061,7 @@ def build_timeline(
     events: list[dict],
     story_by_event: dict[str, dict],
     window_end: str,
+    window_start: str | None = None,
 ) -> list[dict]:
     event_dates = {
         item["event_id"]: report_date(item["event_at"])
@@ -1069,8 +1070,12 @@ def build_timeline(
     # A weekly issue always ends on the collection date. The old implementation
     # extended forward from the latest event to fill seven slots, which could
     # display future dates. Seven calendar days inclusive means end - 6 days.
-    end = report_date(window_end)
-    start = end - timedelta(days=6)
+    # Collector windows are half-open [window_start, window_end).  When the
+    # explicit start is available, anchor the seven labels to it so a midnight
+    # window end does not incorrectly drop the first collection day and add an
+    # empty eighth-day label.  Older fixtures without window_start retain the
+    # collection-day behavior.
+    start = report_date(window_start) if window_start else report_date(window_end) - timedelta(days=6)
     tones = ["purple", "blue", "cyan", "orange", "pink", "green", "muted"]
     timeline = []
     for offset in range(7):
@@ -1260,7 +1265,9 @@ def main() -> None:
     exact_issue_one = set(events) == set(STORY_COPY)
     fallback_window_end = max(item["event_at"] for item in events.values())
     window_end_value = verified.get("window_end") or fallback_window_end
-    timeline = [{**day, "story_ids": [story_by_event[event_id]["story_id"] for event_id in day["event_ids"]]} for day in TIMELINE] if exact_issue_one else build_timeline(list(events.values()), story_by_event, window_end_value)
+    timeline = [{**day, "story_ids": [story_by_event[event_id]["story_id"] for event_id in day["event_ids"]]} for day in TIMELINE] if exact_issue_one else build_timeline(
+        list(events.values()), story_by_event, window_end_value, verified.get("window_start")
+    )
     timeline = add_briefs_to_timeline(timeline, news_briefs, story_by_event)
     trends = TRENDS if exact_issue_one else build_trends(list(events.values()))
     trend_labels = "、".join(trend["label"] for trend in trends)

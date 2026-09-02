@@ -46,16 +46,24 @@ def validate_review(review: dict[str, Any], candidates: dict[str, Any]) -> list[
     event_ids: list[str] = []
     for item in records:
         label = item.get("candidate_id", "unknown")
-        if item.get("verification_status") != "verified_primary":
-            errors.append(f"{label}: primary source is not verified")
-        if item.get("decision") not in {"include", "watch", "exclude"}:
+        decision = item.get("decision")
+        verification_status = item.get("verification_status")
+        if decision == "include" and verification_status != "verified_primary":
+            errors.append(f"{label}: included event requires verified primary source")
+        elif decision in {"watch", "exclude"} and verification_status not in {
+            "verified_primary", "verified_secondary"
+        }:
+            errors.append(f"{label}: reviewed source status is missing")
+        if decision not in {"include", "watch", "exclude"}:
+            if verification_status not in {"verified_primary", "verified_secondary"}:
+                errors.append(f"{label}: primary source is not verified")
             errors.append(f"{label}: decision must be include, watch or exclude")
         if not item.get("decision_reason"):
             errors.append(f"{label}: decision_reason is required")
         if not item.get("limitation"):
             errors.append(f"{label}: limitation is required")
         claims = item.get("claims", [])
-        if not claims:
+        if decision in {"include", "watch"} and not claims:
             errors.append(f"{label}: at least one evidence claim is required")
         for index, claim in enumerate(claims, 1):
             if not all(claim.get(field) for field in ("text", "kind", "locator")):
@@ -71,11 +79,8 @@ def validate_review(review: dict[str, Any], candidates: dict[str, Any]) -> list[
             else:
                 event_ids.append(event["event_id"])
     included = sum(item.get("decision") == "include" for item in records)
-    attainable_minimum = min(5, len(records))
-    if not attainable_minimum <= included <= 10:
-        errors.append(
-            f"included events must be {attainable_minimum}-10 for this review queue, got {included}"
-        )
+    if included > 10:
+        errors.append(f"included events must not exceed 10, got {included}")
     return errors
 
 

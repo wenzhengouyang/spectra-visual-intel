@@ -353,7 +353,7 @@ def attach_harness_evidence(review: dict[str, Any], evidence: dict[str, Any]) ->
 def materialize_fact_decisions(review: dict[str, Any]) -> dict[str, Any]:
     """Convert explicit fact-level human decisions into formal review claims."""
     for record in review.get("records", []):
-        if record.get("decision") != "include" or record.get("claims"):
+        if record.get("decision") not in {"include", "watch"} or record.get("claims"):
             continue
         suggestions = record.get("suggested_evidence") or []
         approve_all = record.get("approve_all_suggested_facts") is True
@@ -794,6 +794,29 @@ def resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
                     raise
                 log(run_dir, "p1_editorial_background", "writer_failed_using_quick_read_fallback")
 
+        if args.editorial_only:
+            checkpoint = read_json(run_dir / "p1-long-editorial-checkpoint.json")
+            jobs = list((checkpoint.get("jobs") or {}).values())
+            update_state(
+                run_dir,
+                status="waiting_for_editorial_review",
+                current_stage="p1_editorial_review",
+                paused_reason="P1 Writer acceptance review requested; publication stages not run",
+                error=None,
+                publish_status="not_published",
+            )
+            print(json.dumps({
+                "run_id": run_dir.name,
+                "status": "waiting_for_editorial_review",
+                "writer_jobs": len(jobs),
+                "auto_passed": sum(item.get("status") == "completed" for item in jobs),
+                "demoted": sum(str(item.get("status", "")).startswith("demoted") for item in jobs),
+                "audit": str(editorial_audit_path),
+                "checkpoint": str(run_dir / "p1-long-editorial-checkpoint.json"),
+                "publish_status": "not_published",
+            }, ensure_ascii=False, indent=2))
+            return 0
+
         update_state(run_dir, current_stage="generate")
         issue_path = run_dir / "editorial-issue.json"
         static_draft = prepare_static_draft(run_dir, ROOT / config["static_page"])
@@ -922,6 +945,7 @@ def parser() -> argparse.ArgumentParser:
     resume.add_argument("--review", help="import an approved review JSON before resuming")
     resume.add_argument("--retry", action="store_true", help="retry a failed resume after correcting its input")
     resume.add_argument("--editorial-worker", action="store_true", help=argparse.SUPPRESS)
+    resume.add_argument("--editorial-only", action="store_true", help="stop after P1 Writer and its audit; do not build or publish an issue")
     return root
 
 

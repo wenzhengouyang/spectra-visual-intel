@@ -127,6 +127,24 @@ class SpectraAgentGateTest(unittest.TestCase):
         errors = validate_review(review, self.candidates)
         self.assertTrue(any("evidence claim" in error for error in errors))
 
+    def test_secondary_source_can_be_watch_but_not_formal_event(self):
+        review = copy.deepcopy(self.approved)
+        review["records"][0]["decision"] = "watch"
+        review["records"][0]["verification_status"] = "verified_secondary"
+        review["records"][0]["event"] = None
+        errors = validate_review(review, self.candidates)
+        self.assertFalse(any("source" in error for error in errors))
+
+    def test_review_does_not_force_unverified_items_to_meet_a_minimum(self):
+        review = copy.deepcopy(self.approved)
+        for index, record in enumerate(review["records"]):
+            if index >= 3:
+                record["decision"] = "watch"
+                record["verification_status"] = "verified_secondary"
+                record["event"] = None
+        errors = validate_review(review, self.candidates)
+        self.assertFalse(any("included events" in error for error in errors))
+
     def test_duplicate_event_id_blocks_resume(self):
         review = copy.deepcopy(self.approved)
         included = [item for item in review["records"] if item["decision"] == "include"]
