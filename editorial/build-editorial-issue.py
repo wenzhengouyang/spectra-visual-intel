@@ -1312,7 +1312,7 @@ def main() -> None:
         for item in [*stories, *news_briefs]
         if item.get("published_at")
     )
-    week_cumulative_count = len(stories) + len(news_briefs)
+    rolling_window_count = len(stories) + len(news_briefs)
 
     output = {
         "schema_version": "0.2",
@@ -1337,7 +1337,7 @@ def main() -> None:
             "story_count": len(stories),
             "total_intelligence_count": len(stories) + len(news_briefs),
             "today_new_count": today_new_count,
-            "week_cumulative_count": week_cumulative_count,
+            "rolling_window_count": rolling_window_count,
             "deep_dive_count": sum(story["article_type"] == "deep_dive" for story in stories),
             "brief_count": len(news_briefs),
             "reviewed_count": verified["summary"]["p1_reviewed"],

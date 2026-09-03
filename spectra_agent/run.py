@@ -463,17 +463,13 @@ find_weekly_baseline = find_incremental_baseline
 
 
 def annotate_display_window(collection_path: Path, config: dict[str, Any]) -> None:
-    """Add the current local week used by the page without changing collection scope."""
+    """Add the rolling collection window used by the daily page."""
     collection = read_json(collection_path)
     window_end = parse_timestamp(collection["window_end"])
-    local_tz = ZoneInfo(config.get("timezone", "Asia/Shanghai"))
-    local_end = window_end.astimezone(local_tz)
-    local_start = (local_end - timedelta(days=local_end.weekday())).replace(
-        hour=0, minute=0, second=0, microsecond=0
-    )
-    collection["display_window_start"] = local_start.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+    window_start = parse_timestamp(collection["window_start"])
+    collection["display_window_start"] = window_start.isoformat().replace("+00:00", "Z")
     collection["display_window_end"] = window_end.isoformat().replace("+00:00", "Z")
-    collection["display_window_mode"] = "current_local_week"
+    collection["display_window_mode"] = "rolling_7x24_hours"
     write_json(collection_path, collection)
 
 
