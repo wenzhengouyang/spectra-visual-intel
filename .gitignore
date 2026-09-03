@@ -48,6 +48,7 @@ yarn-error.log*
 /vendor/
 /spectra_agent/runs/
 /spectra_agent/.publish-remote/
+/spectra_agent/logs/
 /integrations/we-mp-rss/
 /collector/runs/*.json
 /processor/runs/*.json

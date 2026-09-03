@@ -2,8 +2,8 @@
   "version": "0.1",
   "timezone": "Asia/Shanghai",
   "schedule": {
-    "frequency": "twice_weekly",
-    "weekdays": ["monday", "thursday"],
+    "frequency": "daily",
+    "weekdays": ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"],
     "local_time": "09:30",
     "window_days": 7,
     "action": "collect_structure_and_pause_for_review"
@@ -11,7 +11,8 @@
   "incremental_collection": {
     "enabled": true,
     "baseline_weekday": 0,
-    "incremental_weekday": 3,
+    "incremental_weekdays": [1, 2, 3, 4, 5, 6],
+    "overlap_hours": 6,
     "reuse_llm_checkpoint": true,
     "full_window_retry_on_missing_or_failed_baseline_source": true
   },
@@ -120,6 +121,16 @@
       "minimum_distinct_windows": 3,
       "require_unchanged_strategy": true
     }
+  },
+  "local_runtime": {
+    "daily_run_prefix": "daily",
+    "logs_dir": "spectra_agent/logs"
+  },
+  "publishing": {
+    "remote": "origin",
+    "branch": "main",
+    "require_completed_run": true,
+    "require_publication_checks": true
   },
   "minimum_formal_events": 5,
   "maximum_formal_events": 10

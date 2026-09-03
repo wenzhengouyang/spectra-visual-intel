@@ -148,6 +148,8 @@ def build_bundle(review: dict[str, Any], collector: dict[str, Any], candidate_ru
         # editorial review.
         "window_start": collector.get("window_start") or candidate_run.get("window_start"),
         "window_end": collector.get("window_end") or candidate_run.get("window_end"),
+        "display_window_start": collector.get("display_window_start"),
+        "display_window_end": collector.get("display_window_end"),
         "summary": {
             "p1_reviewed": len(records),
             "verified_primary": sum(item["verification_status"] == "verified_primary" for item in records),

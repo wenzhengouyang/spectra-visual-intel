@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from collector.merge_incremental_runs import merge
-from spectra_agent.run import find_weekly_baseline, incremental_retry_source_ids
+from spectra_agent.run import find_incremental_baseline, incremental_retry_source_ids
 
 
 def record(source_id, url, digest, published, title="item"):
@@ -127,7 +127,7 @@ class IncrementalCollectionTest(unittest.TestCase):
             "new_source",
         ])
 
-    def test_thursday_selects_same_week_monday_baseline(self):
+    def test_thursday_selects_latest_same_week_collection(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             monday = root / "monday"
@@ -137,11 +137,18 @@ class IncrementalCollectionTest(unittest.TestCase):
                 "source_records": [record("old", "https://example.com/old", "h1", "2026-08-31T01:00:00Z")],
                 "source_checks": [{"registry_id": "feed", "status": "success"}],
             }))
+            wednesday = root / "wednesday"
+            wednesday.mkdir()
+            (wednesday / "collection.json").write_text(json.dumps({
+                "window_end": "2026-09-02T02:00:00Z",
+                "source_records": [record("newer", "https://example.com/newer", "h2", "2026-09-02T01:00:00Z")],
+                "source_checks": [{"registry_id": "feed", "status": "success"}],
+            }))
             config = {"runs_dir": str(root), "timezone": "Asia/Shanghai", "incremental_collection": {
-                "enabled": True, "baseline_weekday": 0, "incremental_weekday": 3,
+                "enabled": True, "baseline_weekday": 0, "incremental_weekdays": [1, 2, 3, 4, 5, 6],
             }}
-            selected = find_weekly_baseline(config, datetime(2026, 9, 3, 2, tzinfo=timezone.utc), root / "current")
-        self.assertEqual(selected, monday / "collection.json")
+            selected = find_incremental_baseline(config, datetime(2026, 9, 3, 2, tzinfo=timezone.utc), root / "current")
+        self.assertEqual(selected, wednesday / "collection.json")
 
     def test_corrupt_monday_baseline_falls_back_to_full_collection(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -152,7 +159,7 @@ class IncrementalCollectionTest(unittest.TestCase):
             config = {"runs_dir": str(root), "timezone": "Asia/Shanghai", "incremental_collection": {
                 "enabled": True, "baseline_weekday": 0, "incremental_weekday": 3,
             }}
-            selected = find_weekly_baseline(config, datetime(2026, 9, 3, 2, tzinfo=timezone.utc), root / "current")
+            selected = find_incremental_baseline(config, datetime(2026, 9, 3, 2, tzinfo=timezone.utc), root / "current")
         self.assertIsNone(selected)
 
     def test_valid_empty_monday_baseline_can_be_reused(self):
@@ -174,20 +181,60 @@ class IncrementalCollectionTest(unittest.TestCase):
                     "incremental_weekday": 3,
                 },
             }
-            selected = find_weekly_baseline(
+            selected = find_incremental_baseline(
                 config,
                 datetime(2026, 9, 3, 2, tzinfo=timezone.utc),
                 root / "current",
             )
         self.assertEqual(selected, monday / "collection.json")
 
-    def test_non_thursday_uses_full_collection(self):
+    def test_monday_uses_full_collection(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             config = {"runs_dir": str(root), "timezone": "Asia/Shanghai", "incremental_collection": {
                 "enabled": True, "baseline_weekday": 0, "incremental_weekday": 3,
             }}
-            selected = find_weekly_baseline(config, datetime(2026, 8, 31, 2, tzinfo=timezone.utc), root / "current")
+            selected = find_incremental_baseline(config, datetime(2026, 8, 31, 2, tzinfo=timezone.utc), root / "current")
+        self.assertIsNone(selected)
+
+    def test_tuesday_reuses_monday_collection(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            monday = root / "monday"
+            monday.mkdir()
+            (monday / "collection.json").write_text(json.dumps({
+                "window_end": "2026-08-31T02:00:00Z",
+                "source_records": [],
+                "source_checks": [{"registry_id": "feed", "status": "success"}],
+            }))
+            config = {"runs_dir": str(root), "timezone": "Asia/Shanghai", "incremental_collection": {
+                "enabled": True, "baseline_weekday": 0, "incremental_weekdays": [1, 2, 3, 4, 5, 6],
+            }}
+            selected = find_incremental_baseline(
+                config,
+                datetime(2026, 9, 1, 2, tzinfo=timezone.utc),
+                root / "current",
+            )
+        self.assertEqual(selected, monday / "collection.json")
+
+    def test_previous_week_collection_is_not_reused(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            prior = root / "prior"
+            prior.mkdir()
+            (prior / "collection.json").write_text(json.dumps({
+                "window_end": "2026-08-30T02:00:00Z",
+                "source_records": [],
+                "source_checks": [{"registry_id": "feed", "status": "success"}],
+            }))
+            config = {"runs_dir": str(root), "timezone": "Asia/Shanghai", "incremental_collection": {
+                "enabled": True, "baseline_weekday": 0, "incremental_weekdays": [1, 2, 3, 4, 5, 6],
+            }}
+            selected = find_incremental_baseline(
+                config,
+                datetime(2026, 9, 1, 2, tzinfo=timezone.utc),
+                root / "current",
+            )
         self.assertIsNone(selected)
 
 

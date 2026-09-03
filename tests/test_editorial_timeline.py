@@ -241,6 +241,51 @@ class EditorialTimelineTest(unittest.TestCase):
 
         self.assertEqual([brief["candidate_id"] for brief in briefs], ["cand_inside"])
 
+    def test_p2_briefs_can_use_current_week_display_window(self):
+        candidates = {
+            "window_start": "2026-08-27T02:00:00Z",
+            "selected_candidates": [
+                {
+                    "candidate_id": "cand_prior_week",
+                    "canonical_title": "Prior week context",
+                    "primary_source_id": "src_1",
+                    "source_ids": ["src_1"],
+                    "published_at": "2026-08-30T08:00:00Z",
+                    "primary_route": "frontier.world_model",
+                    "intelligence_type": "type.technology_breakthrough",
+                    "tags": {},
+                    "score": 12,
+                },
+                {
+                    "candidate_id": "cand_this_week",
+                    "canonical_title": "This week",
+                    "primary_source_id": "src_1",
+                    "source_ids": ["src_1"],
+                    "published_at": "2026-09-01T08:00:00Z",
+                    "primary_route": "frontier.world_model",
+                    "intelligence_type": "type.technology_breakthrough",
+                    "tags": {},
+                    "score": 12,
+                },
+            ],
+        }
+        collection = {"source_records": [{
+            "source_id": "src_1",
+            "source_type": "paper_report",
+            "canonical_url": "https://example.com",
+            "raw_excerpt": "Abstract",
+        }]}
+
+        briefs = MODULE.build_news_briefs(
+            candidates,
+            collection,
+            set(),
+            "2026-09-03T02:00:00Z",
+            "2026-08-31T16:00:00Z",
+        )
+
+        self.assertEqual([item["candidate_id"] for item in briefs], ["cand_this_week"])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -956,11 +956,13 @@ def build_news_briefs(
     collection: dict,
     reviewed_ids: set[str],
     window_end: str | None = None,
+    window_start: str | None = None,
 ) -> list[dict]:
     source_map = {item["source_id"]: item for item in collection.get("source_records", [])}
     briefs = []
     end_date = report_date(window_end) if window_end else None
-    start_date = report_date(candidate_run.get("window_start")) if candidate_run.get("window_start") else (end_date - timedelta(days=6) if end_date else None)
+    start_value = window_start or candidate_run.get("window_start")
+    start_date = report_date(start_value) if start_value else (end_date - timedelta(days=6) if end_date else None)
     feed_candidates = candidate_run.get("feed_candidates") or candidate_run.get("selected_candidates", [])
     for candidate in feed_candidates:
         if not candidate.get("front_display_eligible", True):
@@ -1245,7 +1247,8 @@ def main() -> None:
             candidate_run,
             collection,
             reviewed_candidate_ids,
-            verified.get("window_end"),
+            verified.get("display_window_end") or verified.get("window_end"),
+            verified.get("display_window_start"),
         )
         if candidate_run and collection else []
     )
@@ -1262,9 +1265,10 @@ def main() -> None:
         story["reading_time_minutes"] = max(story["reading_time_minutes"], 5) if is_deep_dive else 2
     exact_issue_one = set(events) == set(STORY_COPY)
     fallback_window_end = max(item["event_at"] for item in events.values())
-    window_end_value = verified.get("window_end") or fallback_window_end
+    window_end_value = verified.get("display_window_end") or verified.get("window_end") or fallback_window_end
+    display_window_start = verified.get("display_window_start") or verified.get("window_start")
     timeline = [{**day, "story_ids": [story_by_event[event_id]["story_id"] for event_id in day["event_ids"]]} for day in TIMELINE] if exact_issue_one else build_timeline(
-        list(events.values()), story_by_event, window_end_value, verified.get("window_start")
+        list(events.values()), story_by_event, window_end_value, display_window_start
     )
     timeline = add_briefs_to_timeline(timeline, news_briefs, story_by_event)
     trends = TRENDS if exact_issue_one else build_trends(list(events.values()))
@@ -1301,8 +1305,14 @@ def main() -> None:
         period_end = report_date(max(item["event_at"] for item in events.values()))
     else:
         period_end = report_date(window_end_value)
-        period_start = period_end - timedelta(days=6)
+        period_start = report_date(display_window_start) if display_window_start else period_end - timedelta(days=6)
     issue_year, issue_week, _ = period_end.isocalendar()
+    today_new_count = sum(
+        report_date(item["published_at"]) == period_end
+        for item in [*stories, *news_briefs]
+        if item.get("published_at")
+    )
+    week_cumulative_count = len(stories) + len(news_briefs)
 
     output = {
         "schema_version": "0.2",
@@ -1326,6 +1336,8 @@ def main() -> None:
             "news_brief_ids": [item["brief_id"] for item in news_briefs],
             "story_count": len(stories),
             "total_intelligence_count": len(stories) + len(news_briefs),
+            "today_new_count": today_new_count,
+            "week_cumulative_count": week_cumulative_count,
             "deep_dive_count": sum(story["article_type"] == "deep_dive" for story in stories),
             "brief_count": len(news_briefs),
             "reviewed_count": verified["summary"]["p1_reviewed"],

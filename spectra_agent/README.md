@@ -118,6 +118,43 @@ python3 spectra_agent/run.py run --llm
 
 P1 人工事实审核通过后，`fact_selection` 只从 `verified_events` 生成 Writer 可见事实包。至少包含 8 条人工核验事实的事件进入 `p1_long_pipeline.py`：系统启动独立后台 worker，本机 `qwen3:14b` 按事件串行生成长篇正文，随后由程序执行重复句清理、段落—claim 映射、数字新增检查、来源归因检查、事实重合度检查和判断边界检查。每个事件在 `p1-long-editorial-checkpoint.json` 中记录 queued/running/retryable_failure/completed/manual_review 状态；中断后复用已完成稿，单篇最多尝试两次。未达到 8 条事实的事件自动降为快速解读；最终失败稿进入 `manual_editorial_review`。审计写入 `p1-long-editorial-audit.json`，后台结束后仍保持 `publish_status=not_published`。
 
+## 本机日更运行
+
+日更不依赖 Codex。周一重新采集滚动 7 天完整基线；周二至周日从本周最近一次有效 collection 接续，只处理新增或发生变化的记录，并向前重叠 6 小时防止延迟源漏采。页面显示范围固定为本周一至当天，滚动 7 天只作为采集、去重和恢复上下文。
+
+```bash
+.venv-llm/bin/python spectra_agent/daily_runner.py
+```
+
+同一天重复启动不会重复采集：已完成或正在等待人工时直接退出；失败或异常中断时使用既有产物执行 `resume --retry`。日志位于 `spectra_agent/logs/`。
+
+查看 P1 队列：
+
+```bash
+.venv-llm/bin/python spectra_agent/review_cli.py --run-id daily-YYYYMMDD --list
+```
+
+确认所有事实，并在同一命令中续跑 Writer 与页面生成：
+
+```bash
+.venv-llm/bin/python spectra_agent/review_cli.py \
+  --run-id daily-YYYYMMDD \
+  --include 1,2,3 \
+  --watch 4 \
+  --exclude 5 \
+  --reviewer 欧阳文铮 \
+  --resume
+```
+
+只有完成状态、人工事实审核和发布前校验全部满足后，下面的显式命令才会推送 GitHub Pages。日更任务本身不会跨过人工闸门或自动发布。
+
+```bash
+.venv-llm/bin/python spectra_agent/publish_run.py --run-id daily-YYYYMMDD
+.venv-llm/bin/python spectra_agent/publish_run.py --run-id daily-YYYYMMDD --push --confirm
+```
+
+`launchd` 配置模板位于 `spectra_agent/launchd/com.spectra.visual-intel.daily.plist`，每天 09:30 启动本地 runner。
+
 当前主流程为：
 
 ```text

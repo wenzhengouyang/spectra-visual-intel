@@ -408,14 +408,24 @@ def prepare_retry_artifacts(
         raise
 
 
-def find_weekly_baseline(config: dict[str, Any], end: datetime, exclude: Path) -> Path | None:
-    """Return this week's latest valid Monday collection for a Thursday delta run."""
+def find_incremental_baseline(config: dict[str, Any], end: datetime, exclude: Path) -> Path | None:
+    """Return the latest valid collection from this ISO week for a daily delta.
+
+    The configured baseline weekday always starts from a fresh rolling window.
+    Every other configured incremental weekday may reuse the most recent valid
+    collection in the same local ISO week.
+    """
     incremental = config.get("incremental_collection") or {}
     if not incremental.get("enabled", False):
         return None
     local_tz = ZoneInfo(config.get("timezone", "Asia/Shanghai"))
     local_end = end.astimezone(local_tz)
-    if local_end.weekday() != int(incremental.get("incremental_weekday", 3)):
+    baseline_weekday = int(incremental.get("baseline_weekday", 0))
+    configured_days = incremental.get("incremental_weekdays")
+    if configured_days is None:
+        configured_days = [int(incremental.get("incremental_weekday", 3))]
+    allowed_days = {int(day) for day in configured_days}
+    if local_end.weekday() == baseline_weekday or local_end.weekday() not in allowed_days:
         return None
     candidates: list[tuple[datetime, Path]] = []
     for directory in runs_dir(config).iterdir() if runs_dir(config).exists() else []:
@@ -438,8 +448,7 @@ def find_weekly_baseline(config: dict[str, Any], end: datetime, exclude: Path) -
                 and all(check.get("registry_id") and check.get("status") for check in checks)
             )
             if (
-                local_baseline.weekday() == int(incremental.get("baseline_weekday", 0))
-                and local_baseline.isocalendar()[:2] == local_end.isocalendar()[:2]
+                local_baseline.isocalendar()[:2] == local_end.isocalendar()[:2]
                 and baseline_end < end
                 and structurally_valid
             ):
@@ -447,6 +456,25 @@ def find_weekly_baseline(config: dict[str, Any], end: datetime, exclude: Path) -
         except (OSError, KeyError, ValueError, TypeError, json.JSONDecodeError):
             continue
     return max(candidates, default=(None, None), key=lambda item: item[0])[1]
+
+
+# Compatibility alias for integrations created before daily collection.
+find_weekly_baseline = find_incremental_baseline
+
+
+def annotate_display_window(collection_path: Path, config: dict[str, Any]) -> None:
+    """Add the current local week used by the page without changing collection scope."""
+    collection = read_json(collection_path)
+    window_end = parse_timestamp(collection["window_end"])
+    local_tz = ZoneInfo(config.get("timezone", "Asia/Shanghai"))
+    local_end = window_end.astimezone(local_tz)
+    local_start = (local_end - timedelta(days=local_end.weekday())).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
+    collection["display_window_start"] = local_start.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+    collection["display_window_end"] = window_end.isoformat().replace("+00:00", "Z")
+    collection["display_window_mode"] = "current_local_week"
+    write_json(collection_path, collection)
 
 
 def incremental_retry_source_ids(
@@ -852,19 +880,24 @@ def create_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
         update_state(run_dir, status="running", current_stage="collect")
         collection_path = run_dir / "collection.json"
         target_end = parse_timestamp(args.end) if args.end else datetime.now(timezone.utc)
-        baseline_path = find_weekly_baseline(config, target_end, run_dir)
+        baseline_path = find_incremental_baseline(config, target_end, run_dir)
         if args.from_collection:
             shutil.copyfile(ROOT / args.from_collection, collection_path)
             log(run_dir, "collect", "reused_collection", source=args.from_collection)
         elif baseline_path:
             baseline = read_json(baseline_path)
             baseline_end = parse_timestamp(baseline["window_end"])
+            overlap_hours = max(
+                0,
+                int((config.get("incremental_collection") or {}).get("overlap_hours", 6)),
+            )
+            delta_start = baseline_end - timedelta(hours=overlap_hours)
             desired_start = target_end - timedelta(days=int(args.days or config.get("schedule", {}).get("window_days", 7)))
             delta_path = run_dir / "collection.incremental.json"
             check_werss_service(config, run_dir)
             delta_cmd = [
                 collector_python(config), "collector/collect.py", "--config", config["collection_config"],
-                "--output", str(delta_path), "--start", baseline_end.isoformat(), "--end", target_end.isoformat(),
+                "--output", str(delta_path), "--start", delta_start.isoformat(), "--end", target_end.isoformat(),
             ]
             if args.newscrawler_command:
                 delta_cmd += ["--newscrawler-command", args.newscrawler_command]
@@ -908,8 +941,9 @@ def create_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
             incremental_summary = merged_collection.get("summary") or {}
             update_state(
                 run_dir,
-                collection_mode="weekly_incremental",
+                collection_mode="daily_incremental",
                 incremental_baseline_run=baseline_path.parent.name,
+                incremental_overlap_hours=overlap_hours,
                 incremental_changed_records=incremental_summary.get("changed_records", 0),
                 incremental_unchanged_records=incremental_summary.get("unchanged_records", 0),
                 incremental_processing_mode=(
@@ -925,8 +959,9 @@ def create_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
             log(
                 run_dir,
                 "collect",
-                "weekly_incremental_merged",
+                "daily_incremental_merged",
                 baseline_run=baseline_path.parent.name,
+                overlap_hours=overlap_hours,
                 retry_sources=retry_ids,
                 changed_records=incremental_summary.get("changed_records", 0),
                 unchanged_records=incremental_summary.get("unchanged_records", 0),
@@ -944,8 +979,9 @@ def create_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
             update_state(
                 run_dir,
                 collection_mode="full_baseline",
-                incremental_fallback_reason="valid_same_week_monday_baseline_not_found",
+                incremental_fallback_reason="scheduled_weekly_baseline_or_valid_same_week_baseline_not_found",
             )
+        annotate_display_window(collection_path, config)
         command(run_dir, "validate_collection", [sys.executable, "scripts/validate-source-run.py", str(collection_path)])
 
         radar_config = config.get("discussion_radar") or {"enabled": True, "required": False}
