@@ -66,6 +66,8 @@ class RunEvaluatorTest(unittest.TestCase):
             after = (run / "p1-review.json").read_bytes()
         self.assertEqual(before, after)
         self.assertEqual(report_1["fact_alignment_sample"]["results"], report_2["fact_alignment_sample"]["results"])
+        self.assertFalse(report_1["cohort_eligible"])
+        self.assertEqual(report_1["rolling_advice"]["distinct_windows"], 0)
         self.assertFalse(report_1["rolling_advice"]["allow_expand"])
         self.assertTrue(all(value is False for value in report_1["immutability"].values()))
 

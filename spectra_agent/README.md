@@ -137,7 +137,7 @@ collect → validate_collection → discussion_radar → structure
   --config spectra_agent/config.v0.1.json
 ```
 
-评测默认只读流水线产物、只写上述报告。主流程在发布物校验之后、标记 `completed` 之前按 `run_evaluation.enabled` 调用；`block_completion_on_failure` 决定评测失败是否阻断完成，默认不阻断。滚动建议中的 `allow_expand` 只供人判断，评测不会修改 `p1-review.json`、claims、policy 或发布权限。模型、采集策略或窗口配置变化会改变策略指纹，使既有“稳定”结论失效并重新进入观察。
+评测默认只读流水线产物、只写上述报告。主流程在发布物校验之后、标记 `completed` 之前按 `run_evaluation.enabled` 调用；`block_completion_on_failure` 决定评测失败是否阻断完成，默认不阻断。只有事实审核、Writer、页面校验全部结束且发布前校验通过的不同真实窗口才标记为 `cohort_eligible` 并计入滚动判断；在 `waiting_for_review` 阶段做的手动回放不会冒充完整轮次。滚动建议中的 `allow_expand` 只供人判断，评测不会修改 `p1-review.json`、claims、policy 或发布权限。模型、采集策略或窗口配置变化会改变策略指纹，使既有“稳定”结论失效并重新进入观察。
 
 `p2_localizer` 使用 `qwen3:8b` 将仍为英文的 P2 标题与摘要忠实转为中文。它保留原文字段，双向检查数字、单位和数量级，并检查来源归因与不确定措辞是否丢失。通过校验的短讯不会改变原有 P2 待核验状态；失败内容从页面数据中隔离并进入 `p2-localization-review.json`，不得进入网页。
 

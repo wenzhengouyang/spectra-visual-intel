@@ -214,10 +214,10 @@ def _strategy_fingerprint(config: dict[str, Any], collection: dict[str, Any]) ->
 
 
 def _distinct_prior_reports(runs_dir: Path, current: dict[str, Any], limit: int) -> list[dict[str, Any]]:
-    reports = [current]
+    reports = [current] if current.get("cohort_eligible") else []
     for path in runs_dir.glob("*/eval-report.json") if runs_dir.exists() else []:
         report = read_json(path)
-        if report and report.get("run_id") != current.get("run_id"):
+        if report and report.get("cohort_eligible") and report.get("run_id") != current.get("run_id"):
             reports.append(report)
     by_window: dict[tuple[Any, Any], dict[str, Any]] = {}
     for report in reports:
@@ -309,6 +309,11 @@ def evaluate_run(
         _check("sample_fact_failure_rate", sample["failure_rate"] is not None and sample["failure_rate"] <= float(thresholds.get("sample_fact_failure_rate_max", 0.05)), str(sample["failure_rate"])),
     ]
     failures = [item for item in structural + publication + threshold_checks if item["severity"] == "error" and not item["passed"]]
+    publication_ready = bool(artifacts["verified"] and artifacts["issue"] and (run_dir / "weekly-report.html").exists())
+    review_complete = (artifacts["review"] or {}).get("review_status") == "approved"
+    cohort_eligible = publication_ready and review_complete and all(
+        item["passed"] for item in publication if item["severity"] == "error"
+    )
     report = {
         "schema_version": "1.0",
         "record_type": "spectra_run_evaluation",
@@ -317,6 +322,12 @@ def evaluate_run(
         "window_start": collection.get("window_start"),
         "window_end": collection.get("window_end"),
         "run_status_at_evaluation": state.get("status"),
+        "cohort_eligible": cohort_eligible,
+        "cohort_reason": (
+            "完整链路与发布前校验已完成，可计入滚动窗口。"
+            if cohort_eligible
+            else "尚未完成事实审核、Writer、页面校验中的全部环节，不计入三轮滚动判断。"
+        ),
         "strategy_fingerprint": _strategy_fingerprint(config, collection),
         "status": "fail" if failures else "pass",
         "blocking_recommended": bool(failures),
