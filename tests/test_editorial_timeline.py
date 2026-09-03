@@ -135,7 +135,7 @@ class EditorialTimelineTest(unittest.TestCase):
         self.assertEqual(timeline[4]["event_ids"], ["evt_1"])
         self.assertNotIn("08.23", [day["date"] for day in timeline])
 
-    def test_timeline_uses_explicit_half_open_window_start(self):
+    def test_timeline_preserves_both_dates_touched_by_rolling_window(self):
         events = [{
             "event_id": "evt_1", "event_at": "2026-08-25T12:00:00Z",
             "primary_route": "extended.foundation_multimodal",
@@ -145,7 +145,7 @@ class EditorialTimelineTest(unittest.TestCase):
             "2026-09-01T00:00:00Z", "2026-08-25T00:00:00Z",
         )
         self.assertEqual([day["date"] for day in timeline], [
-            "08.25", "08.26", "08.27", "08.28", "08.29", "08.30", "08.31"
+            "08.25", "08.26", "08.27", "08.28", "08.29", "08.30", "08.31", "09.01"
         ])
         self.assertEqual(timeline[0]["story_ids"], ["story_1"])
 

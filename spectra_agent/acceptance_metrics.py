@@ -33,10 +33,19 @@ def fact_review_counts(review: dict[str, Any]) -> dict[str, int]:
     return result
 
 
-def metrics_for_run(run_dir: Path) -> dict[str, Any] | None:
+def review_tier_counts(review: dict[str, Any]) -> dict[str, int]:
+    result = {"mandatory_review": 0, "sample_review": 0, "auto_locked": 0}
+    for record in review.get("records", []):
+        tier = (record.get("review_policy") or {}).get("tier")
+        if tier in result:
+            result[tier] += 1
+    return result
+
+
+def metrics_for_run(run_dir: Path, require_completed: bool = True) -> dict[str, Any] | None:
     state = read_json(run_dir / "run.json", {})
     collection = read_json(run_dir / "collection.json", {})
-    if state.get("status") != "completed" or not collection:
+    if (require_completed and state.get("status") != "completed") or not collection:
         return None
     candidates = read_json(run_dir / "candidates.json", {})
     verified = read_json(run_dir / "verified-events.json", {})
@@ -53,6 +62,7 @@ def metrics_for_run(run_dir: Path) -> dict[str, Any] | None:
     manual_queue = sum(job.get("status") == "manual_review" for job in jobs)
     eligible_jobs = len(jobs) - sparse_demotions
     fact_counts = fact_review_counts(review)
+    tier_counts = review_tier_counts(review)
     manual_editorial_edits = len(adjustments.get("records", []))
 
     return {
@@ -89,6 +99,27 @@ def metrics_for_run(run_dir: Path) -> dict[str, Any] | None:
             "fact_edit_rate": ratio(fact_counts["modified"] + fact_counts["dropped"], sum(fact_counts.values())),
             "editorial_adjustments": manual_editorial_edits,
         },
+        "tiered_review": {
+            **tier_counts,
+            "manual_review_rate": ratio(
+                tier_counts["mandatory_review"] + tier_counts["sample_review"],
+                sum(tier_counts.values()),
+            ),
+            "sample_fact_edit_rate": ratio(
+                sum(
+                    fact.get("human_fact_decision") in {"modify", "drop"}
+                    for record in review.get("records", [])
+                    if (record.get("review_policy") or {}).get("tier") == "sample_review"
+                    for fact in record.get("suggested_evidence", [])
+                ),
+                sum(
+                    1
+                    for record in review.get("records", [])
+                    if (record.get("review_policy") or {}).get("tier") == "sample_review"
+                    for _fact in record.get("suggested_evidence", [])
+                ),
+            ),
+        },
         "publication": {
             "publish_status": state.get("publish_status", "unknown"),
             "stories": len(issue.get("editorial_stories", [])),
@@ -117,9 +148,34 @@ def distinct_completed_runs(runs_dir: Path, limit: int) -> list[dict[str, Any]]:
 
 def rolling_summary(runs: list[dict[str, Any]], target_rounds: int) -> dict[str, Any]:
     def mean(path: tuple[str, str]) -> float | None:
-        values = [item[path[0]][path[1]] for item in runs if item[path[0]].get(path[1]) is not None]
+        values = [
+            item.get(path[0], {}).get(path[1])
+            for item in runs
+            if item.get(path[0], {}).get(path[1]) is not None
+        ]
         return round(sum(values) / len(values), 4) if values else None
 
+    averages = {
+        "source_success_rate": mean(("source_health", "success_rate")),
+        "p1_auto_pass_rate": mean(("p1_editorial", "auto_pass_rate")),
+        "p1_writer_demotion_rate": mean(("p1_editorial", "writer_demotion_rate")),
+        "human_fact_edit_rate": mean(("human_intervention", "fact_edit_rate")),
+        "sample_fact_edit_rate": mean(("tiered_review", "sample_fact_edit_rate")),
+    }
+    enough_rounds = len(runs) >= target_rounds
+    thresholds = {
+        "source_success_rate_min": 0.9,
+        "p1_auto_pass_rate_min": 0.8,
+        "p1_writer_demotion_rate_max": 0.2,
+        "sample_fact_edit_rate_max": 0.05,
+    }
+    checks = {
+        "source_success_rate": averages["source_success_rate"] is not None and averages["source_success_rate"] >= thresholds["source_success_rate_min"],
+        "p1_auto_pass_rate": averages["p1_auto_pass_rate"] is not None and averages["p1_auto_pass_rate"] >= thresholds["p1_auto_pass_rate_min"],
+        "p1_writer_demotion_rate": averages["p1_writer_demotion_rate"] is not None and averages["p1_writer_demotion_rate"] <= thresholds["p1_writer_demotion_rate_max"],
+        "sample_fact_edit_rate": averages["sample_fact_edit_rate"] is not None and averages["sample_fact_edit_rate"] <= thresholds["sample_fact_edit_rate_max"],
+    }
+    legacy_indicators_pass = enough_rounds and all(checks.values())
     return {
         "schema_version": "0.1",
         "record_type": "spectra_acceptance_summary",
@@ -127,11 +183,13 @@ def rolling_summary(runs: list[dict[str, Any]], target_rounds: int) -> dict[str,
         "target_rounds": target_rounds,
         "status": "ready_for_decision" if len(runs) >= target_rounds else "collecting",
         "remaining_rounds": max(0, target_rounds - len(runs)),
-        "averages": {
-            "source_success_rate": mean(("source_health", "success_rate")),
-            "p1_auto_pass_rate": mean(("p1_editorial", "auto_pass_rate")),
-            "p1_writer_demotion_rate": mean(("p1_editorial", "writer_demotion_rate")),
-            "human_fact_edit_rate": mean(("human_intervention", "fact_edit_rate")),
+        "averages": averages,
+        "automation_readiness": {
+            "legacy_indicators_pass": legacy_indicators_pass,
+            "decision_owner": "run_evaluator.eval-report.json:rolling_advice",
+            "thresholds": thresholds,
+            "checks": checks,
+            "publication_setting_changed": False,
         },
         "totals": {
             "manual_editorial_adjustments": sum(item["human_intervention"]["editorial_adjustments"] for item in runs),
@@ -139,7 +197,7 @@ def rolling_summary(runs: list[dict[str, Any]], target_rounds: int) -> dict[str,
             "p1_writer_demotions": sum(item["p1_editorial"]["demoted_after_failed_writer"] for item in runs),
         },
         "runs": runs,
-        "decision_note": "达到目标轮次后再人工决定是否启用自动发布；本报告不会自行改变发布状态。",
+        "decision_note": "本文件保留连续运行原始指标；自动锁定扩围建议统一以 eval-report.json 的 rolling_advice 为准，且必须由人工改配。",
     }
 
 

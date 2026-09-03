@@ -960,7 +960,7 @@ def build_news_briefs(
     source_map = {item["source_id"]: item for item in collection.get("source_records", [])}
     briefs = []
     end_date = report_date(window_end) if window_end else None
-    start_date = end_date - timedelta(days=6) if end_date else None
+    start_date = report_date(candidate_run.get("window_start")) if candidate_run.get("window_start") else (end_date - timedelta(days=6) if end_date else None)
     feed_candidates = candidate_run.get("feed_candidates") or candidate_run.get("selected_candidates", [])
     for candidate in feed_candidates:
         if not candidate.get("front_display_eligible", True):
@@ -1070,15 +1070,13 @@ def build_timeline(
     # A weekly issue always ends on the collection date. The old implementation
     # extended forward from the latest event to fill seven slots, which could
     # display future dates. Seven calendar days inclusive means end - 6 days.
-    # Collector windows are half-open [window_start, window_end).  When the
-    # explicit start is available, anchor the seven labels to it so a midnight
-    # window end does not incorrectly drop the first collection day and add an
-    # empty eighth-day label.  Older fixtures without window_start retain the
-    # collection-day behavior.
+    # A rolling 7x24-hour window can touch eight local calendar dates. Preserve
+    # both boundary dates so events are never silently omitted from the UI.
     start = report_date(window_start) if window_start else report_date(window_end) - timedelta(days=6)
+    end = report_date(window_end)
     tones = ["purple", "blue", "cyan", "orange", "pink", "green", "muted"]
     timeline = []
-    for offset in range(7):
+    for offset in range((end - start).days + 1):
         day = start + timedelta(days=offset)
         day_events = [
             item for item in events
@@ -1088,7 +1086,7 @@ def build_timeline(
         categories = list(dict.fromkeys(ROUTE_CATEGORY.get(item["primary_route"], "视觉智能") for item in day_events))
         summary = "、".join(categories) + "出现值得关注的新信号。" if categories else "完成检查，暂无达到阈值的事件。"
         timeline.append({
-            "day": day.strftime("%a").upper(), "date": date_label, "tone": tones[offset],
+            "day": day.strftime("%a").upper(), "date": date_label, "tone": tones[offset % len(tones)],
             "summary": summary, "event_ids": [item["event_id"] for item in day_events],
             "story_ids": [story_by_event[item["event_id"]]["story_id"] for item in day_events],
         })

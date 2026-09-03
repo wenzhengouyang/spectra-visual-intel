@@ -112,7 +112,9 @@ python3 spectra_agent/run.py run --llm
 
 结构化阶段执行两道前置硬门槛：`content_completeness` 检查正文是否满足来源类型要求，`fact_wording_fidelity` 检查来源归因、不确定措辞以及单一案例是否被错误升级为行业趋势。只有两道门槛均为 `pass` 的候选才能进入 `p1-review.json`。失败或仍为 `pending_llm` 的记录统一写入同一运行目录的 `gated-review.json`，等待补正文、按原文限定重写、观察或剔除；它们不会进入P1深读或后续正式事件生成。
 
-通过结构化硬门槛后，`verification/verification_harness.py` 会在人工审核前运行：从完整正文定位每条候选主张的对应证据，检查数字、归因和单一案例趋势化风险，并在有多来源时给出一致性提示。随后 `p1_fact_expander.py` 使用 `qwen3:8b` 为每个 P1 提议 8—12 条原子事实；只有原文引文精确命中、数字一致且保留来源归因的事实才会写入 `p1-review.json.suggested_evidence`。每条建议都必须由人工设为 `keep/modify/drop`，或明确批准全部建议，系统才会生成正式 `claims`。所有建议仍为 `pending_human_review`，不会自动批准事件或触发发布。
+通过结构化硬门槛后，`verification/verification_harness.py` 会在人工审核前运行：从完整正文定位每条候选主张的对应证据，检查数字、归因和单一案例趋势化风险，并在有多来源时给出一致性提示。随后 `p1_fact_expander.py` 使用 `qwen3:8b` 为每个 P1 提议 8—12 条原子事实；只有原文引文精确命中、数字一致且保留来源归因的事实才会写入 `p1-review.json.suggested_evidence`。
+
+`review_policy.py` 是候选级唯一判定入口。它把正文完整、措辞保真、证据支持、风险、数字一致和主来源有效作为六项硬条件，并在配置中限定自动锁定可接受的置信度、情报类型、来源、单主源和模型扩写深度。命中必人工类型、任意风险、低置信、数字或效果结论、多来源拼接或扩写过深时，记录仍进入人工队列。自动锁定只修改仍为 `pending` 的达标子集，不覆盖已有人工决定；默认 `preserve_run_human_gate=true`，所以即使某些记录已自动锁定，整次 Run 仍暂停在人工事实审核闸门，也不会触发发布。
 
 P1 人工事实审核通过后，`fact_selection` 只从 `verified_events` 生成 Writer 可见事实包。至少包含 8 条人工核验事实的事件进入 `p1_long_pipeline.py`：系统启动独立后台 worker，本机 `qwen3:14b` 按事件串行生成长篇正文，随后由程序执行重复句清理、段落—claim 映射、数字新增检查、来源归因检查、事实重合度检查和判断边界检查。每个事件在 `p1-long-editorial-checkpoint.json` 中记录 queued/running/retryable_failure/completed/manual_review 状态；中断后复用已完成稿，单篇最多尝试两次。未达到 8 条事实的事件自动降为快速解读；最终失败稿进入 `manual_editorial_review`。审计写入 `p1-long-editorial-audit.json`，后台结束后仍保持 `publish_status=not_published`。
 
@@ -122,8 +124,20 @@ P1 人工事实审核通过后，`fact_selection` 只从 `verified_events` 生�
 collect → validate_collection → discussion_radar → structure
 → validate_structure → verification_harness → p1_fact_expansion → waiting_for_review
 → fact-level human review → verified-events → p1 editorial queue/worker → p2_localizer
-→ validate_issue → local draft
+→ validate_issue → run_evaluation（可选，只读）→ local draft
 ```
+
+## Run 级评测
+
+`run_evaluator.py` 可独立回放任意历史 Run。它检查 ID 与数量一致性、队列互斥、来源成功率、增量基线与重复处理、自动锁定及人工修改、Writer 降级、固定种子的事实抽样和发布物基础完整性，并写入机器可读的 `eval-report.json` 与简短的 `eval-report.md`：
+
+```bash
+.venv-llm/bin/python spectra_agent/run_evaluator.py \
+  --run-dir spectra_agent/runs/<run-id> \
+  --config spectra_agent/config.v0.1.json
+```
+
+评测默认只读流水线产物、只写上述报告。主流程在发布物校验之后、标记 `completed` 之前按 `run_evaluation.enabled` 调用；`block_completion_on_failure` 决定评测失败是否阻断完成，默认不阻断。滚动建议中的 `allow_expand` 只供人判断，评测不会修改 `p1-review.json`、claims、policy 或发布权限。模型、采集策略或窗口配置变化会改变策略指纹，使既有“稳定”结论失效并重新进入观察。
 
 `p2_localizer` 使用 `qwen3:8b` 将仍为英文的 P2 标题与摘要忠实转为中文。它保留原文字段，双向检查数字、单位和数量级，并检查来源归因与不确定措辞是否丢失。通过校验的短讯不会改变原有 P2 待核验状态；失败内容从页面数据中隔离并进入 `p2-localization-review.json`，不得进入网页。
 
@@ -142,5 +156,5 @@ collect → validate_collection → discussion_radar → structure
 ```
 
 累计三个不同采集窗口后，报告状态才会从 `collecting` 变为 `ready_for_decision`。这只表示可以人工评估
-是否启用自动发布，不会自行修改发布开关。P1 Writer 不再使用事件 ID 对应的人工正文覆盖；模型稿未通过
+是否扩大低风险子集的自动锁定范围，不会自行修改过审或发布开关。P1 Writer 不再使用事件 ID 对应的人工正文覆盖；模型稿未通过
 程序审计时必须降为快速解读，并计入 Writer 降级率。

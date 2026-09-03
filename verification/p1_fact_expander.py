@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import difflib
+import hashlib
 import json
 import os
 import re
@@ -22,6 +23,9 @@ if str(ROOT) not in sys.path:
 
 from spectra_agent.llm_client import create_llm_client  # noqa: E402
 from editorial.expand_facts import locate_quote, normalize, numeric_atoms  # noqa: E402
+
+CHECKPOINT_SCHEMA_VERSION = "0.2"
+PROMPT_VERSION = "p1_fact_expander.v0.2"
 
 
 SCHEMA = {
@@ -143,18 +147,50 @@ def safe_fact_count(items: list[dict[str, Any]]) -> int:
 def expand_bundle(evidence: dict[str, Any], collection: dict[str, Any], client,
                   checkpoint_path: Path | None = None, max_attempts: int = 2) -> dict[str, Any]:
     sources = {item["source_id"]: item for item in collection["source_records"]}
-    checkpoint = {"records": {}}
+    checkpoint = {
+        "schema_version": CHECKPOINT_SCHEMA_VERSION,
+        "record_type": "p1_fact_expansion_checkpoint",
+        "prompt_version": PROMPT_VERSION,
+        "model": getattr(getattr(client, "settings", None), "model", None),
+        "source_window": {
+            "start": collection.get("window_start"),
+            "end": collection.get("window_end"),
+        },
+        "records": {},
+    }
     if checkpoint_path and checkpoint_path.exists():
-        checkpoint = json.loads(checkpoint_path.read_text(encoding="utf-8"))
+        expected_model = getattr(getattr(client, "settings", None), "model", None)
+        try:
+            loaded = json.loads(checkpoint_path.read_text(encoding="utf-8"))
+        except (OSError, ValueError, json.JSONDecodeError):
+            loaded = {}
+        saved_window = loaded.get("source_window") or {}
+        current_start, current_end = collection.get("window_start"), collection.get("window_end")
+        window_compatible = not (current_start and current_end) or bool(
+            saved_window.get("start") and saved_window.get("end")
+            and saved_window["end"] <= current_end
+            and saved_window["end"] >= current_start
+        )
+        if (
+            loaded.get("schema_version") == CHECKPOINT_SCHEMA_VERSION
+            and loaded.get("record_type") == "p1_fact_expansion_checkpoint"
+            and loaded.get("prompt_version") == PROMPT_VERSION
+            and expected_model
+            and loaded.get("model") == expected_model
+            and window_compatible
+        ):
+            checkpoint = loaded
+    checkpoint.update({
+        "schema_version": CHECKPOINT_SCHEMA_VERSION,
+        "record_type": "p1_fact_expansion_checkpoint",
+        "prompt_version": PROMPT_VERSION,
+        "model": getattr(getattr(client, "settings", None), "model", None),
+        "source_window": {"start": collection.get("window_start"), "end": collection.get("window_end")},
+    })
     completed = checkpoint.setdefault("records", {})
     output = json.loads(json.dumps(evidence, ensure_ascii=False))
     for record in output.get("records", []):
         candidate_id = record["candidate_id"]
-        cached = completed.get(candidate_id)
-        if cached and cached.get("status") in {"completed", "insufficient_source_facts"}:
-            record["claim_reviews"] = cached["claim_reviews"]
-            record["fact_expansion"] = cached["fact_expansion"]
-            continue
         existing = record.get("claim_reviews") or []
         source_id = existing[0].get("source_id") if existing else None
         source = sources.get(source_id)
@@ -162,6 +198,22 @@ def expand_bundle(evidence: dict[str, Any], collection: dict[str, Any], client,
             record["fact_expansion"] = {"status": "failed", "reason": "source_missing"}
             continue
         source_text = source.get("verified_text") or source.get("raw_text") or source.get("raw_excerpt") or ""
+        input_fingerprint = hashlib.sha256(json.dumps({
+            "candidate_id": candidate_id,
+            "title": record.get("title"),
+            "existing_claims": [item.get("claim") for item in existing],
+            "source_id": source_id,
+            "source_text": source_text,
+        }, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()
+        cached = completed.get(candidate_id)
+        if (
+            cached
+            and cached.get("status") in {"completed", "insufficient_source_facts"}
+            and cached.get("input_fingerprint") == input_fingerprint
+        ):
+            record["claim_reviews"] = cached["claim_reviews"]
+            record["fact_expansion"] = cached["fact_expansion"]
+            continue
         try:
             accepted, rejected, calls = [], [], []
             merged = merge_reviews(existing, accepted)
@@ -199,11 +251,16 @@ def expand_bundle(evidence: dict[str, Any], collection: dict[str, Any], client,
             completed[candidate_id] = {
                 "status": status, "claim_reviews": merged,
                 "fact_expansion": record["fact_expansion"],
+                "input_fingerprint": input_fingerprint,
             }
         except Exception as exc:
             record["claim_reviews"] = merge_reviews(existing, [])
             record["fact_expansion"] = {"status": "failed", "reason": str(exc)}
-            completed[candidate_id] = {"status": "failed", "reason": str(exc)}
+            completed[candidate_id] = {
+                "status": "failed",
+                "reason": str(exc),
+                "input_fingerprint": input_fingerprint,
+            }
         if checkpoint_path:
             checkpoint_path.write_text(json.dumps(checkpoint, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     counts = [len(record.get("claim_reviews") or []) for record in output.get("records", [])]

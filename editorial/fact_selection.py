@@ -217,6 +217,10 @@ def build_fact_selection(verified: dict[str, Any], review: dict[str, Any],
         "source_of_truth": "verified_events",
         "locked": True,
         "verified_at": verified["verified_at"],
+        "source_window": {
+            "start": collection.get("window_start"),
+            "end": collection.get("window_end"),
+        },
         "selections": selections,
     }
 

@@ -1,3 +1,5 @@
+import hashlib
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -9,9 +11,19 @@ from spectra_agent.run import WorkflowError, materialize_fact_decisions
 class FakeClient:
     def __init__(self, facts):
         self.facts = facts
+        self.calls = 0
+        self.settings = type("Settings", (), {"model": "qwen3:8b"})()
 
     def generate_json(self, **kwargs):
+        self.calls += 1
         return {"facts": self.facts}, {"model": "qwen3:8b"}
+
+
+class FailingClient:
+    settings = type("Settings", (), {"model": "qwen3:8b"})()
+
+    def generate_json(self, **kwargs):
+        raise AssertionError("unchanged source should reuse checkpoint")
 
 
 def source_bundle():
@@ -61,6 +73,53 @@ class P1FactExpanderTest(unittest.TestCase):
         self.assertGreaterEqual(len(reviews), 8)
         self.assertTrue(all(item["human_fact_decision"] == "pending" for item in reviews))
         self.assertEqual(output["fact_expansion_summary"]["completed"], 1)
+
+    def test_reuses_checkpoint_only_when_source_text_is_unchanged(self):
+        collection, _ = source_bundle()
+        source_text = collection["source_records"][0]["raw_text"]
+        cached_review = evidence_bundle()["records"][0]["claim_reviews"]
+        with tempfile.TemporaryDirectory() as temp:
+            checkpoint = Path(temp) / "checkpoint.json"
+            checkpoint.write_text(json.dumps({
+                "schema_version": "0.2",
+                "record_type": "p1_fact_expansion_checkpoint",
+                "prompt_version": "p1_fact_expander.v0.2",
+                "model": "qwen3:8b", "source_window": {"start": None, "end": None},
+                "records": {"cand_1": {
+                "status": "completed", "claim_reviews": cached_review,
+                "fact_expansion": {"status": "completed", "supported_facts": 8},
+                "input_fingerprint": hashlib.sha256(json.dumps({
+                    "candidate_id": "cand_1",
+                    "title": "Product release",
+                    "existing_claims": ["公司文章称，产品已经发布。"],
+                    "source_id": "src_1",
+                    "source_text": source_text,
+                }, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest(),
+            }}}))
+            output = expand_bundle(evidence_bundle(), collection, FailingClient(), checkpoint)
+        self.assertEqual(output["records"][0]["fact_expansion"]["status"], "completed")
+
+    def test_changed_existing_claim_invalidates_fact_checkpoint(self):
+        collection, sentences = source_bundle()
+        details = ["合同审查", "权限连接", "代理执行", "治理控制", "监管扫描", "数据隔离", "合作生态", "预览发布"]
+        facts = [
+            {
+                "text": f"公司文章称，{detail}已经列入对应的产品工作范围。",
+                "kind": "reported_capability",
+                "evidence_quote": sentence,
+            }
+            for detail, sentence in zip(details, sentences)
+        ]
+        with tempfile.TemporaryDirectory() as temp:
+            checkpoint = Path(temp) / "checkpoint.json"
+            first = FakeClient(facts)
+            expand_bundle(evidence_bundle(), collection, first, checkpoint)
+            changed_evidence = evidence_bundle()
+            changed_evidence["records"][0]["claim_reviews"][0]["claim"] = "公司文章称，产品处于预览阶段。"
+            second = FakeClient(facts)
+            expand_bundle(changed_evidence, collection, second, checkpoint)
+        self.assertGreater(first.calls, 0)
+        self.assertGreater(second.calls, 0)
 
     def test_fact_decisions_materialize_only_explicitly_approved_claims(self):
         review = {"records": [{

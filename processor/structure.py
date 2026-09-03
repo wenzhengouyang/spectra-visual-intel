@@ -848,23 +848,47 @@ def enrich_with_llm(
     }
     source_map = {item["source_id"]: item for item in source_payload["source_records"]}
     if checkpoint_path and checkpoint_path.exists():
-        checkpoint = json.loads(checkpoint_path.read_text(encoding="utf-8"))
-        completed = {item["candidate_id"]: item for item in checkpoint.get("analyses", [])}
-        completed_fingerprints = checkpoint.get("input_fingerprints", {})
-        batches = checkpoint.get("batches", [])
+        expected_model = getattr(getattr(client, "settings", None), "model", None)
+        try:
+            checkpoint = json.loads(checkpoint_path.read_text(encoding="utf-8"))
+        except (OSError, ValueError, json.JSONDecodeError):
+            checkpoint = {}
+        current_window = {
+            "start": source_payload.get("window_start"),
+            "end": source_payload.get("window_end"),
+        }
+        saved_window = checkpoint.get("source_window") or {}
+        window_compatible = True
+        if current_window["start"] and current_window["end"]:
+            window_compatible = bool(
+                saved_window.get("start") and saved_window.get("end")
+                and saved_window["end"] <= current_window["end"]
+                and saved_window["end"] >= current_window["start"]
+            )
+        checkpoint_compatible = (
+            checkpoint.get("schema_version") == "0.2"
+            and checkpoint.get("record_type") == "llm_structure_checkpoint"
+            and checkpoint.get("prompt_version") == prompt_version
+            and expected_model
+            and checkpoint.get("model") == expected_model
+            and window_compatible
+        )
+        if checkpoint_compatible:
+            completed = {item["candidate_id"]: item for item in checkpoint.get("analyses", [])}
+            completed_fingerprints = checkpoint.get("input_fingerprints", {})
+            batches = checkpoint.get("batches", [])
+        else:
+            print(json.dumps({
+                "event": "llm_checkpoint_invalidated",
+                "reason": "schema_prompt_model_or_window_mismatch",
+            }, ensure_ascii=False), flush=True)
     reusable_by_id: dict[str, dict[str, Any]] = {}
     pending: list[dict[str, Any]] = []
     for item in selected:
         candidate_id = item["candidate_id"]
         if candidate_id in completed:
             saved_fingerprint = completed_fingerprints.get(candidate_id)
-            legacy_has_extracted_text = any(
-                (source_map.get(source_id) or {}).get("processing_status") == "text_extracted"
-                for source_id in item["source_ids"]
-            )
-            if saved_fingerprint == current_fingerprints[candidate_id] or (
-                saved_fingerprint is None and not legacy_has_extracted_text
-            ):
+            if saved_fingerprint == current_fingerprints[candidate_id]:
                 reusable_by_id[candidate_id] = completed[candidate_id]
                 continue
         pending.append(item)
@@ -898,7 +922,14 @@ def enrich_with_llm(
             analysis_by_id = {item["candidate_id"]: item for item in analyses}
             checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
             checkpoint_path.write_text(json.dumps({
+                "schema_version": "0.2",
+                "record_type": "llm_structure_checkpoint",
                 "prompt_version": prompt_version,
+                "model": getattr(getattr(client, "settings", None), "model", None) or metadata.get("model"),
+                "source_window": {
+                    "start": source_payload.get("window_start"),
+                    "end": source_payload.get("window_end"),
+                },
                 "candidate_ids": [item["candidate_id"] for item in selected],
                 "input_fingerprints": current_fingerprints,
                 "analyses": [

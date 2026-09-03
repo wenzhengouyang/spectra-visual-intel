@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import sys
@@ -20,6 +21,9 @@ from editorial.diagnostic_long_writer import (  # noqa: E402
 )
 from editorial.finalize_diagnostic_long_stories import clean  # noqa: E402
 
+CHECKPOINT_SCHEMA_VERSION = "0.2"
+WRITER_PROMPT_VERSION = "p1_long_writer.v0.3"
+
 
 def write_checkpoint(path: Path | None, payload: dict[str, Any]) -> None:
     if not path:
@@ -30,7 +34,7 @@ def write_checkpoint(path: Path | None, payload: dict[str, Any]) -> None:
 
 
 def build_bundle(verified: dict[str, Any], selection: dict[str, Any], client,
-                 checkpoint_path: Path | None = None, max_attempts: int = 2,
+                 checkpoint_path: Path | None = None, max_attempts: int = 3,
                  event_ids: list[str] | None = None) -> tuple[dict, dict]:
     plans = {item["event_id"]: item for item in selection["selections"]}
     event_map = {item["event_id"]: item for item in verified["intelligence_events"]}
@@ -42,13 +46,42 @@ def build_bundle(verified: dict[str, Any], selection: dict[str, Any], client,
     if requested_event_ids is not None:
         event_ids = [event_id for event_id in event_ids if event_id in requested_event_ids]
     drafts, blocked, demoted, records, calls = [], [], [], [], []
-    checkpoint = {"schema_version": "0.1", "record_type": "p1_long_job_checkpoint", "jobs": {}}
+    expected_model = getattr(getattr(client, "settings", None), "model", None)
+    current_window = selection.get("source_window") or {}
+    checkpoint = {
+        "schema_version": CHECKPOINT_SCHEMA_VERSION,
+        "record_type": "p1_long_job_checkpoint",
+        "prompt_version": WRITER_PROMPT_VERSION,
+        "model": expected_model,
+        "source_window": current_window,
+        "jobs": {},
+    }
     if checkpoint_path and checkpoint_path.exists():
-        checkpoint = json.loads(checkpoint_path.read_text(encoding="utf-8"))
+        try:
+            loaded = json.loads(checkpoint_path.read_text(encoding="utf-8"))
+        except (OSError, ValueError, json.JSONDecodeError):
+            loaded = {}
+        saved_window = loaded.get("source_window") or {}
+        window_compatible = bool(
+            current_window.get("start")
+            and current_window.get("end")
+            and saved_window == current_window
+        )
+        if (
+            loaded.get("schema_version") == CHECKPOINT_SCHEMA_VERSION
+            and loaded.get("prompt_version") == WRITER_PROMPT_VERSION
+            and expected_model
+            and loaded.get("model") == expected_model
+            and window_compatible
+        ):
+            checkpoint = loaded
     jobs = checkpoint.setdefault("jobs", {})
     for event_id in event_ids:
         plan = plans[event_id]
         reader = plan["reader_packet"]
+        input_fingerprint = hashlib.sha256(
+            json.dumps(reader, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        ).hexdigest()
         facts = reader.get("fact_units") or []
         profile = reader.get("writing_profile") or {}
         if profile.get("mode") != "long_form" or len(facts) < int(profile.get("min_fact_units", 8)):
@@ -58,17 +91,27 @@ def build_bundle(verified: dict[str, Any], selection: dict[str, Any], client,
                 "reason": "fewer_than_8_human_verified_fact_units",
                 "fact_units": len(facts),
             })
-            jobs[event_id] = {"status": "demoted", "fact_units": len(facts)}
+            jobs[event_id] = {
+                "status": "demoted",
+                "fact_units": len(facts),
+                "input_fingerprint": input_fingerprint,
+            }
             write_checkpoint(checkpoint_path, checkpoint)
             continue
         cached = jobs.get(event_id) or {}
-        if cached.get("status") == "completed":
+        if cached.get("input_fingerprint") != input_fingerprint:
+            cached = {}
+        if cached.get("status") == "completed" and cached.get("input_fingerprint") == input_fingerprint:
             drafts.append(cached["draft"])
             records.append(cached["audit_record"])
             if cached.get("llm_call"):
                 calls.append(cached["llm_call"])
             continue
-        if cached.get("status") in {"manual_review", "demoted_after_failed_long_story"} and int(cached.get("attempts", 0)) >= max_attempts:
+        if (
+            cached.get("input_fingerprint") == input_fingerprint
+            and cached.get("status") in {"manual_review", "demoted_after_failed_long_story"}
+            and int(cached.get("attempts", 0)) >= max_attempts
+        ):
             demoted.append({
                 "event_id": event_id,
                 "target_article_type": "quick_read",
@@ -94,6 +137,7 @@ def build_bundle(verified: dict[str, Any], selection: dict[str, Any], client,
             phase = "initial_generation" if latest_draft is None else "targeted_revision"
             jobs[event_id] = {
                 **jobs.get(event_id, {}), "status": "running", "attempts": attempt, "phase": phase,
+                "input_fingerprint": input_fingerprint,
             }
             write_checkpoint(checkpoint_path, checkpoint)
             try:
@@ -112,7 +156,9 @@ def build_bundle(verified: dict[str, Any], selection: dict[str, Any], client,
                     cleaned, actions = raw, []
                     revision_history.append({
                         "attempt": attempt, "audit_errors": (latest_audit or {}).get("errors", []),
+                        "revision_mode": revision.get("revision_mode", "targeted_fact_repair"),
                         "patches": revision.get("patches") or [],
+                        "paragraph_evidence_plan": revision.get("paragraph_evidence_plan") or [],
                         "programmatic_backfill_fact_ids": (
                             revision.get("programmatic_backfill_fact_ids") or []
                         ),
@@ -130,6 +176,7 @@ def build_bundle(verified: dict[str, Any], selection: dict[str, Any], client,
                     "initial_draft": initial_draft,
                     "revised_draft": cleaned if revision is not None else None,
                     "revision_history": revision_history,
+                    "input_fingerprint": input_fingerprint,
                     "draft": cleaned, "audit": audit,
                 }
                 if audit["status"] != "passed":
@@ -140,6 +187,7 @@ def build_bundle(verified: dict[str, Any], selection: dict[str, Any], client,
                         "initial_draft": initial_draft,
                         "revised_draft": cleaned if revision is not None else None,
                         "revision_history": revision_history,
+                        "input_fingerprint": input_fingerprint,
                     }
                     write_checkpoint(checkpoint_path, checkpoint)
                     continue
@@ -167,6 +215,7 @@ def build_bundle(verified: dict[str, Any], selection: dict[str, Any], client,
                     "llm_call": call_record, "initial_draft": initial_draft,
                     "revised_draft": cleaned if revision is not None else None,
                     "revision_history": revision_history,
+                    "input_fingerprint": input_fingerprint,
                 }
                 write_checkpoint(checkpoint_path, checkpoint)
                 break
@@ -185,6 +234,7 @@ def build_bundle(verified: dict[str, Any], selection: dict[str, Any], client,
                     "audit_record": audit_record, "initial_draft": initial_draft,
                     "revised_draft": latest_draft if latest_draft != initial_draft else None,
                     "revision_history": revision_history,
+                    "input_fingerprint": input_fingerprint,
                 }
                 write_checkpoint(checkpoint_path, checkpoint)
         if completed_draft is None:
@@ -201,6 +251,7 @@ def build_bundle(verified: dict[str, Any], selection: dict[str, Any], client,
             jobs[event_id] = {
                 **jobs.get(event_id, {}), "status": "demoted_after_failed_long_story", "attempts": attempt,
                 "error": last_error,
+                "input_fingerprint": input_fingerprint,
             }
             write_checkpoint(checkpoint_path, checkpoint)
             continue
@@ -209,7 +260,7 @@ def build_bundle(verified: dict[str, Any], selection: dict[str, Any], client,
     bundle = {
         "schema_version": "0.2",
         "record_type": "deep_story_draft_bundle",
-        "prompt_version": "p1_long_writer.v0.2",
+        "prompt_version": WRITER_PROMPT_VERSION,
         "generation_mode": "serial_background_local_14b",
         "drafts": drafts,
         "blocked": blocked,
@@ -236,7 +287,7 @@ def main() -> int:
     parser.add_argument("--num-ctx", type=int, default=8192)
     parser.add_argument("--num-predict", type=int, default=1200)
     parser.add_argument("--checkpoint", required=True)
-    parser.add_argument("--max-attempts", type=int, default=2)
+    parser.add_argument("--max-attempts", type=int, default=3)
     parser.add_argument("--event-id", action="append", dest="event_ids")
     args = parser.parse_args()
     os.environ["SPECTRA_MODEL"] = args.model

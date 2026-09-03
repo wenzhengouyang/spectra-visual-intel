@@ -24,7 +24,7 @@ class AcceptanceMetricsTest(unittest.TestCase):
         })
         write(run / "candidates.json", {"summary": {"selected_for_verification": 4}})
         write(run / "verified-events.json", {"summary": {"included_events": 3}})
-        write(run / "p1-review.json", {"records": [{"suggested_evidence": [
+        write(run / "p1-review.json", {"records": [{"review_policy": {"tier": "sample_review"}, "suggested_evidence": [
             {"human_fact_decision": "keep"}, {"human_fact_decision": "modify"},
         ]}]})
         write(run / "p1-long-editorial-checkpoint.json", {"jobs": {
@@ -43,6 +43,7 @@ class AcceptanceMetricsTest(unittest.TestCase):
         self.assertEqual(metrics["p1_editorial"]["auto_pass_rate"], 1.0)
         self.assertEqual(metrics["p1_editorial"]["writer_demotion_rate"], 0.0)
         self.assertEqual(metrics["human_intervention"]["fact_edit_rate"], 0.5)
+        self.assertEqual(metrics["tiered_review"]["sample_fact_edit_rate"], 0.5)
 
     def test_rolling_summary_requires_distinct_collection_windows(self):
         with tempfile.TemporaryDirectory() as temp:

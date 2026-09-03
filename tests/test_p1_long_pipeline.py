@@ -1,15 +1,19 @@
 import unittest
 import tempfile
+import json
 from pathlib import Path
 
 from editorial.p1_long_pipeline import build_bundle
-from editorial.diagnostic_long_writer import audit_article, backfill_verified_facts
+from editorial.diagnostic_long_writer import (
+    audit_article, backfill_verified_facts, revise_long_story,
+)
 
 
 class FakeClient:
-    def __init__(self, result):
+    def __init__(self, result, model="qwen3:14b"):
         self.result = result
         self.calls = 0
+        self.settings = type("Settings", (), {"model": model})()
 
     def generate_json(self, **kwargs):
         self.calls += 1
@@ -20,11 +24,18 @@ class SequenceClient:
     def __init__(self, *results):
         self.results = list(results)
         self.calls = 0
+        self.settings = type("Settings", (), {"model": "qwen3:14b"})()
 
     def generate_json(self, **kwargs):
         result = self.results[self.calls]
         self.calls += 1
         return result, {"model": "qwen3:14b", "usage": {"total_tokens": 100}}
+
+
+class CapturingClient(FakeClient):
+    def generate_json(self, **kwargs):
+        self.kwargs = kwargs
+        return super().generate_json(**kwargs)
 
 
 def verified(event_id="evt_1"):
@@ -56,17 +67,23 @@ def fact(index):
 
 
 def selection(count=8):
-    return {"selections": [{
-        "event_id": "evt_1",
-        "reader_packet": {
-            "fact_units": [fact(index) for index in range(count)],
-            "allowed_judgment": "该产品体现法律工作流与企业治理的组合落地。",
-            "writing_profile": {
-                "mode": "long_form", "min_fact_units": 8,
-                "min_characters": 600, "max_characters": 1000,
-            } if count >= 8 else {},
+    return {
+        "source_window": {
+            "start": "2026-08-20T00:00:00Z",
+            "end": "2026-08-27T00:00:00Z",
         },
-    }]}
+        "selections": [{
+            "event_id": "evt_1",
+            "reader_packet": {
+                "fact_units": [fact(index) for index in range(count)],
+                "allowed_judgment": "该产品体现法律工作流与企业治理的组合落地。",
+                "writing_profile": {
+                    "mode": "long_form", "min_fact_units": 8,
+                    "min_characters": 600, "max_characters": 1000,
+                } if count >= 8 else {},
+            },
+        }],
+    }
 
 
 def valid_result():
@@ -137,6 +154,40 @@ class P1LongPipelineTest(unittest.TestCase):
         self.assertEqual(second.calls, 0)
         self.assertEqual(first_bundle["drafts"], second_bundle["drafts"])
 
+    def test_changed_fact_input_invalidates_completed_checkpoint(self):
+        with tempfile.TemporaryDirectory() as temp:
+            checkpoint = Path(temp) / "jobs.json"
+            first = FakeClient(valid_result())
+            build_bundle(verified(), selection(8), first, checkpoint, 2)
+            changed = selection(8)
+            changed["selections"][0]["reader_packet"]["fact_units"][0]["evidence_context"] += "新增证据。"
+            second = FakeClient(valid_result())
+            build_bundle(verified(), changed, second, checkpoint, 2)
+        self.assertEqual(first.calls, 1)
+        self.assertEqual(second.calls, 1)
+
+    def test_changed_collection_window_invalidates_completed_checkpoint(self):
+        with tempfile.TemporaryDirectory() as temp:
+            checkpoint = Path(temp) / "jobs.json"
+            first = FakeClient(valid_result())
+            build_bundle(verified(), selection(8), first, checkpoint, 2)
+            changed = selection(8)
+            changed["source_window"]["end"] = "2026-08-28T00:00:00Z"
+            second = FakeClient(valid_result())
+            build_bundle(verified(), changed, second, checkpoint, 2)
+        self.assertEqual(first.calls, 1)
+        self.assertEqual(second.calls, 1)
+
+    def test_changed_model_invalidates_completed_checkpoint(self):
+        with tempfile.TemporaryDirectory() as temp:
+            checkpoint = Path(temp) / "jobs.json"
+            first = FakeClient(valid_result(), "qwen3:14b")
+            build_bundle(verified(), selection(8), first, checkpoint, 2)
+            second = FakeClient(valid_result(), "qwen3:8b")
+            build_bundle(verified(), selection(8), second, checkpoint, 2)
+        self.assertEqual(first.calls, 1)
+        self.assertEqual(second.calls, 1)
+
     def test_second_attempt_patches_only_failed_paragraph(self):
         initial = valid_result()
         original_paragraphs = list(initial["paragraphs"])
@@ -186,6 +237,52 @@ class P1LongPipelineTest(unittest.TestCase):
         self.assertTrue(inserted)
         self.assertGreaterEqual(len("\n".join(draft["paragraphs"])), 120)
         self.assertTrue(any(fact(index)["text"] in draft["paragraphs"][0] for index in range(8)))
+
+    def test_length_only_failure_recomposes_all_paragraphs_with_evidence_plan(self):
+        reader = selection(8)["selections"][0]["reader_packet"]
+        short = valid_result()
+        short["paragraphs"] = [
+            "公司文章称，" + fact(left)["text"].removeprefix("公司文章称，")
+            + "据公司文章介绍，" + fact(right)["text"].removeprefix("公司文章称，")
+            for left, right in ((0, 1), (2, 3), (4, 5), (6, 7))
+        ]
+        initial_audit = audit_article(
+            short, reader["fact_units"], reader["allowed_judgment"], reader["writing_profile"]
+        )
+        self.assertEqual(initial_audit["errors"], ["article length outside 600-1000: 441"])
+        revision = {
+            "revision": {
+                "event_id": "evt_1",
+                "patches": [
+                    {"target": "paragraph", "paragraph_index": index, "text": text}
+                    for index, text in enumerate(valid_result()["paragraphs"])
+                ],
+            },
+        }
+        client = CapturingClient(revision)
+        revised, _, record = revise_long_story(
+            reader, "evt_1", short, initial_audit, client
+        )
+        payload = json.loads(client.kwargs["input_text"])
+        self.assertEqual(payload["revision_mode"], "evidence_recomposition_for_length")
+        self.assertEqual(len(payload["allowed_targets"]), 4)
+        planned = [
+            fact_item["fact_id"] for item in payload["paragraph_evidence_plan"]
+            for fact_item in item["assigned_facts"]
+        ]
+        self.assertCountEqual(planned, [f"clm_{index}" for index in range(8)])
+        self.assertTrue(all(
+            item["minimum_characters"] == 80
+            for item in payload["target_requirements"]
+        ))
+        self.assertEqual(record["revision_mode"], "evidence_recomposition_for_length")
+        self.assertEqual(
+            audit_article(
+                revised, reader["fact_units"], reader["allowed_judgment"],
+                reader["writing_profile"],
+            )["status"],
+            "passed",
+        )
 
 
 if __name__ == "__main__":

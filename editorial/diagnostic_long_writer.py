@@ -99,6 +99,15 @@ REVISION_INSTRUCTIONS = """你正在修订一篇已经完成初稿、但未通�
 不得新增数字、主体、效果、因果、行业趋势或后续计划。输出严格符合JSON Schema。"""
 
 
+LENGTH_REPAIR_INSTRUCTIONS = """你正在对一篇事实审计已经通过、但正文篇幅不足的中文情报文章做最后一次证据重排。
+只能使用locked_writer_input中的fact_units；evidence_context只用于理解对应fact_unit，不得成为新增事实来源。
+必须返回allowed_targets列出的全部正文段落补丁，不得修改标题、摘要或判断。按照paragraph_evidence_plan组织正文：每段只能使用assigned_facts中的事实，把相关事实写成2—4个连贯完整句子；同一事实只在一个段落中展开，避免逐条罗列和机械复述。
+修订后正文总长度必须落在target_article_characters与final_article_max_characters之间，每段不得短于target_requirements指定的minimum_characters。篇幅补足必须来自事实的背景、构成、机制、数据、适用范围、发布状态或限制等已有信息，不得用评价、效果、因果或趋势判断凑字数。
+每个句子都必须能直接对应assigned_facts中的至少一条事实。除非assigned_facts原文明确包含，否则禁止使用“从而、以确保、帮助、使得、提升、改善、推动、促进、意味着、表明”等目的、效果或推断连接语；宁可减少修饰，也不能补写事实没有陈述的用途或结果。
+attribution_required为true的事实必须保留“据／称／援引／报告”等来源归因，但同一段通常只需归因一次。不得新增数字、主体、效果、因果、行业趋势或后续计划，不得出现“人工确认、核验、审计、证据边界”等内部语言。
+输出严格符合JSON Schema。"""
+
+
 UNSUPPORTED_INFERENCE_MARKERS = (
     "确保", "有助于", "帮助", "提升", "改善", "推动", "促进", "重塑", "引领", "加速",
     "意味着", "表明", "体现", "凸显", "反映", "标志着", "证明", "显示出", "显著",
@@ -133,9 +142,62 @@ def revision_targets(errors: list[str], draft: dict) -> set[tuple[str, int]]:
     if any(error.startswith("article length outside") for error in errors):
         paragraphs = draft.get("paragraphs") or []
         if paragraphs:
-            shortest = sorted(range(len(paragraphs)), key=lambda index: len(paragraphs[index]))[:2]
-            targets.update(("paragraph", index) for index in shortest)
+            length_errors = [error for error in errors if error.startswith("article length outside")]
+            if len(length_errors) == len(errors):
+                # Once every factual boundary has passed, recomposing all paragraphs is
+                # safer than repeatedly inflating the two shortest paragraphs. It lets
+                # the writer place every verified fact exactly once in a coherent order.
+                targets.update(("paragraph", index) for index in range(len(paragraphs)))
+            else:
+                shortest = sorted(range(len(paragraphs)), key=lambda index: len(paragraphs[index]))[:2]
+                targets.update(("paragraph", index) for index in shortest)
     return targets
+
+
+def is_length_only_failure(errors: list[str]) -> bool:
+    return bool(errors) and all(error.startswith("article length outside") for error in errors)
+
+
+def paragraph_evidence_plan(draft: dict, facts: list[dict]) -> list[dict]:
+    """Assign each verified fact to one best-fit paragraph exactly once."""
+    paragraphs = draft.get("paragraphs") or []
+    if not paragraphs:
+        return []
+    assignments: list[list[str]] = [[] for _ in paragraphs]
+    paragraph_tokens = [meaningful_tokens(paragraph) for paragraph in paragraphs]
+    for fact in facts:
+        fact_tokens = meaningful_tokens(str(fact.get("text") or ""))
+        scored = []
+        for index, tokens in enumerate(paragraph_tokens):
+            overlap = len(fact_tokens & tokens) / max(1, len(fact_tokens))
+            scored.append((overlap, -len(assignments[index]), -index, index))
+        best_index = max(scored)[-1]
+        assignments[best_index].append(fact["claim_id"])
+
+    # A sparse draft can map everything onto one paragraph. Move the least
+    # represented facts so every rewritten paragraph has an explicit boundary.
+    empty_indexes = [index for index, values in enumerate(assignments) if not values]
+    for empty_index in empty_indexes:
+        donor = max(range(len(assignments)), key=lambda index: len(assignments[index]))
+        if len(assignments[donor]) <= 1:
+            break
+        assignments[empty_index].append(assignments[donor].pop())
+    fact_map = {fact["claim_id"]: fact for fact in facts}
+    return [
+        {
+            "paragraph_index": index,
+            "assigned_facts": [
+                {
+                    "fact_id": fact_id,
+                    "text": fact_map[fact_id]["text"],
+                    "attribution_required": bool(fact_map[fact_id].get("attribution_required")),
+                    "evidence_context": fact_map[fact_id].get("evidence_context", ""),
+                }
+                for fact_id in fact_ids
+            ],
+        }
+        for index, fact_ids in enumerate(assignments)
+    ]
 
 
 def apply_long_revision(draft: dict, revision: dict, allowed: set[tuple[str, int]],
@@ -360,7 +422,9 @@ def generate_long_story(reader: dict, event_id: str, client=None) -> tuple[dict,
 
 def revise_long_story(reader: dict, event_id: str, draft: dict, audit: dict,
                       client=None) -> tuple[dict, dict, dict]:
-    allowed = revision_targets(audit.get("errors") or [], draft)
+    audit_errors = audit.get("errors") or []
+    length_repair = is_length_only_failure(audit_errors)
+    allowed = revision_targets(audit_errors, draft)
     if not allowed:
         raise ValueError(f"{event_id}: audit failure has no safely patchable location")
     profile = reader.get("writing_profile", {})
@@ -371,6 +435,8 @@ def revise_long_story(reader: dict, event_id: str, draft: dict, audit: dict,
         len(text) for index, text in enumerate(paragraphs) if index not in paragraph_targets
     )
     paragraph_patch_minimum = max(0, minimum_article - unchanged_characters)
+    paragraph_count = max(1, len(paragraph_targets))
+    length_repair_paragraph_minimum = 80 if length_repair else 40
     attribution_targets = {
         int(match.group(1))
         for error in audit.get("errors") or []
@@ -397,10 +463,17 @@ def revise_long_story(reader: dict, event_id: str, draft: dict, audit: dict,
     requirements = {
         (target, index): {
             "require_attribution": target == "paragraph" and index in attribution_targets,
-            "minimum_characters": 40 if target == "paragraph" else 1,
+            "minimum_characters": length_repair_paragraph_minimum if target == "paragraph" else 1,
         }
         for target, index in allowed
     }
+    evidence_plan = paragraph_evidence_plan(draft, reader["fact_units"]) if length_repair else []
+    fact_by_id = {fact["claim_id"]: fact for fact in reader["fact_units"]}
+    for item in evidence_plan:
+        if any(
+            fact.get("attribution_required") for fact in item["assigned_facts"]
+        ):
+            requirements[("paragraph", item["paragraph_index"])]["require_attribution"] = True
     payload = {
         "locked_writer_input": {
             "event_id": event_id,
@@ -419,7 +492,8 @@ def revise_long_story(reader: dict, event_id: str, draft: dict, audit: dict,
             "writing_profile": profile,
         },
         "failed_draft": draft,
-        "audit_errors": audit.get("errors") or [],
+        "revision_mode": "evidence_recomposition_for_length" if length_repair else "targeted_fact_repair",
+        "audit_errors": audit_errors,
         "allowed_targets": [
             {"target": target, "paragraph_index": index}
             for target, index in sorted(allowed)
@@ -429,16 +503,24 @@ def revise_long_story(reader: dict, event_id: str, draft: dict, audit: dict,
             for target, index in sorted(allowed)
         ],
         "final_article_min_characters": minimum_article,
+        "final_article_max_characters": int(profile.get("max_characters", 1000)),
+        "target_article_characters": min(
+            int(profile.get("max_characters", 1000)), max(minimum_article + 80, 680)
+        ),
         "minimum_total_characters_for_paragraph_patches": paragraph_patch_minimum,
         "preferred_expansion_fact_ids": preferred_expansion_fact_ids,
+        "paragraph_evidence_plan": evidence_plan,
     }
     response, metadata = (client or create_llm_client()).generate_json(
-        instructions=REVISION_INSTRUCTIONS,
+        instructions=LENGTH_REPAIR_INSTRUCTIONS if length_repair else REVISION_INSTRUCTIONS,
         input_text=json.dumps(payload, ensure_ascii=False),
         schema_name="spectra_minimal_long_story_patch_revision",
         schema=REVISION_SCHEMA,
     )
     revision = response.get("revision") or {}
+    revision["revision_mode"] = payload["revision_mode"]
+    if evidence_plan:
+        revision["paragraph_evidence_plan"] = evidence_plan
     try:
         revised = apply_long_revision(
             draft, revision, allowed, event_id, requirements, 0

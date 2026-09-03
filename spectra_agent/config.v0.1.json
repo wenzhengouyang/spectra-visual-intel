@@ -8,6 +8,13 @@
     "window_days": 7,
     "action": "collect_structure_and_pause_for_review"
   },
+  "incremental_collection": {
+    "enabled": true,
+    "baseline_weekday": 0,
+    "incremental_weekday": 3,
+    "reuse_llm_checkpoint": true,
+    "full_window_retry_on_missing_or_failed_baseline_source": true
+  },
   "collector_python": ".venv-collector/bin/python",
   "llm_python": ".venv-llm/bin/python",
   "p2_localizer": {
@@ -31,10 +38,10 @@
     "model": "qwen3:14b",
     "num_ctx": 8192,
     "num_predict": 1200,
-    "max_attempts": 2,
+    "max_attempts": 3,
     "min_verified_fact_units": 8,
     "generation_mode": "serial_background",
-    "prompt_version": "p1_long_writer.v0.1"
+    "prompt_version": "p1_long_writer.v0.3"
   },
   "werss_service": {
     "enabled": true,
@@ -55,6 +62,63 @@
       "type.product_release": 1,
       "type.industry_market": 2,
       "type.company_strategy": 1
+    }
+  },
+  "review_policy": {
+    "enabled": true,
+    "mode": "tiered",
+    "preserve_run_human_gate": true,
+    "minimum_consistent_sources": 2,
+    "official_source_types": [
+      "official_announcement",
+      "company_news",
+      "paper_report",
+      "public_report"
+    ],
+    "auto_lock": {
+      "enabled": true,
+      "minimum_confidence": "high",
+      "sample_rate": 0.2,
+      "sample_seed": "spectra-review-v1",
+      "allow_single_primary_source": false,
+      "maximum_model_expansion_depth": 1,
+      "allowed_intelligence_types": [
+        "type.technology_breakthrough",
+        "type.product_release",
+        "type.company_strategy"
+      ],
+      "allowed_source_types": [
+        "official_announcement",
+        "company_news",
+        "paper_report",
+        "public_report"
+      ]
+    },
+    "mandatory_review": {
+      "intelligence_types": [
+        "type.industry_market"
+      ],
+      "numeric_or_effect_claims": true,
+      "multi_source_fact_mix": true
+    }
+  },
+  "run_evaluation": {
+    "enabled": true,
+    "block_completion_on_failure": false,
+    "sample_rate": 0.25,
+    "sample_seed": 20260903,
+    "rolling_window": 3,
+    "use_llm": false,
+    "thresholds": {
+      "source_success_rate_min": 0.9,
+      "duplicate_processing_rate_max": 0.15,
+      "sample_fact_failure_rate_max": 0.05,
+      "auto_lock_post_edit_rate_max": 0.05,
+      "writer_demotion_rate_max": 0.2
+    },
+    "expansion_advice": {
+      "minimum_distinct_windows": 3,
+      "require_unchanged_strategy": true
     }
   },
   "minimum_formal_events": 5,

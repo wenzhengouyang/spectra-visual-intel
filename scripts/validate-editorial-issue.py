@@ -110,7 +110,7 @@ def main() -> None:
 
     timeline_ids = [story_id for day in editorial["presentation"]["timeline_days"] for story_id in day["story_ids"]]
     timeline_brief_ids = [brief_id for day in editorial["presentation"]["timeline_days"] for brief_id in day.get("brief_ids", [])]
-    require(len(editorial["presentation"]["timeline_days"]) == 7, "timeline must contain 7 days")
+    require(len(editorial["presentation"]["timeline_days"]) in {7, 8}, "timeline must contain 7 days, or 8 calendar dates for an exact rolling 7x24-hour window")
     require(len(timeline_ids) == len(stories) and set(timeline_ids) == story_ids, "timeline must contain every story exactly once")
     require(len(timeline_brief_ids) == len(news_briefs) and set(timeline_brief_ids) == news_brief_ids, "timeline must contain every P2 brief exactly once")
     require(1 <= len(editorial["presentation"]["trend_radar"]) <= 4, "trend radar must contain 1-4 trends")

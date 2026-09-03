@@ -1784,6 +1784,7 @@ def main() -> int:
     parser.add_argument("--config", default="collector/source_registry.v0.2.json")
     parser.add_argument("--output", default="collector/runs/latest.json")
     parser.add_argument("--end", help="ISO timestamp; default now")
+    parser.add_argument("--start", help="ISO timestamp; overrides --days for incremental collection")
     parser.add_argument("--days", type=int, help="Override config window_days")
     parser.add_argument(
         "--source",
@@ -1806,7 +1807,12 @@ def main() -> int:
     if end.tzinfo is None:
         end = end.replace(tzinfo=timezone.utc)
     days = args.days or config.get("window_days", 7)
-    ctx = Context(collected_at=datetime.now(timezone.utc), window_start=end - timedelta(days=days), window_end=end, newscrawler_command=args.newscrawler_command)
+    start = datetime.fromisoformat(args.start.replace("Z", "+00:00")) if args.start else end - timedelta(days=days)
+    if start.tzinfo is None:
+        start = start.replace(tzinfo=timezone.utc)
+    if start >= end:
+        parser.error("--start must be earlier than --end")
+    ctx = Context(collected_at=datetime.now(timezone.utc), window_start=start, window_end=end, newscrawler_command=args.newscrawler_command)
     result = run(config, ctx)
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)

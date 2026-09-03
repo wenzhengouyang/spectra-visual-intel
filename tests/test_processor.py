@@ -261,6 +261,7 @@ class ProcessorTest(unittest.TestCase):
 
         class FakeClient:
             calls = []
+            settings = type("Settings", (), {"model": "mock-model"})()
 
             def generate_json(self, **kwargs):
                 ids = [item["candidate_id"] for item in json.loads(kwargs["input_text"])["candidates"]]
@@ -273,6 +274,11 @@ class ProcessorTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             checkpoint_path = Path(temp_dir) / "checkpoint.json"
             checkpoint_path.write_text(json.dumps({
+                "schema_version": "0.2",
+                "record_type": "llm_structure_checkpoint",
+                "prompt_version": "test.v1",
+                "model": "mock-model",
+                "source_window": {"start": None, "end": None},
                 "analyses": [analysis(selected[0])],
                 "input_fingerprints": {
                     selected[0]["candidate_id"]: MODULE.hashlib.sha256(

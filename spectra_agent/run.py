@@ -13,14 +13,18 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import re
+import secrets
 import shutil
 import subprocess
 import sys
 import traceback
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 from urllib.request import Request, urlopen
+from zoneinfo import ZoneInfo
 
 try:
     from llm_client import load_local_env
@@ -29,8 +33,12 @@ except ImportError:  # `python -m unittest` imports this file as spectra_agent.r
 
 try:
     from acceptance_metrics import distinct_completed_runs, metrics_for_run, rolling_summary, write_outputs
+    from review_policy import apply_review_policy
+    from run_evaluator import evaluate_run, write_report as write_eval_report
 except ImportError:
     from spectra_agent.acceptance_metrics import distinct_completed_runs, metrics_for_run, rolling_summary, write_outputs
+    from spectra_agent.review_policy import apply_review_policy
+    from spectra_agent.run_evaluator import evaluate_run, write_report as write_eval_report
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -77,6 +85,65 @@ def prepare_static_draft(run_dir: Path, static_page: Path) -> Path:
     if source_assets.exists():
         shutil.copytree(source_assets, run_dir / "assets", dirs_exist_ok=True)
     return static_draft
+
+
+def validate_static_package(run_dir: Path, static_draft: Path, issue: dict[str, Any]) -> None:
+    """Fail closed when a generated report is not a self-contained local package."""
+    if not static_draft.is_file() or static_draft.stat().st_size == 0:
+        raise WorkflowError("generated weekly report is missing")
+    html = static_draft.read_text(encoding="utf-8")
+    for marker in ("<!-- ISSUE_DATA_START -->", "<!-- ISSUE_DATA_END -->"):
+        if html.count(marker) != 1:
+            raise WorkflowError(f"weekly report needs exactly one {marker}")
+    if html.count('id="issue-data"') != 1:
+        raise WorkflowError("weekly report needs exactly one embedded issue payload")
+    payload_matches = re.findall(
+        r'<script\b[^>]*\bid="issue-data"[^>]*>(.*?)</script>',
+        html,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    if len(payload_matches) != 1:
+        raise WorkflowError("weekly report issue payload is missing or duplicated")
+    try:
+        embedded_issue = json.loads(payload_matches[0])
+    except json.JSONDecodeError as exc:
+        raise WorkflowError(f"weekly report issue payload is invalid JSON: {exc}") from exc
+    if embedded_issue != issue:
+        raise WorkflowError("weekly report issue payload does not match editorial-issue.json")
+
+    run_root = run_dir.resolve()
+
+    def require_packaged_file(relative_url: str, asset_kind: str) -> None:
+        clean_url = relative_url.split("?", 1)[0].split("#", 1)[0]
+        relative_path = Path(clean_url)
+        if relative_path.is_absolute() or ".." in relative_path.parts:
+            raise WorkflowError(f"unsafe local {asset_kind} path: {relative_url}")
+        target = (run_dir / relative_path).resolve()
+        try:
+            target.relative_to(run_root)
+        except ValueError as exc:
+            raise WorkflowError(f"unsafe local {asset_kind} path: {relative_url}") from exc
+        if not target.is_file() or target.stat().st_size == 0:
+            raise WorkflowError(f"packaged {asset_kind} asset is missing: {relative_url}")
+
+    stylesheet_tags = re.findall(r"<link\b[^>]*>", html, flags=re.IGNORECASE)
+    stylesheet_urls = []
+    for tag in stylesheet_tags:
+        if not re.search(r'\brel=["\']stylesheet["\']', tag, flags=re.IGNORECASE):
+            continue
+        href = re.search(r'\bhref=["\']([^"\']+)["\']', tag, flags=re.IGNORECASE)
+        if href and not re.match(r"^(?:https?:)?//", href.group(1)):
+            stylesheet_urls.append(href.group(1))
+    if not stylesheet_urls:
+        raise WorkflowError("weekly report has no packaged stylesheet references")
+    for stylesheet_url in stylesheet_urls:
+        require_packaged_file(stylesheet_url, "stylesheet")
+
+    for story in issue.get("editorial_stories", []):
+        cover_url = str((story.get("cover_image") or {}).get("url") or "")
+        if not cover_url.startswith("assets/"):
+            continue
+        require_packaged_file(cover_url, "cover")
 
 
 def resolve_config(path: str) -> tuple[Path, dict[str, Any]]:
@@ -128,6 +195,285 @@ def log(run_dir: Path, stage: str, message: str, **details: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a", encoding="utf-8") as handle:
         handle.write(json.dumps(entry, ensure_ascii=False) + "\n")
+
+
+WORKER_TOKEN_ENV = "SPECTRA_EDITORIAL_WORKER_TOKEN"
+
+
+def worker_lock_path(run_dir: Path) -> Path:
+    return run_dir / "p1-editorial-worker.lock.json"
+
+
+def process_is_alive(pid: int | None) -> bool:
+    if not pid or pid < 1:
+        return False
+    try:
+        os.kill(pid, 0)
+        return True
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+
+
+def reserve_editorial_worker(run_dir: Path) -> tuple[str | None, int | None]:
+    """Atomically reserve one background Writer slot for a run."""
+    path = worker_lock_path(run_dir)
+    if path.exists():
+        try:
+            lock = read_json(path)
+            if process_is_alive(lock.get("pid")):
+                return None, int(lock["pid"])
+        except (OSError, ValueError, TypeError, json.JSONDecodeError):
+            pass
+        path.unlink(missing_ok=True)
+    token = secrets.token_hex(16)
+    payload = json.dumps({"token": token, "pid": None, "reserved_at": utc_now()}, ensure_ascii=False)
+    try:
+        descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    except FileExistsError:
+        return None, None
+    with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+        handle.write(payload + "\n")
+    return token, None
+
+
+def claim_editorial_worker(run_dir: Path) -> bool:
+    """Validate a launcher token or acquire a stale/empty lease for manual recovery."""
+    path = worker_lock_path(run_dir)
+    supplied = os.environ.get(WORKER_TOKEN_ENV)
+    if path.exists():
+        try:
+            lock = read_json(path)
+        except (OSError, ValueError, json.JSONDecodeError):
+            lock = {}
+        if supplied and supplied == lock.get("token"):
+            write_json(path, {**lock, "pid": os.getpid(), "claimed_at": utc_now()})
+            return True
+        if process_is_alive(lock.get("pid")):
+            return False
+        path.unlink(missing_ok=True)
+    token, active_pid = reserve_editorial_worker(run_dir)
+    if not token or active_pid:
+        return False
+    os.environ[WORKER_TOKEN_ENV] = token
+    write_json(path, {"token": token, "pid": os.getpid(), "claimed_at": utc_now()})
+    return True
+
+
+def release_editorial_worker(run_dir: Path) -> None:
+    path = worker_lock_path(run_dir)
+    if not path.exists():
+        return
+    try:
+        lock = read_json(path)
+        if lock.get("pid") == os.getpid() and lock.get("token") == os.environ.get(WORKER_TOKEN_ENV):
+            path.unlink(missing_ok=True)
+            state_path = run_dir / "run.json"
+            if state_path.exists():
+                state = read_json(state_path)
+                if state.get("editorial_worker_pid") == os.getpid():
+                    update_state(run_dir, editorial_worker_pid=None)
+    except (OSError, ValueError, json.JSONDecodeError):
+        return
+
+
+def parse_timestamp(value: str) -> datetime:
+    parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+
+
+def automatic_resume_args(args: argparse.Namespace, run_id: str) -> argparse.Namespace:
+    """Preserve root parser options when the review policy resumes internally."""
+    return argparse.Namespace(
+        run_id=run_id,
+        review=None,
+        retry=False,
+        editorial_worker=False,
+        editorial_only=False,
+        config=getattr(args, "config", str(DEFAULT_CONFIG.relative_to(ROOT))),
+    )
+
+
+def pre_review_artifacts_recoverable(run_dir: Path, review_path: Path) -> bool:
+    """Use persisted artifacts, not a fragile stage-name allowlist, for recovery."""
+    if not (run_dir / "collection.json").exists() or not (run_dir / "candidates.json").exists():
+        return False
+    if not review_path.exists():
+        return True
+    try:
+        review = read_json(review_path)
+    except (OSError, ValueError, json.JSONDecodeError):
+        return True
+    return review.get("review_status") != "approved" and not review.get("verification_harness")
+
+
+def resume_is_allowed(status: str, retry: bool) -> bool:
+    return retry or status in {"waiting_for_review", "waiting_for_editorial_review"}
+
+
+def rebuild_structure_from_collection(
+    run_dir: Path,
+    config: dict[str, Any],
+    llm_requested: bool,
+) -> None:
+    """Rebuild structure from a persisted collection without collecting again."""
+    collection_path = run_dir / "collection.json"
+    candidates_path = run_dir / "candidates.json"
+    update_state(run_dir, status="running", current_stage="validate_collection", error=None)
+    command(run_dir, "validate_collection", [
+        sys.executable,
+        "scripts/validate-source-run.py",
+        str(collection_path),
+    ])
+    structure_command = [
+        sys.executable,
+        "processor/structure.py",
+        "--input",
+        str(collection_path),
+        "--config",
+        config["processor_config"],
+        "--output",
+        str(candidates_path),
+    ]
+    stage = "structure"
+    if llm_requested:
+        stage = "llm_structure"
+        structure_command[0] = llm_python(config)
+        structure_command += [
+            "--llm",
+            "--llm-checkpoint",
+            str(run_dir / "llm-structure-checkpoint.json"),
+        ]
+    update_state(run_dir, current_stage=stage)
+    command(run_dir, stage, structure_command)
+    command(run_dir, "validate_structure", [
+        sys.executable,
+        "scripts/validate-structured-run.py",
+        str(candidates_path),
+    ])
+    if llm_requested:
+        candidates = read_json(candidates_path)
+        update_state(run_dir, llm=candidates.get("llm"))
+    log(run_dir, stage, "structure_rebuilt_from_persisted_collection")
+
+
+def prepare_retry_artifacts(
+    run_dir: Path,
+    config: dict[str, Any],
+    llm_requested: bool,
+) -> bool:
+    """Validate persisted inputs and rebuild only a missing or invalid structure artifact."""
+    collection_path = run_dir / "collection.json"
+    candidates_path = run_dir / "candidates.json"
+    try:
+        if not collection_path.exists():
+            raise WorkflowError(
+                "retry cannot continue without collection.json; start a new run to collect again"
+            )
+        if not candidates_path.exists():
+            rebuild_structure_from_collection(run_dir, config, llm_requested)
+            return True
+        command(run_dir, "validate_collection", [
+            sys.executable,
+            "scripts/validate-source-run.py",
+            str(collection_path),
+        ])
+        try:
+            command(run_dir, "validate_structure", [
+                sys.executable,
+                "scripts/validate-structured-run.py",
+                str(candidates_path),
+            ])
+            return False
+        except WorkflowError:
+            rebuild_structure_from_collection(run_dir, config, llm_requested)
+            return True
+    except Exception as exc:
+        state = read_json(run_dir / "run.json")
+        current_stage = state.get("current_stage")
+        failed_stage = (
+            state.get("failed_stage")
+            if current_stage == "failed"
+            else current_stage
+        ) or "retry_prepare"
+        update_state(
+            run_dir,
+            status="failed",
+            current_stage="failed",
+            failed_stage=failed_stage,
+            error=str(exc),
+        )
+        log(run_dir, "failed", "retry_preparation_failed", error=str(exc))
+        raise
+
+
+def find_weekly_baseline(config: dict[str, Any], end: datetime, exclude: Path) -> Path | None:
+    """Return this week's latest valid Monday collection for a Thursday delta run."""
+    incremental = config.get("incremental_collection") or {}
+    if not incremental.get("enabled", False):
+        return None
+    local_tz = ZoneInfo(config.get("timezone", "Asia/Shanghai"))
+    local_end = end.astimezone(local_tz)
+    if local_end.weekday() != int(incremental.get("incremental_weekday", 3)):
+        return None
+    candidates: list[tuple[datetime, Path]] = []
+    for directory in runs_dir(config).iterdir() if runs_dir(config).exists() else []:
+        collection_path = directory / "collection.json"
+        if directory == exclude or not collection_path.exists():
+            continue
+        try:
+            payload = read_json(collection_path)
+            baseline_end = parse_timestamp(payload["window_end"])
+            local_baseline = baseline_end.astimezone(local_tz)
+            records = payload.get("source_records")
+            checks = payload.get("source_checks")
+            structurally_valid = (
+                isinstance(records, list)
+                and isinstance(checks, list) and bool(checks)
+                and all(
+                    record.get("source_id") and record.get("canonical_url") and record.get("content_hash")
+                    for record in records
+                )
+                and all(check.get("registry_id") and check.get("status") for check in checks)
+            )
+            if (
+                local_baseline.weekday() == int(incremental.get("baseline_weekday", 0))
+                and local_baseline.isocalendar()[:2] == local_end.isocalendar()[:2]
+                and baseline_end < end
+                and structurally_valid
+            ):
+                candidates.append((baseline_end, collection_path))
+        except (OSError, KeyError, ValueError, TypeError, json.JSONDecodeError):
+            continue
+    return max(candidates, default=(None, None), key=lambda item: item[0])[1]
+
+
+def incremental_retry_source_ids(
+    baseline: dict[str, Any],
+    delta: dict[str, Any],
+) -> list[str]:
+    """Return only failed or newly introduced sources that need a full-window retry."""
+    baseline_checks = {
+        item["registry_id"]: item
+        for item in baseline.get("source_checks", [])
+    }
+    delta_checks = {
+        item["registry_id"]: item
+        for item in delta.get("source_checks", [])
+    }
+    failed_now = {
+        registry_id
+        for registry_id, check in delta_checks.items()
+        if check.get("status") == "failed"
+    }
+    failed_before = {
+        registry_id
+        for registry_id, check in baseline_checks.items()
+        if check.get("status") == "failed"
+    }
+    newly_configured = set(delta_checks) - set(baseline_checks)
+    return sorted(failed_now | failed_before | newly_configured)
 
 
 def command(run_dir: Path, stage: str, args: list[str]) -> None:
@@ -505,19 +851,101 @@ def create_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
     try:
         update_state(run_dir, status="running", current_stage="collect")
         collection_path = run_dir / "collection.json"
+        target_end = parse_timestamp(args.end) if args.end else datetime.now(timezone.utc)
+        baseline_path = find_weekly_baseline(config, target_end, run_dir)
         if args.from_collection:
             shutil.copyfile(ROOT / args.from_collection, collection_path)
             log(run_dir, "collect", "reused_collection", source=args.from_collection)
+        elif baseline_path:
+            baseline = read_json(baseline_path)
+            baseline_end = parse_timestamp(baseline["window_end"])
+            desired_start = target_end - timedelta(days=int(args.days or config.get("schedule", {}).get("window_days", 7)))
+            delta_path = run_dir / "collection.incremental.json"
+            check_werss_service(config, run_dir)
+            delta_cmd = [
+                collector_python(config), "collector/collect.py", "--config", config["collection_config"],
+                "--output", str(delta_path), "--start", baseline_end.isoformat(), "--end", target_end.isoformat(),
+            ]
+            if args.newscrawler_command:
+                delta_cmd += ["--newscrawler-command", args.newscrawler_command]
+            command(run_dir, "collect_incremental", delta_cmd)
+            delta = read_json(delta_path)
+            retry_ids = incremental_retry_source_ids(baseline, delta)
+            retry_path = run_dir / "collection.full-window-retry.json"
+            if retry_ids:
+                retry_cmd = [
+                    collector_python(config), "collector/collect.py", "--config", config["collection_config"],
+                    "--output", str(retry_path), "--start", desired_start.isoformat(), "--end", target_end.isoformat(),
+                ]
+                for registry_id in retry_ids:
+                    retry_cmd += ["--source", registry_id]
+                if args.newscrawler_command:
+                    retry_cmd += ["--newscrawler-command", args.newscrawler_command]
+                command(run_dir, "collect_full_window_retry", retry_cmd)
+            merge_cmd = [
+                sys.executable, "collector/merge_incremental_runs.py",
+                "--baseline", str(baseline_path), "--delta", str(delta_path),
+                "--window-start", desired_start.isoformat(), "--window-end", target_end.isoformat(),
+                "--output", str(collection_path),
+            ]
+            if retry_path.exists():
+                merge_cmd += ["--retry", str(retry_path)]
+            command(run_dir, "merge_incremental", merge_cmd)
+            checkpoint_available = (run_dir / "llm-structure-checkpoint.json").exists()
+            if (
+                args.llm
+                and (config.get("incremental_collection") or {}).get("reuse_llm_checkpoint", True)
+                and not checkpoint_available
+            ):
+                previous_checkpoint = baseline_path.parent / "llm-structure-checkpoint.json"
+                if previous_checkpoint.exists():
+                    shutil.copyfile(previous_checkpoint, run_dir / "llm-structure-checkpoint.json")
+                    checkpoint_available = True
+                previous_fact_checkpoint = baseline_path.parent / "p1-fact-expansion-checkpoint.json"
+                if previous_fact_checkpoint.exists():
+                    shutil.copyfile(previous_fact_checkpoint, run_dir / "p1-fact-expansion-checkpoint.json")
+            merged_collection = read_json(collection_path)
+            incremental_summary = merged_collection.get("summary") or {}
+            update_state(
+                run_dir,
+                collection_mode="weekly_incremental",
+                incremental_baseline_run=baseline_path.parent.name,
+                incremental_changed_records=incremental_summary.get("changed_records", 0),
+                incremental_unchanged_records=incremental_summary.get("unchanged_records", 0),
+                incremental_processing_mode=(
+                    "deterministic_without_llm"
+                    if not args.llm
+                    else (
+                        "fingerprint_checkpoint_reuse"
+                        if checkpoint_available
+                        else "full_structure_fallback_missing_checkpoint"
+                    )
+                ),
+            )
+            log(
+                run_dir,
+                "collect",
+                "weekly_incremental_merged",
+                baseline_run=baseline_path.parent.name,
+                retry_sources=retry_ids,
+                changed_records=incremental_summary.get("changed_records", 0),
+                unchanged_records=incremental_summary.get("unchanged_records", 0),
+                checkpoint_available=checkpoint_available,
+            )
         else:
             check_werss_service(config, run_dir)
             cmd = [collector_python(config), "collector/collect.py", "--config", config["collection_config"], "--output", str(collection_path)]
-            if args.end:
-                cmd += ["--end", args.end]
+            cmd += ["--end", target_end.isoformat()]
             if args.days:
                 cmd += ["--days", str(args.days)]
             if args.newscrawler_command:
                 cmd += ["--newscrawler-command", args.newscrawler_command]
             command(run_dir, "collect", cmd)
+            update_state(
+                run_dir,
+                collection_mode="full_baseline",
+                incremental_fallback_reason="valid_same_week_monday_baseline_not_found",
+            )
         command(run_dir, "validate_collection", [sys.executable, "scripts/validate-source-run.py", str(collection_path)])
 
         radar_config = config.get("discussion_radar") or {"enabled": True, "required": False}
@@ -590,9 +1018,29 @@ def create_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
                 log(run_dir, "p1_fact_expansion", "fact_expansion_failed_using_harness_claims")
         evidence = read_json(evidence_path)
         template = attach_harness_evidence(template, evidence)
+        template = apply_review_policy(
+            template, candidates, evidence, config.get("review_policy"), collection
+        )
         write_json(run_dir / "p1-review.json", template)
         confidence_summary = evidence.get("summary", {})
         log(run_dir, "verification_harness", "evidence_packet_ready", **confidence_summary)
+
+        policy = template.get("review_policy") or {}
+        if (
+            template["records"]
+            and not policy.get("manual_review_required", True)
+            and not policy.get("run_gate_preserved", True)
+        ):
+            template["review_status"] = "approved"
+            template["verified_at"] = utc_now()
+            template["verified_by"] = "verification_policy"
+            write_json(run_dir / "p1-review.json", template)
+            update_state(
+                run_dir, status="waiting_for_review", current_stage="auto_fact_lock",
+                paused_reason=None,
+            )
+            log(run_dir, "auto_fact_lock", "all_p1_facts_auto_locked", **policy.get("counts", {}))
+            return resume_run(automatic_resume_args(args, run_id), config)
 
         write_review_instructions(run_dir, len(template["records"]), gated_template["count"])
         update_state(run_dir, status="waiting_for_review", current_stage="human_review", paused_reason="P1 primary-source verification required")
@@ -600,7 +1048,8 @@ def create_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
         print(json.dumps({"run_id": run_id, "status": "waiting_for_review", "p1_candidates": len(template["records"]), "gated_candidates": gated_template["count"], "review_file": str(run_dir / "p1-review.json"), "gated_review_file": str(run_dir / "gated-review.json"), "next": f"python3 spectra_agent/run.py resume --run-id {run_id}"}, ensure_ascii=False, indent=2))
         return 2
     except Exception as exc:
-        update_state(run_dir, status="failed", current_stage="failed", error=str(exc))
+        failed_stage = read_json(run_dir / "run.json").get("current_stage")
+        update_state(run_dir, status="failed", current_stage="failed", failed_stage=failed_stage, error=str(exc))
         log(run_dir, "failed", "workflow_failed", error=str(exc), traceback=traceback.format_exc())
         raise
 
@@ -611,27 +1060,31 @@ def resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
     if state["status"] == "completed":
         print(json.dumps({"run_id": run_dir.name, "status": "completed", "message": "nothing to resume"}, ensure_ascii=False, indent=2))
         return 0
-    if state["status"] != "waiting_for_review" and not args.retry:
-        raise WorkflowError(f"run is {state['status']}; resume requires waiting_for_review (or --retry after fixing a failed run)")
+    resume_from_editorial_review = state["status"] == "waiting_for_editorial_review"
+    if not resume_is_allowed(state["status"], args.retry):
+        raise WorkflowError(f"run is {state['status']}; resume requires a review state (or --retry after fixing a failed run)")
     review_path = run_dir / "p1-review.json"
     if args.review:
         shutil.copyfile(ROOT / args.review, review_path)
         log(run_dir, "human_review", "review_imported", source=args.review)
-    recoverable_pre_review_stage = state.get("current_stage") in {
-        "validate_structure",
-        "verification_harness",
-        "p1_fact_expansion",
-    }
-    if args.retry and (not review_path.exists() or recoverable_pre_review_stage):
+    collection_path = run_dir / "collection.json"
+    candidates_path = run_dir / "candidates.json"
+    structure_rebuilt = (
+        prepare_retry_artifacts(
+            run_dir,
+            config,
+            bool(state.get("llm_requested")),
+        )
+        if args.retry
+        else False
+    )
+    recoverable_pre_review = pre_review_artifacts_recoverable(run_dir, review_path)
+    if args.retry and (structure_rebuilt or recoverable_pre_review):
         # Recover a run that failed after structure output was persisted but
         # before the review packet was fully materialized.  An interrupted
         # fact-expansion stage may already have a preliminary p1-review.json;
         # rebuild it from persisted evidence and checkpoints without repeating
         # collection or model structuring.
-        collection_path = run_dir / "collection.json"
-        candidates_path = run_dir / "candidates.json"
-        if not collection_path.exists() or not candidates_path.exists():
-            raise WorkflowError("cannot recover pre-review run: collection.json or candidates.json is missing")
         update_state(run_dir, status="running", current_stage="validate_structure", error=None)
         command(run_dir, "validate_structure", [
             sys.executable, "scripts/validate-structured-run.py", str(candidates_path)
@@ -676,7 +1129,26 @@ def resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
                 log(run_dir, "p1_fact_expansion", "fact_expansion_failed_using_harness_claims")
         evidence = read_json(evidence_path)
         template = attach_harness_evidence(template, evidence)
+        template = apply_review_policy(
+            template, candidates, evidence, config.get("review_policy"), collection
+        )
         write_json(review_path, template)
+        policy = template.get("review_policy") or {}
+        if (
+            template["records"]
+            and not policy.get("manual_review_required", True)
+            and not policy.get("run_gate_preserved", True)
+        ):
+            template["review_status"] = "approved"
+            template["verified_at"] = utc_now()
+            template["verified_by"] = "verification_policy"
+            write_json(review_path, template)
+            update_state(
+                run_dir, status="waiting_for_review", current_stage="auto_fact_lock",
+                paused_reason=None, error=None,
+            )
+            log(run_dir, "auto_fact_lock", "all_p1_facts_auto_locked", **policy.get("counts", {}))
+            return resume_run(automatic_resume_args(args, run_dir.name), config)
         write_review_instructions(run_dir, len(template["records"]), gated_template["count"])
         update_state(
             run_dir,
@@ -736,7 +1208,21 @@ def resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
         editorial_drafts_path = run_dir / "deep-story-drafts.json"
         editorial_audit_path = run_dir / "p1-long-editorial-audit.json"
         background_mode = deep_story_config.get("generation_mode") == "serial_background"
-        if state.get("llm_requested") and background_mode and not args.editorial_worker:
+        if state.get("llm_requested") and background_mode and not args.editorial_worker and not resume_from_editorial_review:
+            worker_token, active_pid = reserve_editorial_worker(run_dir)
+            if not worker_token:
+                update_state(
+                    run_dir, status="waiting_for_editorial", current_stage="p1_editorial_queued",
+                    paused_reason="existing qwen3:14b P1 editorial worker is still running",
+                    editorial_worker_pid=active_pid,
+                )
+                log(run_dir, "p1_editorial_queued", "duplicate_worker_start_prevented", pid=active_pid)
+                print(json.dumps({
+                    "run_id": run_dir.name, "status": "waiting_for_editorial",
+                    "worker_pid": active_pid, "message": "existing editorial worker retained",
+                    "publish_status": "not_published",
+                }, ensure_ascii=False, indent=2))
+                return 0
             update_state(
                 run_dir,
                 status="waiting_for_editorial",
@@ -747,14 +1233,20 @@ def resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
             worker_log = (run_dir / "p1-editorial-worker.log").open("a", encoding="utf-8")
             worker_command = [
                 sys.executable, str(ROOT / "spectra_agent/run.py"),
-                "--config", args.config,
+                "--config", getattr(args, "config", str(DEFAULT_CONFIG.relative_to(ROOT))),
                 "resume", "--run-id", run_dir.name, "--retry", "--editorial-worker",
             ]
+            worker_env = os.environ.copy()
+            worker_env[WORKER_TOKEN_ENV] = worker_token
             process = subprocess.Popen(
                 worker_command, cwd=ROOT, stdout=worker_log, stderr=worker_log,
-                start_new_session=True,
+                start_new_session=True, env=worker_env,
             )
             worker_log.close()
+            write_json(worker_lock_path(run_dir), {
+                "token": worker_token, "pid": process.pid,
+                "reserved_at": utc_now(), "command": "p1_editorial_worker",
+            })
             update_state(run_dir, editorial_worker_pid=process.pid)
             log(run_dir, "p1_editorial_queued", "background_worker_started", pid=process.pid)
             print(json.dumps({
@@ -845,7 +1337,31 @@ def resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
             command(run_dir, "p2_localizer", localize_command)
         command(run_dir, "validate_issue", [sys.executable, "scripts/validate-editorial-issue.py", "--editorial", str(issue_path), "--verified", str(verified_path)])
         issue = read_json(issue_path)
+        validate_static_package(run_dir, static_draft, issue)
         write_run_report(run_dir, read_json(run_dir / "collection.json"), read_json(run_dir / "candidates.json"), verified, issue)
+        evaluation_config = config.get("run_evaluation") or {}
+        evaluation = None
+        if evaluation_config.get("enabled", False):
+            update_state(run_dir, current_stage="run_evaluation")
+            evaluation = evaluate_run(run_dir, config, runs_dir(config))
+            write_eval_report(
+                evaluation,
+                run_dir / "eval-report.json",
+                run_dir / "eval-report.md",
+            )
+            log(
+                run_dir,
+                "run_evaluation",
+                "run_evaluation_completed",
+                evaluation_status=evaluation["status"],
+                allow_expand=evaluation["rolling_advice"]["allow_expand"],
+                failed_checks=evaluation["failed_checks"],
+            )
+            if evaluation["status"] == "fail" and evaluation_config.get("block_completion_on_failure", False):
+                raise WorkflowError(
+                    "run evaluation failed and block_completion_on_failure is enabled: "
+                    + ", ".join(evaluation["failed_checks"])
+                )
         update_state(
             run_dir,
             status="completed",
@@ -854,6 +1370,9 @@ def resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
             error=None,
             publish_status="not_published",
             completed_at=utc_now(),
+            evaluation_status=evaluation["status"] if evaluation else "disabled",
+            evaluation_report="eval-report.json" if evaluation else None,
+            automation_expansion_advice=(evaluation or {}).get("rolling_advice", {}).get("allow_expand"),
         )
         acceptance = metrics_for_run(run_dir)
         if acceptance:
@@ -875,13 +1394,17 @@ def resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
             "p2_localization_blocked": (issue.get("localization") or {}).get("blocked_briefs", 0),
             "p2_localization_review": str(localization_review) if localization_review.exists() else None,
             "p1_editorial_audit": str(editorial_audit_path) if editorial_audit_path.exists() else None,
+            "evaluation_status": evaluation["status"] if evaluation else "disabled",
+            "evaluation_report": str(run_dir / "eval-report.json") if evaluation else None,
+            "allow_expand": (evaluation or {}).get("rolling_advice", {}).get("allow_expand"),
             "issue": str(issue_path),
             "static_draft": str(static_draft),
             "publish_status": "not_published",
         }, ensure_ascii=False, indent=2))
         return 0
     except Exception as exc:
-        update_state(run_dir, status="failed", current_stage="failed", error=str(exc))
+        failed_stage = read_json(run_dir / "run.json").get("current_stage")
+        update_state(run_dir, status="failed", current_stage="failed", failed_stage=failed_stage, error=str(exc))
         log(run_dir, "failed", "resume_failed", error=str(exc), traceback=traceback.format_exc())
         raise
 
@@ -913,6 +1436,13 @@ def show_status(args: argparse.Namespace, config: dict[str, Any]) -> int:
     state = read_json(run_dir / "run.json")
     result = {key: state.get(key) for key in ("run_id", "status", "current_stage", "publish_status", "paused_reason", "error", "created_at", "updated_at", "completed_at") if state.get(key) is not None}
     result["run_dir"] = str(run_dir)
+    if (run_dir / "eval-report.json").exists():
+        evaluation = read_json(run_dir / "eval-report.json")
+        result["evaluation"] = {
+            "status": evaluation.get("status"),
+            "allow_expand": (evaluation.get("rolling_advice") or {}).get("allow_expand"),
+            "report": str(run_dir / "eval-report.json"),
+        }
     if state["status"] == "waiting_for_review":
         review = read_json(run_dir / "p1-review.json")
         result["p1_candidates"] = len(review["records"])
@@ -953,15 +1483,28 @@ def main() -> int:
     args = parser().parse_args()
     load_local_env()
     _, config = resolve_config(args.config)
+    worker_run_dir = None
     try:
         if args.command == "run":
             return create_run(args, config)
         if args.command == "resume":
+            if args.editorial_worker:
+                worker_run_dir = locate_run(config, args.run_id)
+                if not claim_editorial_worker(worker_run_dir):
+                    print(json.dumps({
+                        "run_id": worker_run_dir.name,
+                        "status": "waiting_for_editorial",
+                        "message": "another editorial worker already owns this run",
+                    }, ensure_ascii=False, indent=2))
+                    return 0
             return resume_run(args, config)
         return show_status(args, config)
     except WorkflowError as exc:
         print(json.dumps({"result": "blocked", "error": str(exc)}, ensure_ascii=False, indent=2), file=sys.stderr)
         return 3
+    finally:
+        if worker_run_dir is not None:
+            release_editorial_worker(worker_run_dir)
 
 
 if __name__ == "__main__":
