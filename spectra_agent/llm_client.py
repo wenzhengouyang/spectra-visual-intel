@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import os
 import socket
+import time
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 from dataclasses import dataclass
@@ -237,6 +238,7 @@ class OllamaChatClient:
         input_text: str,
         schema_name: str,
         schema: dict[str, Any],
+        max_retries: int = 3,
     ) -> tuple[dict[str, Any], dict[str, Any]]:
         request_payload = {
             "model": self.settings.model,
@@ -259,23 +261,42 @@ class OllamaChatClient:
             headers={"Content-Type": "application/json"},
             method="POST",
         )
-        try:
-            with urlopen(request, timeout=self.settings.timeout_seconds) as response:
-                raw_response = json.loads(response.read().decode("utf-8"))
-        except HTTPError as exc:
-            detail = exc.read().decode("utf-8", errors="replace")[:300]
-            raise LLMProviderError(
-                f"Ollama API returned HTTP {exc.code}: {detail}", status_code=exc.code, code="ollama_http_error"
-            ) from exc
-        except URLError as exc:
-            raise LLMProviderError(
-                "Cannot reach Ollama. Start it with `ollama serve` and retry.", code="ollama_unreachable"
-            ) from exc
-        except (TimeoutError, socket.timeout) as exc:
-            raise LLMProviderError(
-                f"Ollama request exceeded {self.settings.timeout_seconds}s. Reduce the batch size or increase OLLAMA_TIMEOUT.",
-                code="ollama_timeout",
-            ) from exc
+
+        last_error = None
+        for attempt in range(max_retries):
+            try:
+                with urlopen(request, timeout=self.settings.timeout_seconds) as response:
+                    raw_response = json.loads(response.read().decode("utf-8"))
+                break  # Success, exit retry loop
+            except HTTPError as exc:
+                detail = exc.read().decode("utf-8", errors="replace")[:300]
+                last_error = LLMProviderError(
+                    f"Ollama API returned HTTP {exc.code}: {detail}", status_code=exc.code, code="ollama_http_error"
+                )
+                # Retry on 5xx errors, fail immediately on 4xx
+                if exc.code < 500:
+                    raise last_error from exc
+                # Exponential backoff for retryable errors
+                if attempt < max_retries - 1:
+                    time.sleep(2 ** attempt)
+                continue
+            except URLError as exc:
+                # Network errors are usually persistent, don't retry
+                raise LLMProviderError(
+                    "Cannot reach Ollama. Start it with `ollama serve` and retry.", code="ollama_unreachable"
+                ) from exc
+            except (TimeoutError, socket.timeout) as exc:
+                last_error = LLMProviderError(
+                    f"Ollama request exceeded {self.settings.timeout_seconds}s. Reduce the batch size or increase OLLAMA_TIMEOUT.",
+                    code="ollama_timeout",
+                )
+                # Retry on timeout
+                if attempt < max_retries - 1:
+                    time.sleep(2 ** attempt)
+                continue
+        else:
+            # All retries exhausted
+            raise last_error
         content = (raw_response.get("message") or {}).get("content")
         if not content:
             raise LLMResponseError("Ollama response did not contain message.content")

@@ -67,14 +67,27 @@ def build_bundle(verified: dict[str, Any], selection: dict[str, Any], client,
             and current_window.get("end")
             and saved_window == current_window
         )
-        if (
-            loaded.get("schema_version") == CHECKPOINT_SCHEMA_VERSION
-            and loaded.get("prompt_version") == WRITER_PROMPT_VERSION
-            and expected_model
-            and loaded.get("model") == expected_model
-            and window_compatible
-        ):
+        schema_compatible = loaded.get("schema_version") == CHECKPOINT_SCHEMA_VERSION
+        prompt_compatible = loaded.get("prompt_version") == WRITER_PROMPT_VERSION
+        model_compatible = not expected_model or loaded.get("model") == expected_model
+
+        if schema_compatible and prompt_compatible and model_compatible and window_compatible:
+            # Full compatibility: use entire checkpoint
             checkpoint = loaded
+        elif schema_compatible and loaded.get("jobs"):
+            # Partial compatibility: recover completed jobs, re-run others
+            # Only keep jobs that succeeded (have "status": "success")
+            recovered_jobs = {
+                event_id: job for event_id, job in loaded.get("jobs", {}).items()
+                if job.get("status") == "success" and job.get("draft")
+            }
+            if recovered_jobs:
+                checkpoint["jobs"] = recovered_jobs
+                checkpoint["_recovered_from"] = {
+                    "prompt_version": loaded.get("prompt_version"),
+                    "model": loaded.get("model"),
+                    "recovered_jobs": len(recovered_jobs),
+                }
     jobs = checkpoint.setdefault("jobs", {})
     for event_id in event_ids:
         plan = plans[event_id]

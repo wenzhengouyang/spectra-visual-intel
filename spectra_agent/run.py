@@ -178,20 +178,33 @@ def locate_run(config: dict[str, Any], run_id: str | None) -> Path:
 
 
 def update_state(run_dir: Path, **changes: Any) -> dict[str, Any]:
+    """Atomically update run state with file locking to prevent race conditions."""
+    import fcntl
     state_path = run_dir / "run.json"
-    state = read_json(state_path)
-    previous = {"status": state.get("status"), "stage": state.get("current_stage")}
-    state.update(changes)
-    state["updated_at"] = utc_now()
-    current = {"status": state.get("status"), "stage": state.get("current_stage")}
-    if current != previous:
-        state.setdefault("history", []).append({
-            "at": state["updated_at"],
-            "from": previous,
-            "to": current,
-        })
-    write_json(state_path, state)
-    return state
+
+    # Acquire exclusive lock on state file
+    with open(state_path, "r+", encoding="utf-8") as f:
+        fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+        try:
+            state = json.load(f)
+            previous = {"status": state.get("status"), "stage": state.get("current_stage")}
+            state.update(changes)
+            state["updated_at"] = utc_now()
+            current = {"status": state.get("status"), "stage": state.get("current_stage")}
+            if current != previous:
+                state.setdefault("history", []).append({
+                    "at": state["updated_at"],
+                    "from": previous,
+                    "to": current,
+                })
+            # Write back to file with lock held
+            f.seek(0)
+            f.truncate()
+            json.dump(state, f, ensure_ascii=False, indent=2)
+            f.write("\n")
+            return state
+        finally:
+            fcntl.flock(f.fileno(), fcntl.LOCK_UN)
 
 
 def log(run_dir: Path, stage: str, message: str, **details: Any) -> None:
@@ -1312,15 +1325,25 @@ def resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
         if state.get("llm_requested") and background_mode and not args.editorial_worker and not resume_from_editorial_review:
             worker_token, active_pid = reserve_editorial_worker(run_dir)
             if not worker_token:
+                # Distinguish between active worker and reserved-but-unclaimed lock
+                if active_pid is not None:
+                    # Case 1: Active worker is running
+                    paused_reason = "existing qwen3:14b P1 editorial worker is still running"
+                    message = "existing editorial worker retained"
+                else:
+                    # Case 2: Lock is reserved but worker hasn't claimed it yet (race window)
+                    paused_reason = "editorial worker slot is reserved, waiting for worker to start"
+                    message = "editorial worker slot already reserved"
+
                 update_state(
                     run_dir, status="waiting_for_editorial", current_stage="p1_editorial_queued",
-                    paused_reason="existing qwen3:14b P1 editorial worker is still running",
+                    paused_reason=paused_reason,
                     editorial_worker_pid=active_pid,
                 )
                 log(run_dir, "p1_editorial_queued", "duplicate_worker_start_prevented", pid=active_pid)
                 print(json.dumps({
                     "run_id": run_dir.name, "status": "waiting_for_editorial",
-                    "worker_pid": active_pid, "message": "existing editorial worker retained",
+                    "worker_pid": active_pid, "message": message,
                     "publish_status": "not_published",
                 }, ensure_ascii=False, indent=2))
                 return 0
