@@ -15,14 +15,14 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from spectra_agent.llm_client import create_llm_client  # noqa: E402
+from spectra_agent.llm_client import LLMProviderError, create_llm_client  # noqa: E402
 from editorial.diagnostic_long_writer import (  # noqa: E402
     audit_article, generate_long_story, revise_long_story,
 )
 from editorial.finalize_diagnostic_long_stories import clean  # noqa: E402
 
 CHECKPOINT_SCHEMA_VERSION = "0.2"
-WRITER_PROMPT_VERSION = "p1_long_writer.v0.3"
+WRITER_PROMPT_VERSION = "p1_long_writer.v0.9"
 
 
 def write_checkpoint(path: Path | None, payload: dict[str, Any]) -> None:
@@ -219,6 +219,34 @@ def build_bundle(verified: dict[str, Any], selection: dict[str, Any], client,
                 }
                 write_checkpoint(checkpoint_path, checkpoint)
                 break
+            except LLMProviderError as exc:
+                # Provider outages are infrastructure failures, not evidence that a
+                # story is editorially unfit. Preserve the job for resume and stop
+                # the pipeline instead of consuming all attempts and publishing a
+                # low-quality deterministic fallback.
+                if exc.code in {"ollama_unreachable", "ollama_timeout", "ollama_http_error"}:
+                    jobs[event_id] = {
+                        **jobs.get(event_id, {}),
+                        "status": "waiting_for_provider",
+                        "attempts": max(0, attempt - 1),
+                        "error": str(exc),
+                        "audit_record": audit_record,
+                        "initial_draft": initial_draft,
+                        "revised_draft": latest_draft if latest_draft != initial_draft else None,
+                        "revision_history": revision_history,
+                        "input_fingerprint": input_fingerprint,
+                    }
+                    write_checkpoint(checkpoint_path, checkpoint)
+                    raise
+                last_error = str(exc)
+                jobs[event_id] = {
+                    "status": "retryable_failure", "attempts": attempt, "error": last_error,
+                    "audit_record": audit_record, "initial_draft": initial_draft,
+                    "revised_draft": latest_draft if latest_draft != initial_draft else None,
+                    "revision_history": revision_history,
+                    "input_fingerprint": input_fingerprint,
+                }
+                write_checkpoint(checkpoint_path, checkpoint)
             except Exception as exc:
                 last_error = str(exc)
                 failed_revision = getattr(exc, "revision", None)

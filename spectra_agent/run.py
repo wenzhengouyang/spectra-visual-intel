@@ -40,6 +40,11 @@ except ImportError:
     from spectra_agent.review_policy import apply_review_policy
     from spectra_agent.run_evaluator import evaluate_run, write_report as write_eval_report
 
+try:
+    from publication_quality import publication_quality_errors
+except ImportError:
+    from spectra_agent.publication_quality import publication_quality_errors
+
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG = ROOT / "spectra_agent/config.v0.1.json"
@@ -217,25 +222,51 @@ def process_is_alive(pid: int | None) -> bool:
 
 
 def reserve_editorial_worker(run_dir: Path) -> tuple[str | None, int | None]:
-    """Atomically reserve one background Writer slot for a run."""
+    """Atomically reserve one background Writer slot for a run.
+
+    Uses O_EXCL flag for atomic file creation. The lock file persists
+    until the worker completes, preventing duplicate reservations.
+    """
     path = worker_lock_path(run_dir)
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Check if existing reservation is active
     if path.exists():
         try:
             lock = read_json(path)
-            if process_is_alive(lock.get("pid")):
-                return None, int(lock["pid"])
+            pid = lock.get("pid")
+            # If pid is None, lock is reserved but worker hasn't claimed it yet
+            if pid is None:
+                return None, None
+            # If pid exists and process is alive, lock is active
+            if process_is_alive(pid):
+                return None, int(pid)
+            # Pid exists but process is dead - stale lock, remove it
+            path.unlink(missing_ok=True)
         except (OSError, ValueError, TypeError, json.JSONDecodeError):
-            pass
-        path.unlink(missing_ok=True)
+            # Corrupted or unreadable - try to remove
+            try:
+                path.unlink(missing_ok=True)
+            except OSError:
+                pass
+
+    # Try to atomically create the lock file
     token = secrets.token_hex(16)
     payload = json.dumps({"token": token, "pid": None, "reserved_at": utc_now()}, ensure_ascii=False)
     try:
+        # O_EXCL ensures atomic creation - fails if file exists
         descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+            handle.write(payload + "\n")
+        return token, None
     except FileExistsError:
-        return None, None
-    with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
-        handle.write(payload + "\n")
-    return token, None
+        # Another process created the lock between our check and creation
+        # This race window is very small (microseconds)
+        try:
+            lock = read_json(path)
+            return None, int(lock.get("pid")) if process_is_alive(lock.get("pid")) else None
+        except (OSError, ValueError, TypeError, json.JSONDecodeError):
+            return None, None
 
 
 def claim_editorial_worker(run_dir: Path) -> bool:
@@ -500,12 +531,50 @@ def incremental_retry_source_ids(
     return sorted(failed_now | failed_before | newly_configured)
 
 
-def command(run_dir: Path, stage: str, args: list[str]) -> None:
-    log(run_dir, stage, "command_started", command=args)
-    result = subprocess.run(args, cwd=ROOT, text=True, capture_output=True)
-    log(run_dir, stage, "command_finished", returncode=result.returncode, stdout=result.stdout[-4000:], stderr=result.stderr[-4000:])
-    if result.returncode:
-        raise WorkflowError(f"{stage} failed: {(result.stderr or result.stdout).strip()[-600:]}")
+def command(run_dir: Path, stage: str, args: list[str], timeout: int | None = None) -> None:
+    """Execute a subprocess with timeout and proper error handling.
+
+    Args:
+        run_dir: Run directory for logging
+        stage: Stage name for logging
+        args: Command arguments
+        timeout: Timeout in seconds (default: 1800 = 30 minutes)
+    """
+    if timeout is None:
+        # Default timeout: 30 minutes for most commands, 2 hours for LLM/collection
+        timeout = 7200 if stage in {"llm_structure", "collect", "p1_editorial_background"} else 1800
+
+    log(run_dir, stage, "command_started", command=args, timeout=timeout)
+    try:
+        result = subprocess.run(
+            args,
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            timeout=timeout,
+        )
+        log(
+            run_dir, stage, "command_finished",
+            returncode=result.returncode,
+            stdout=result.stdout[-4000:] if result.stdout else "",
+            stderr=result.stderr[-4000:] if result.stderr else "",
+        )
+        if result.returncode:
+            error_output = (result.stderr or result.stdout or "").strip()
+            # Keep more context but still limit to prevent log explosion
+            error_excerpt = error_output[-2000:] if error_output else "no output"
+            raise WorkflowError(f"{stage} failed with code {result.returncode}: {error_excerpt}")
+    except subprocess.TimeoutExpired as exc:
+        log(
+            run_dir, stage, "command_timeout",
+            timeout=timeout,
+            stdout=(exc.stdout or "")[-2000:],
+            stderr=(exc.stderr or "")[-2000:],
+        )
+        raise WorkflowError(
+            f"{stage} timed out after {timeout} seconds. "
+            f"Check {run_dir / 'run.log.jsonl'} for details."
+        ) from exc
 
 
 def url_reachable(url: str, timeout: float = 2.0) -> bool:
@@ -1367,9 +1436,38 @@ def resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
             if localizer_config.get("num_ctx"):
                 localize_command += ["--num-ctx", str(localizer_config["num_ctx"])]
             command(run_dir, "p2_localizer", localize_command)
-        command(run_dir, "validate_issue", [sys.executable, "scripts/validate-editorial-issue.py", "--editorial", str(issue_path), "--verified", str(verified_path)])
         issue = read_json(issue_path)
+        pending_image_ids = [
+            story.get("story_id")
+            for story in issue.get("editorial_stories", [])
+            if (story.get("cover_image") or {}).get("kind") in {"editorial_diagram", "generated"}
+            and (story.get("cover_image") or {}).get("review_status") != "approved"
+        ]
+        if pending_image_ids:
+            update_state(
+                run_dir,
+                status="waiting_for_editorial_review",
+                current_stage="image_preview",
+                paused_reason="generated story covers require human preview",
+                pending_image_story_ids=pending_image_ids,
+                error=None,
+            )
+            print(json.dumps({
+                "run_id": run_dir.name,
+                "status": "waiting_for_editorial_review",
+                "pending_image_story_ids": pending_image_ids,
+                "next": (
+                    f"python3 spectra_agent/image_review.py --run-dir {run_dir} "
+                    "--approve all --reviewer <name>, then resume"
+                ),
+                "publish_status": "not_published",
+            }, ensure_ascii=False, indent=2))
+            return 2
+        command(run_dir, "validate_issue", [sys.executable, "scripts/validate-editorial-issue.py", "--editorial", str(issue_path), "--verified", str(verified_path), "--config", str(resolve_config(args.config)[0])])
         validate_static_package(run_dir, static_draft, issue)
+        reader_quality_errors = publication_quality_errors(issue, config, asset_root=run_dir)
+        if reader_quality_errors:
+            raise WorkflowError("reader-facing publication quality failed: " + "; ".join(reader_quality_errors))
         write_run_report(run_dir, read_json(run_dir / "collection.json"), read_json(run_dir / "candidates.json"), verified, issue)
         evaluation_config = config.get("run_evaluation") or {}
         evaluation = None

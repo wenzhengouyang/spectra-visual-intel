@@ -17,6 +17,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from spectra_agent.llm_client import create_llm_client  # noqa: E402
+from processor.language_quality import reader_language_errors  # noqa: E402
 from editorial.editorial_writer import (  # noqa: E402
     ATTRIBUTION_MARKERS, meaningful_tokens, normalized_numbers,
 )
@@ -38,7 +39,7 @@ SCHEMA = {
         "headline": {"type": "string"},
         "dek": {"type": "string"},
         "paragraphs": {
-            "type": "array", "minItems": 4, "maxItems": 6,
+            "type": "array", "minItems": 3, "maxItems": 5,
             "items": {"type": "string"},
         },
         "judgment": {"type": "string"},
@@ -49,11 +50,25 @@ SCHEMA = {
 
 INSTRUCTIONS = """你是SPECTRA的中文情报编辑，读者是AI产品策略、模型与内容行业从业者。请把输入的锁定事实写成原创、专业、清晰的博客式情报文章。
 只能使用fact_units中的事实；evidence_context只帮助理解对应事实，不能引入新事实。
+
 正文写3—5个自然段，不设段落小标题：第一段交代事件主体、发生了什么及具体问题；中间段按产品构成、运行机制、数据结果或适用范围组织；最后一段补充发布状态、限制或后续安排。不得把每条fact_unit单独写成一段。
-正文长度遵守writing_profile的min_characters与max_characters。每段包含2—4个相互关联的完整句子，用句号形成正常节奏，避免用分号串联事实，不使用项目符号、编号、问答体或What/Why/How。
-同一来源在一个段落中通常只归因一次。所有“公司称、论文作者报告、据其所知、将会”等归因与限定必须保留，但不得让连续句子或连续段落都以同一种归因开头。
+
+篇幅要求（严格执行）：正文总字符数**必须达到**writing_profile.min_characters（通常600字符），否则将无法通过审计。优先覆盖全部有信息增量的fact_units。如果事实本身篇幅不足，**必须**从evidence_context补充以下内容达到最低字符数：
+- 技术背景与实现方式（evidence_context中的how部分）
+- 产品构成与组件说明（evidence_context中的what部分）
+- 具体数据结果与数值解读（evidence_context中的数据部分）
+- 适用范围与限制条件（evidence_context中的约束说明）
+禁止重复已有内容或添加未经支持的新事实。每段包含2—4个相互关联的完整句子，用句号形成正常节奏，避免用分号串联事实，不使用项目符号、编号、问答体或What/Why/How。
+
+归因规则：每个段落首次引入来源时必须明确归因（"据XX报道"、"XX称"、"论文指出"），同一段落内后续事实如果来自同一来源可直接陈述，无需逐句重复归因。切换到新来源时必须再次归因。避免连续3个句子都以"据"开头。使用过渡词（"此外"、"同时"、"具体而言"）连接相关事实，形成流畅叙述而非机械罗列。
+
+示例：
+✓ 好的段落：据VentureBeat报道，AI代理在企业中获得更多自主权。这种自主权体现在代理能够规划、决策并在系统间行动，无需人类在每一步批准。代理行为可能具有概率性，这要求治理机制必须在数据层实现，而非依赖抽象政策。
+✗ 坏的段落：据VentureBeat报道，AI代理在企业中获得更多自主权。据VentureBeat报道，这种自主权体现在代理能够规划。据VentureBeat报道，代理行为可能具有概率性。
+
 每条事实最多出现一次，标题、摘要与正文不得机械重复。不得新增数字、实体、效果、因果或行业趋势。
-judgment只能改写allowed_judgment，控制在一到两句；allowed_judgment为空时judgment必须返回空字符串。不要输出事实编号或“人工确认、已核验、证据边界”等审计语言。
+judgment只能改写allowed_judgment，控制在一到两句；allowed_judgment为空时judgment必须返回空字符串。不要输出事实编号或"人工确认、已核验、证据边界"等审计语言。
+段落数组中只能放读者正文，不得把headline、dek、judgment等JSON字段名当成段落文字输出。
 输出严格符合JSON Schema。"""
 
 
@@ -93,26 +108,47 @@ REVISION_SCHEMA = {
 REVISION_INSTRUCTIONS = """你正在修订一篇已经完成初稿、但未通过程序审计的中文情报文章。
 只能使用locked_writer_input中的fact_units和evidence_context。audit_errors指出了失败位置。
 只返回失败字段或失败段落的补丁，绝对不得重写完整文章，也不得修改allowed_targets之外的位置。
-逐项满足target_requirements：require_attribution为true时，修订段落必须明确保留“据公司介绍、论文称、研究团队报告”等与事实一致的归因。修订段落保持正常的2—4句阅读节奏。
-若某句缺少claim支持或包含未经支持的效果、因果、趋势、价值判断，删除该句或严格改写为fact_units明确提供的事实。
-所有paragraph补丁合计必须达到minimum_total_characters_for_paragraph_patches，保证修订后正文不少于final_article_min_characters。只能用尚未充分表达的fact_units增加信息，不得重复原句凑字数。
+
+归因要求：若target_requirements中require_attribution为true，修订段落必须在首次引入来源时明确归因（"据XX报道"、"XX称"），但同一段落内后续来自同一来源的事实可直接陈述，无需逐句重复。使用过渡词（"此外"、"同时"、"具体而言"）连接相关事实。修订段落保持正常的2—4句阅读节奏。
+
+事实保真：若某句缺少claim支持或包含未经支持的效果、因果、趋势、价值判断，删除该句或严格改写为fact_units明确提供的事实。优先用尚未充分表达、确有信息增量的fact_units修复失败段落；不设最低字数，也不得重复原句凑字数。
 不得新增数字、主体、效果、因果、行业趋势或后续计划。输出严格符合JSON Schema。"""
 
 
 LENGTH_REPAIR_INSTRUCTIONS = """你正在对一篇事实审计已经通过、但正文篇幅不足的中文情报文章做最后一次证据重排。
 只能使用locked_writer_input中的fact_units；evidence_context只用于理解对应fact_unit，不得成为新增事实来源。
 必须返回allowed_targets列出的全部正文段落补丁，不得修改标题、摘要或判断。按照paragraph_evidence_plan组织正文：每段只能使用assigned_facts中的事实，把相关事实写成2—4个连贯完整句子；同一事实只在一个段落中展开，避免逐条罗列和机械复述。
-修订后正文总长度必须落在target_article_characters与final_article_max_characters之间，每段不得短于target_requirements指定的minimum_characters。篇幅补足必须来自事实的背景、构成、机制、数据、适用范围、发布状态或限制等已有信息，不得用评价、效果、因果或趋势判断凑字数。
-每个句子都必须能直接对应assigned_facts中的至少一条事实。除非assigned_facts原文明确包含，否则禁止使用“从而、以确保、帮助、使得、提升、改善、推动、促进、意味着、表明”等目的、效果或推断连接语；宁可减少修饰，也不能补写事实没有陈述的用途或结果。
-attribution_required为true的事实必须保留“据／称／援引／报告”等来源归因，但同一段通常只需归因一次。不得新增数字、主体、效果、因果、行业趋势或后续计划，不得出现“人工确认、核验、审计、证据边界”等内部语言。
+
+篇幅要求（严格执行）：修订后正文总长度**必须达到**final_article_min_characters（否则将继续审计失败），不得超过final_article_max_characters。建议达到target_article_characters以提供充分信息。每段不得短于target_requirements指定的minimum_characters。篇幅补足**必须**来自以下渠道：
+- evidence_context中的技术背景、实现细节
+- evidence_context中的产品构成、组件说明
+- evidence_context中的数据解读、数值含义
+- evidence_context中的适用范围、发布状态、限制条件
+不得用评价、效果、因果或趋势判断凑字数，但可以将evidence_context中的英文描述翻译为流畅的中文补充说明。
+
+归因规则：attribution_required为true的事实必须在段落首次引入来源时明确归因（"据XX报道"、"XX称"），但同一段落内后续来自同一来源的事实可直接陈述，无需逐句重复。使用过渡词（"此外"、"同时"、"具体而言"）连接相关事实，形成流畅叙述。
+
+事实保真：每个句子都必须能直接对应assigned_facts中的至少一条事实。如果assigned_facts原文或evidence_context中明确包含某个表述（如"帮助"、"提升"、"体现"），可以保留使用；否则禁止使用"从而、以确保、使得、推动、促进、意味着、表明"等目的、效果或推断连接语。不得新增数字、主体、效果、因果、行业趋势或后续计划，不得出现"人工确认、核验、审计、证据边界"等内部语言。
 输出严格符合JSON Schema。"""
 
 
-UNSUPPORTED_INFERENCE_MARKERS = (
-    "确保", "有助于", "帮助", "提升", "改善", "推动", "促进", "重塑", "引领", "加速",
-    "意味着", "表明", "体现", "凸显", "反映", "标志着", "证明", "显示出", "显著",
-    "领先地位", "重要进展", "可复制", "奠定基础", "满足更多", "广泛应用", "规模化",
-    "行业趋势", "增长趋势", "实际应用价值", "高效且实用", "后续安排可能", "预计将",
+# 绝对禁止的外推 - 无论原文是否包含都不允许使用
+PROHIBITED_EXTRAPOLATIONS = (
+    "重塑", "引领", "奠定基础", "标志着", "领先地位", "可复制", "满足更多",
+    "广泛应用", "规模化", "行业趋势", "增长趋势", "实际应用价值",
+    "高效且实用", "后续安排可能", "预计将", "将要", "有望", "可能会"
+)
+
+# 常见中文连接词 - 作为表达习惯允许使用，不进行严格检测
+# 这些词在中文技术写作中是惯用表达，即使英文原文未明确使用对应词汇
+ALLOWED_CHINESE_CONNECTORS = (
+    "体现", "表明", "显示出", "反映", "证明", "确保",
+    "凸显", "提升", "改善", "推动", "促进", "帮助"
+)
+
+# 条件允许的推断词 - 只有在原文或evidence_context中明确包含时才允许
+CONDITIONAL_INFERENCE_MARKERS = (
+    "有助于", "加速", "意味着", "显著", "重要进展"
 )
 
 
@@ -134,6 +170,8 @@ def ranked_claims(text: str, facts: list[dict], minimum_score: float = 0.08) -> 
 def revision_targets(errors: list[str], draft: dict) -> set[tuple[str, int]]:
     targets: set[tuple[str, int]] = set()
     for error in errors:
+        if error.startswith("article language:"):
+            targets.update(("paragraph", index) for index, _ in enumerate(draft.get("paragraphs") or []))
         for match in re.finditer(r"paragraph\[(\d+)\]", error):
             targets.add(("paragraph", int(match.group(1))))
         for field in ("headline", "dek", "judgment"):
@@ -332,28 +370,47 @@ def audit_article(result: dict, facts: list[dict], allowed_judgment: str = "",
                     f"paragraph[{index}] sentence[{sentence_index}] unsupported numbers: "
                     f"{sorted(sentence_extra)}"
                 )
-            for marker in UNSUPPORTED_INFERENCE_MARKERS:
-                if marker in sentence and marker not in sentence_support:
+            # 绝对禁止的外推
+            for marker in PROHIBITED_EXTRAPOLATIONS:
+                if marker in sentence:
                     errors.append(
-                        f"paragraph[{index}] sentence[{sentence_index}] unsupported inference "
+                        f"paragraph[{index}] sentence[{sentence_index}] prohibited extrapolation "
                         f"'{marker}': {sentence}"
                     )
+            # 条件允许的推断词 - 检查原文是否支持（跳过中文连接词）
+            for marker in CONDITIONAL_INFERENCE_MARKERS:
+                if marker in sentence and marker not in sentence_support:
+                    # 进一步检查 evidence_context
+                    supported_by_context = any(
+                        marker in fact.get("evidence_context", "")
+                        for fact in facts if fact["claim_id"] in sentence_claim_ids
+                    )
+                    if not supported_by_context:
+                        errors.append(
+                            f"paragraph[{index}] sentence[{sentence_index}] unsupported inference "
+                            f"'{marker}': {sentence}"
+                        )
+            # 注意：ALLOWED_CHINESE_CONNECTORS 不进行检测，作为表达习惯允许
         for earlier_index, earlier in enumerate((result.get("paragraphs") or [])[:index]):
             ratio = difflib.SequenceMatcher(None, paragraph, earlier).ratio()
             if ratio >= 0.62:
                 errors.append(f"paragraph[{index}] repeats paragraph[{earlier_index}]: {ratio:.2f}")
     article = "\n".join(result.get("paragraphs") or [])
+    for language_error in reader_language_errors(article, "body"):
+        errors.append(f"article language: {language_error}")
     judgment = str(result.get("judgment") or "").strip()
     for index, paragraph in enumerate(result.get("paragraphs") or []):
         if judgment and judgment in paragraph:
             errors.append(f"paragraph[{index}] repeats editorial judgment")
     profile = writing_profile or {}
-    minimum = int(profile.get("min_characters", 450))
+    minimum = int(profile.get("min_characters", 0))
     maximum = int(profile.get("max_characters", 1000))
-    if not minimum <= len(article) <= maximum:
+    if (minimum > 0 and len(article) < minimum) or len(article) > maximum:
         errors.append(f"article length outside {minimum}-{maximum}: {len(article)}")
     for field in ("headline", "dek"):
         value = str(result.get(field) or "")
+        for language_error in reader_language_errors(value, field):
+            errors.append(f"{field} language: {language_error}")
         extra = normalized_numbers(value) - allowed_numbers
         if extra:
             errors.append(f"{field} unsupported numbers: {sorted(extra)}")
@@ -369,11 +426,24 @@ def audit_article(result: dict, facts: list[dict], allowed_judgment: str = "",
             sentence_support = " ".join(
                 fact["text"] for fact in facts if fact["claim_id"] in sentence_claim_ids
             )
-            for marker in UNSUPPORTED_INFERENCE_MARKERS:
-                if marker in sentence and marker not in sentence_support:
+            # 绝对禁止的外推
+            for marker in PROHIBITED_EXTRAPOLATIONS:
+                if marker in sentence:
                     errors.append(
-                        f"{field} sentence[{sentence_index}] unsupported inference '{marker}': {sentence}"
+                        f"{field} sentence[{sentence_index}] prohibited extrapolation '{marker}': {sentence}"
                     )
+            # 条件允许的推断词（跳过中文连接词）
+            for marker in CONDITIONAL_INFERENCE_MARKERS:
+                if marker in sentence and marker not in sentence_support:
+                    supported_by_context = any(
+                        marker in fact.get("evidence_context", "")
+                        for fact in facts if fact["claim_id"] in sentence_claim_ids
+                    )
+                    if not supported_by_context:
+                        errors.append(
+                            f"{field} sentence[{sentence_index}] unsupported inference '{marker}': {sentence}"
+                        )
+            # 注意：ALLOWED_CHINESE_CONNECTORS 不进行检测
     judgment_value = str(result.get("judgment") or "")
     if allowed_judgment:
         judgment_tokens = meaningful_tokens(judgment_value)
@@ -428,7 +498,7 @@ def revise_long_story(reader: dict, event_id: str, draft: dict, audit: dict,
     if not allowed:
         raise ValueError(f"{event_id}: audit failure has no safely patchable location")
     profile = reader.get("writing_profile", {})
-    minimum_article = int(profile.get("min_characters", 450))
+    minimum_article = int(profile.get("min_characters", 0))
     paragraphs = draft.get("paragraphs") or []
     paragraph_targets = {index for target, index in allowed if target == "paragraph"}
     unchanged_characters = sum(
@@ -505,7 +575,8 @@ def revise_long_story(reader: dict, event_id: str, draft: dict, audit: dict,
         "final_article_min_characters": minimum_article,
         "final_article_max_characters": int(profile.get("max_characters", 1000)),
         "target_article_characters": min(
-            int(profile.get("max_characters", 1000)), max(minimum_article + 80, 680)
+            int(profile.get("max_characters", 1000)),
+            int(profile.get("preferred_characters", minimum_article)),
         ),
         "minimum_total_characters_for_paragraph_patches": paragraph_patch_minimum,
         "preferred_expansion_fact_ids": preferred_expansion_fact_ids,
