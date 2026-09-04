@@ -22,7 +22,7 @@ from editorial.diagnostic_long_writer import (  # noqa: E402
 from editorial.finalize_diagnostic_long_stories import clean  # noqa: E402
 
 CHECKPOINT_SCHEMA_VERSION = "0.2"
-WRITER_PROMPT_VERSION = "p1_long_writer.v0.9"
+WRITER_PROMPT_VERSION = "p1_long_writer.v1.2"
 
 
 def write_checkpoint(path: Path | None, payload: dict[str, Any]) -> None:

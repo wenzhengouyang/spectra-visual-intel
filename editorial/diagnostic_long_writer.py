@@ -60,11 +60,31 @@ INSTRUCTIONS = """你是SPECTRA的中文情报编辑，读者是AI产品策略�
 - 适用范围与限制条件（evidence_context中的约束说明）
 禁止重复已有内容或添加未经支持的新事实。每段包含2—4个相互关联的完整句子，用句号形成正常节奏，避免用分号串联事实，不使用项目符号、编号、问答体或What/Why/How。
 
-归因规则：每个段落首次引入来源时必须明确归因（"据XX报道"、"XX称"、"论文指出"），同一段落内后续事实如果来自同一来源可直接陈述，无需逐句重复归因。切换到新来源时必须再次归因。避免连续3个句子都以"据"开头。使用过渡词（"此外"、"同时"、"具体而言"）连接相关事实，形成流畅叙述而非机械罗列。
+归因规则（严格执行）：
+- **第1段是正文第一段**（不是导语或摘要），必须直接展开事实，并在开头包含归因标记（"据XX报道"、"XX称"、"论文指出"）。禁止写成"XX技术正在改变行业"这类无归因的导语。
+- 文章级归因：如果所有fact_units来自同一来源，只在第1段归因一次即可。**第2、3、4段开头禁止使用任何归因标记**，改用过渡词连接。
+- 段落级归因：仅当某段引入与前文不同的新来源时，该段首句才需归因。
+- 过渡连接：第2段及之后段落**必须**以过渡词开头（"此外"、"同时"、"另外"、"具体而言"），形成自然段落衔接。
+- 同段归因：同一段落内，同一来源的后续句子直接陈述，无需逐句归因。
 
-示例：
-✓ 好的段落：据VentureBeat报道，AI代理在企业中获得更多自主权。这种自主权体现在代理能够规划、决策并在系统间行动，无需人类在每一步批准。代理行为可能具有概率性，这要求治理机制必须在数据层实现，而非依赖抽象政策。
-✗ 坏的段落：据VentureBeat报道，AI代理在企业中获得更多自主权。据VentureBeat报道，这种自主权体现在代理能够规划。据VentureBeat报道，代理行为可能具有概率性。
+正确示例（单一来源 - 全部来自VentureBeat）：
+✓ 第1段：据VentureBeat报道，AI代理在企业中获得更多自主权。这种自主权体现在代理能够规划、决策并在系统间行动，无需人类在每一步批准。（直接展开事实，有归因）
+✓ 第2段：此外，代理行为可能具有概率性。这要求治理机制必须在数据层实现，而非依赖抽象政策。（过渡词开头，无归因）
+✓ 第3段：同时，企业需要建立清晰的审批流程。治理系统会自动记录代理的每个决策节点。（过渡词开头，无归因）
+
+错误示例（导语式开头 - 第1段无归因）：
+✗ 第1段：AI代理技术正在改变企业运营方式。（❌ 这是导语，不是正文！第1段必须有归因）
+✗ 第2段：据VentureBeat报道，AI代理在企业中获得更多自主权...（❌ 归因应该在第1段）
+
+错误示例（单一来源但过度归因）：
+✗ 第1段：据VentureBeat报道，AI代理在企业中获得更多自主权...
+✗ 第2段：据VentureBeat报道，代理行为可能具有概率性...（❌ 禁止重复归因！应以"此外"开头）
+✗ 第3段：据VentureBeat报道，企业需要建立审批流程...（❌ 禁止重复归因！应以"同时"开头）
+
+正确示例（多来源）：
+✓ 第1段：据Nature报道，新算法在图像识别上取得突破...（第一个来源，有归因）
+✓ 第2段：此外，该算法在医疗场景的应用也很广泛...（同一来源，无需归因）
+✓ 第3段：据OpenAI博客介绍，他们采用了类似的架构...（新来源，需要归因）
 
 每条事实最多出现一次，标题、摘要与正文不得机械重复。不得新增数字、实体、效果、因果或行业趋势。
 judgment只能改写allowed_judgment，控制在一到两句；allowed_judgment为空时judgment必须返回空字符串。不要输出事实编号或"人工确认、已核验、证据边界"等审计语言。
@@ -109,7 +129,7 @@ REVISION_INSTRUCTIONS = """你正在修订一篇已经完成初稿、但未通�
 只能使用locked_writer_input中的fact_units和evidence_context。audit_errors指出了失败位置。
 只返回失败字段或失败段落的补丁，绝对不得重写完整文章，也不得修改allowed_targets之外的位置。
 
-归因要求：若target_requirements中require_attribution为true，修订段落必须在首次引入来源时明确归因（"据XX报道"、"XX称"），但同一段落内后续来自同一来源的事实可直接陈述，无需逐句重复。使用过渡词（"此外"、"同时"、"具体而言"）连接相关事实。修订段落保持正常的2—4句阅读节奏。
+归因要求：若target_requirements中require_attribution为true，遵循文章级归因原则。检查整篇文章的来源情况：如果所有事实来自同一来源且第一段已归因，修订段落无需重复归因，应以过渡词（"此外"、"同时"、"另外"）开头；如果修订段引入新来源，该段首次提及时必须明确归因（"据XX报道"、"XX称"）。避免每段都以"据XX报道"机械开头。修订段落保持正常的2—4句阅读节奏。
 
 事实保真：若某句缺少claim支持或包含未经支持的效果、因果、趋势、价值判断，删除该句或严格改写为fact_units明确提供的事实。优先用尚未充分表达、确有信息增量的fact_units修复失败段落；不设最低字数，也不得重复原句凑字数。
 不得新增数字、主体、效果、因果、行业趋势或后续计划。输出严格符合JSON Schema。"""
@@ -126,7 +146,7 @@ LENGTH_REPAIR_INSTRUCTIONS = """你正在对一篇事实审计已经通过、但
 - evidence_context中的适用范围、发布状态、限制条件
 不得用评价、效果、因果或趋势判断凑字数，但可以将evidence_context中的英文描述翻译为流畅的中文补充说明。
 
-归因规则：attribution_required为true的事实必须在段落首次引入来源时明确归因（"据XX报道"、"XX称"），但同一段落内后续来自同一来源的事实可直接陈述，无需逐句重复。使用过渡词（"此外"、"同时"、"具体而言"）连接相关事实，形成流畅叙述。
+归因规则：遵循文章级归因原则。如果所有assigned_facts来自同一来源，只在第一段明确归因（"据XX报道"、"XX称"），后续段落用过渡词（"此外"、"同时"、"另外"、"具体而言"）连接，无需重复归因；如果某段引入新来源，该段首次提及时必须明确归因。同一段落内，同一来源的后续事实可直接陈述。避免每段都以"据XX报道"机械开头，形成流畅自然的叙述。
 
 事实保真：每个句子都必须能直接对应assigned_facts中的至少一条事实。如果assigned_facts原文或evidence_context中明确包含某个表述（如"帮助"、"提升"、"体现"），可以保留使用；否则禁止使用"从而、以确保、使得、推动、促进、意味着、表明"等目的、效果或推断连接语。不得新增数字、主体、效果、因果、行业趋势或后续计划，不得出现"人工确认、核验、审计、证据边界"等内部语言。
 输出严格符合JSON Schema。"""
@@ -330,7 +350,15 @@ def audit_article(result: dict, facts: list[dict], allowed_judgment: str = "",
     errors = []
     mappings = []
     sentence_mappings = []
-    for index, paragraph in enumerate(result.get("paragraphs") or []):
+    # 检查文章级归因：如果第一段有归因，认为全文已归因
+    paragraphs = result.get("paragraphs") or []
+    first_paragraph_has_attribution = (
+        len(paragraphs) > 0 and any(
+            marker in paragraphs[0] for marker in LONG_FORM_ATTRIBUTION_MARKERS
+        )
+    )
+
+    for index, paragraph in enumerate(paragraphs):
         extra = normalized_numbers(paragraph) - allowed_numbers
         if extra:
             errors.append(f"paragraph[{index}] unsupported numbers: {sorted(extra)}")
@@ -343,10 +371,22 @@ def audit_article(result: dict, facts: list[dict], allowed_judgment: str = "",
         if not mapped:
             errors.append(f"paragraph[{index}] no claim mapping")
         mapped_facts = [fact for fact in facts if fact["claim_id"] in mapped]
-        if any(fact.get("attribution_required") for fact in mapped_facts) and not any(
-            marker in paragraph for marker in LONG_FORM_ATTRIBUTION_MARKERS
-        ):
-            errors.append(f"paragraph[{index}] source attribution missing")
+
+        # 归因检查：采用文章级归因逻辑
+        # 如果第一段已有归因，后续段落无需重复归因（假设单一来源）
+        # 如果第一段未归因，每段都需要检查归因（假设多来源）
+        needs_attribution = any(fact.get("attribution_required") for fact in mapped_facts)
+        has_attribution = any(marker in paragraph for marker in LONG_FORM_ATTRIBUTION_MARKERS)
+
+        if needs_attribution:
+            if index == 0:
+                # 第一段必须有归因
+                if not has_attribution:
+                    errors.append(f"paragraph[{index}] source attribution missing")
+            else:
+                # 后续段落：如果第一段已归因，则无需归因；否则需要归因
+                if not first_paragraph_has_attribution and not has_attribution:
+                    errors.append(f"paragraph[{index}] source attribution missing")
         for sentence_index, sentence in enumerate(sentence_parts(paragraph)):
             sentence_ranked = ranked_claims(sentence, facts)
             sentence_claim_ids = [claim_id for _, claim_id in sentence_ranked[:3]]
