@@ -4,14 +4,19 @@
 from __future__ import annotations
 
 import json
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
-RUN = ROOT / "spectra_agent/runs/scheduled-acceptance-complete-20260817"
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from spectra_agent.paths import DEFAULT_DATA_ROOT
+
+RUN = DEFAULT_DATA_ROOT / "runs/scheduled-acceptance-complete-20260817"
 CURRENT = RUN / "p1-review.json"
-PRIOR = ROOT / "spectra_agent/runs/llm-agent-acceptance-v02/p1-review.json"
+PRIOR = DEFAULT_DATA_ROOT / "runs/llm-agent-acceptance-v02/p1-review.json"
 
 INCLUDE = {1, 2, 3, 6, 8}
 WATCH = {4, 5, 7, 9}
@@ -119,8 +124,8 @@ def main() -> None:
     current["review_status"] = "approved"
     current["verified_at"] = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     current["verified_by"] = "user editorial decision + Codex primary-source verification"
-    current["editorial_selection"]["weekly_thesis"] = (
-        "本周视频模型优化正从单纯画质提升转向几何一致性、知识正确性与少步交互效率；"
+    current["editorial_selection"]["rolling_thesis"] = (
+        "近7日视频模型优化正从单纯画质提升转向几何一致性、知识正确性与少步交互效率；"
         "具身应用将继续推动视频模型接受动作控制、空间约束和真实任务指标的检验。"
     )
     CURRENT.write_text(json.dumps(current, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

@@ -45,7 +45,7 @@ EDITORIAL_WRITER_INSTRUCTIONS = """你是 SPECTRA 的中文情报编辑，读者
 呈现方式：
 1. headline 准确、自然，优先使用正式中文名称；首次出现时可在括号中保留英文名。
 2. dek 用一到两句交代最重要的新事实，不重复标题。
-3. deep_story 必须写成博客式文章摘要，而不是证据清单：通常为3—5个自然段，每段包含2—4个相互关联的完整句子。若 reader_packet.writing_profile.mode 为 long_form，事实正文写到其 min_characters—max_characters 指定范围；否则通常为260—600个中文字符。事实包不足时宁可更短，绝不通过补背景、效果、目的或行业影响凑字数。
+3. core_event 必须写成博客式文章摘要，而不是证据清单：通常为3—5个自然段，每段包含2—4个相互关联的完整句子。不设最低字数；优先覆盖全部有信息增量的 fact_units，在不重复、不越过证据的前提下尽量写得充分，且不得超过 writing_profile.max_characters。事实包不足时宁可更短，绝不通过补背景、效果、目的或行业影响凑字数。
 4. 第一段只用已核验事实交代事件主体、发生了什么以及它要解决的具体问题；中间段按产品构成、运行机制、数据结果或适用范围组织；最后一段补充发布状态、限制或后续安排。不得把每个 fact_unit 单独写成一段。
 5. 每段围绕一个信息重点，用句号形成正常阅读节奏。避免用分号串联大量事实，不使用项目符号、编号、问答体或 What、Why、How 等小标题。
 6. 同一来源在一个段落中通常只归因一次。不得让连续句子或连续段落都以“据某某报道”“某某称”“文章指出”开头；后续句子应在不丢失归因边界的前提下自然承接。
@@ -53,7 +53,7 @@ EDITORIAL_WRITER_INSTRUCTIONS = """你是 SPECTRA 的中文情报编辑，读者
 8. 摘要、标题和正文不得相互机械重复。语言客观、具体、克制，不使用宣传式语言。
 9. 不得在 fact_unit 后追加“旨在、确保、有助于、推动、提升效率、提供基础”等解释性尾句，除非这些表述已在同一 fact_unit.text 中明确出现。
 
-每次输入只包含一个正式事件。draft 字段必须返回一篇与该 event_id 对应的 deep_story；不得返回其他事件。
+每次输入只包含一个正式事件。draft 字段必须返回一篇与该 event_id 对应的 core_event；不得返回其他事件。
 输出必须严格符合 JSON Schema。"""
 
 
@@ -244,8 +244,8 @@ def input_for_event(event: dict[str, Any], fact_plan: dict[str, Any],
     return json.dumps(payload, ensure_ascii=False)
 
 
-def deep_story_readiness(fact_plan: dict[str, Any]) -> dict[str, Any]:
-    """Decide whether the locked fact envelope can sustain a real deep story."""
+def core_event_readiness(fact_plan: dict[str, Any]) -> dict[str, Any]:
+    """Decide whether the locked fact envelope can sustain a core event."""
     reader = fact_plan.get("reader_packet") or {}
     facts = reader.get("fact_units") or []
     claim_count = len({fact.get("claim_id") for fact in facts if fact.get("claim_id")})
@@ -297,7 +297,7 @@ def allowed_patch_scope(error: str, draft: dict[str, Any]) -> set[tuple[str, int
     for field in ("headline", "dek", "one_line_takeaway", "judgment"):
         if re.search(rf"(?:^|: ){re.escape(field)}:", error) or error.startswith(f"{field}:"):
             allowed.add((field, -1))
-    if any(marker in error for marker in ("deep story is too short", "overuses semicolons", "too similar to source")):
+    if any(marker in error for marker in ("core event is too short", "overuses semicolons", "too similar to source")):
         allowed.update(
             ("factual_paragraph", index)
             for index, _ in enumerate(draft.get("factual_paragraphs") or [])
@@ -399,7 +399,7 @@ def validate_draft(draft: dict[str, Any], event: dict[str, Any], original: str,
     profile = reader.get("writing_profile") or {}
     max_paragraphs = 8 if profile.get("mode") == "long_form" else 6
     if not 3 <= len(paragraphs) <= max_paragraphs:
-        errors.append(f"{event['event_id']}: deep story requires 3-{max_paragraphs} factual paragraphs")
+        errors.append(f"{event['event_id']}: core event requires 3-{max_paragraphs} factual paragraphs")
     for paragraph_index, paragraph in enumerate(paragraphs):
         used = set(paragraph.get("claim_ids") or [])
         if not used or not used <= allowed:
@@ -419,11 +419,11 @@ def validate_draft(draft: dict[str, Any], event: dict[str, Any], original: str,
                         "attribution-required claim lost source attribution"
                     )
     article = "\n".join(item["text"] for item in paragraphs)
-    minimum_article_length = int(profile.get("min_characters", 150))
-    if len(article) < minimum_article_length:
-        errors.append(f"{event['event_id']}: deep story is too short")
+    minimum_article_length = int(profile.get("min_characters", 0))
+    if minimum_article_length > 0 and len(article) < minimum_article_length:
+        errors.append(f"{event['event_id']}: core event is too short")
     if article.count("；") > 3:
-        errors.append(f"{event['event_id']}: deep story overuses semicolons")
+        errors.append(f"{event['event_id']}: core event overuses semicolons")
     if len(article) >= 240 and len(original) >= 240:
         ratio = difflib.SequenceMatcher(None, re.sub(r"\s+", "", article), re.sub(r"\s+", "", original)).ratio()
         if ratio >= 0.72:
@@ -459,15 +459,15 @@ def write_drafts(verified: dict[str, Any], fact_selection: dict[str, Any],
     plans = {item["event_id"]: item for item in fact_selection["selections"]}
     event_map = {item["event_id"]: item for item in verified["intelligence_events"]}
     source_map = {item["source_id"]: item for item in collection["source_records"]}
-    deep_story_ids = [
+    core_event_ids = [
         event_id for event_id in verified.get("editorial_selection", {}).get("top_event_ids", [])
         if event_id in event_map
     ][:5]
     if event_ids is not None:
         selected = set(event_ids)
-        deep_story_ids = [event_id for event_id in deep_story_ids if event_id in selected]
+        core_event_ids = [event_id for event_id in core_event_ids if event_id in selected]
     ordered = sorted(
-        (event_map[event_id] for event_id in deep_story_ids),
+        (event_map[event_id] for event_id in core_event_ids),
         key=lambda item: ({"priority.p0": 0, "priority.p1": 1, "priority.p2": 2}.get(item["priority"], 9), item["event_at"]),
     )
     drafts = []
@@ -478,16 +478,16 @@ def write_drafts(verified: dict[str, Any], fact_selection: dict[str, Any],
     readiness_records = []
     demoted = []
     for rank, event in enumerate(ordered):
-        article_type = "deep_story"
+        article_type = "core_event"
         if event["event_id"] not in plans:
             raise ValueError(f"{event['event_id']}: missing locked fact selection")
-        readiness = deep_story_readiness(plans[event["event_id"]])
+        readiness = core_event_readiness(plans[event["event_id"]])
         readiness_records.append({"event_id": event["event_id"], **readiness})
         if not readiness["ready"]:
             demoted.append({
                 "event_id": event["event_id"],
                 "target_article_type": "quick_read",
-                "reason": "deep_story_readiness_failed",
+                "reason": "core_event_readiness_failed",
                 "details": readiness,
             })
             continue
@@ -582,8 +582,8 @@ def write_drafts(verified: dict[str, Any], fact_selection: dict[str, Any],
         attempt_log.append({"event_id": event["event_id"], "attempts": 1, "outcome": "passed_first_attempt"})
     return {
         "schema_version": "0.1",
-        "record_type": "deep_story_draft_bundle",
-        "prompt_version": "deep_story_writer.v0.2",
+        "record_type": "core_event_draft_bundle",
+        "prompt_version": "core_event_writer.v0.2",
         "drafts": drafts,
         "blocked": blocked,
         "demoted": demoted,
@@ -601,8 +601,8 @@ def main() -> int:
     parser.add_argument("--collection", required=True)
     parser.add_argument("--output", required=True)
     parser.add_argument("--diagnostics-output", help="Internal-only draft and patch diagnostics JSON")
-    parser.add_argument("--model", help="Optional model override for deep-story writing only")
-    parser.add_argument("--num-ctx", type=int, help="Optional Ollama context override for deep-story writing only")
+    parser.add_argument("--model", help="Optional model override for core-event writing only")
+    parser.add_argument("--num-ctx", type=int, help="Optional Ollama context override for core-event writing only")
     parser.add_argument("--event-id", action="append", dest="event_ids", help="Limit a diagnostic run to selected event IDs")
     args = parser.parse_args()
     if args.model:

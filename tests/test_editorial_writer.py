@@ -2,7 +2,7 @@ import json
 import unittest
 
 from editorial.editorial_writer import (
-    apply_revision_patches, deep_story_readiness, input_for_event, source_text,
+    apply_revision_patches, core_event_readiness, input_for_event, source_text,
     validate_draft, write_drafts,
 )
 
@@ -86,7 +86,7 @@ class EditorialWriterTest(unittest.TestCase):
             "source_name": "官方来源", "canonical_url": "https://example.com",
         }]}
 
-        payload = json.loads(input_for_event(event, plan, collection, "deep_story"))
+        payload = json.loads(input_for_event(event, plan, collection, "core_event"))
 
         self.assertEqual(
             set(payload),
@@ -117,36 +117,36 @@ class EditorialWriterTest(unittest.TestCase):
         }}
         collection = {"source_records": [{"source_id": "src_1", "raw_excerpt": "来源摘要"}]}
 
-        payload = json.loads(input_for_event(event, plan, collection, "deep_story"))
+        payload = json.loads(input_for_event(event, plan, collection, "core_event"))
 
         self.assertEqual(payload["fact_units"][0]["text"], "正式事实。")
         self.assertNotIn("来源摘要", json.dumps(payload, ensure_ascii=False))
 
-    def test_deep_story_readiness_accepts_three_substantive_verified_facts(self):
+    def test_core_event_readiness_accepts_three_substantive_verified_facts(self):
         facts = [
             {"claim_id": f"clm_{index}", "text": "这是一条经过确认且足够具体的正式事实内容。" * 3,
              "atomic_units": ["正式事实"], "evidence_context": "对应证据上下文"}
             for index in range(3)
         ]
-        result = deep_story_readiness({"reader_packet": {
+        result = core_event_readiness({"reader_packet": {
             "fact_units": facts, "allowed_judgment": "允许给出克制判断。",
         }})
         self.assertTrue(result["ready"])
         self.assertEqual(result["status"], "ready")
 
-    def test_deep_story_readiness_does_not_require_editorial_judgment(self):
+    def test_core_event_readiness_does_not_require_editorial_judgment(self):
         facts = [
             {"claim_id": f"clm_{index}", "text": "这是一条经过确认且足够具体的正式事实内容。" * 3,
              "atomic_units": ["正式事实"], "evidence_context": "对应证据上下文"}
             for index in range(3)
         ]
-        result = deep_story_readiness({"reader_packet": {
+        result = core_event_readiness({"reader_packet": {
             "fact_units": facts, "allowed_judgment": "",
         }})
         self.assertTrue(result["ready"])
 
-    def test_deep_story_readiness_demotes_sparse_event(self):
-        result = deep_story_readiness({"reader_packet": {
+    def test_core_event_readiness_demotes_sparse_event(self):
+        result = core_event_readiness({"reader_packet": {
             "fact_units": [{
                 "claim_id": "clm_1", "text": "只有一条事实。",
                 "atomic_units": ["只有一条事实"], "evidence_context": "一条证据",

@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 import json
+import sys
 from pathlib import Path
 
 
 ROOT = Path(__file__).parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from spectra_agent.compat import rolling_thesis
 data = json.loads((ROOT / "verification" / "runs" / "p1-verified-events-v0.2.json").read_text(encoding="utf-8"))
 records = {item["candidate_id"]: item for item in data["verification_records"]}
 events = data["intelligence_events"]
@@ -12,12 +17,12 @@ record_by_event = {item["event"]["event_id"]: item for item in records.values() 
 top = set(data["editorial_selection"]["top_event_ids"])
 
 lines = [
-    "# P1原文核验与正式周报事件 v0.1", "",
+    "# P1原文核验与滚动摘要事件 v0.1", "",
     "> 核验窗口：2026-08-06—2026-08-12；核验对象：结构化候选中的16条P1。", "",
     "## 1. 本轮结论", "",
     "16条P1均完成原始来源核验：15条核对arXiv原始条目，1条核对Wan官方GitHub README与提交记录。"
     "最终保留9个正式事件，另7条进入观察池。入选只表示事件事实和作者报告已经核对，不代表实验获得独立复现。", "",
-    f"本周总判断：{data['editorial_selection']['weekly_thesis']}", "",
+    f"近7日总判断：{rolling_thesis(data['editorial_selection'], '')}", "",
     "```text", "16条P1", "→ 题名、作者、时间核对", "→ 方法、数字、实验结论核对", "→ 明确作者报告与独立事实边界",
     "→ 同主题编辑去重", "→ 9个正式事件（其中5个首页重点）＋7个观察项", "```", "",
     "## 2. 首页重点事件（5条）", ""
@@ -73,4 +78,4 @@ lines.extend([
     "- 这一步完成的是事实层事件，不在本轮直接生成长篇The Batch式文章。下一步才进入编辑文章层。", ""
 ])
 
-(ROOT / "P1原文核验与正式周报事件_v0.1.md").write_text("\n".join(lines), encoding="utf-8")
+(ROOT / "P1原文核验与滚动摘要事件_v0.1.md").write_text("\n".join(lines), encoding="utf-8")

@@ -11,15 +11,21 @@ import argparse
 import hashlib
 import json
 import re
-import textwrap
+import sys
 from collections import Counter
 from datetime import datetime, timedelta
 from pathlib import Path
 from xml.sax.saxutils import escape as xml_escape
 from zoneinfo import ZoneInfo
 
-
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from spectra_agent.compat import rolling_thesis as compatible_rolling_thesis
+from spectra_agent.publication_quality import expected_cover_motif
+
+
 VERIFIED_PATH = ROOT / "verification/runs/p1-verified-events-v0.2.json"
 REVIEW_PATH = ROOT / "verification/p1-review.v0.1.json"
 OUTPUT_PATH = ROOT / "editorial/runs/issue-01-editorial-stories-v0.2.json"
@@ -38,16 +44,7 @@ def load_cover_manifest(path: Path = COVER_MANIFEST_PATH) -> dict:
 
 
 def semantic_cover_motif(headline: str, category: str) -> str:
-    text = f"{headline} {category}".lower()
-    if any(term in text for term in ("法律", "legal", "合规")):
-        return "document"
-    if any(term in text for term in ("治理", "数据层", "安全", "governance")):
-        return "layers"
-    if any(term in text for term in ("运营", "组织", "客户回报", "roi")):
-        return "workflow"
-    if any(term in text for term in ("芯片", "算力", "集群", "gpu")):
-        return "compute"
-    return "signal"
+    return expected_cover_motif(headline, category)
 
 
 def write_semantic_cover(headline: str, category: str, credit: str, target_dir: Path) -> str:
@@ -58,28 +55,25 @@ def write_semantic_cover(headline: str, category: str, credit: str, target_dir: 
     target = target_dir / filename
     accent_by_motif = {
         "document": "#9aaee8", "layers": "#72c1bd", "workflow": "#c5a3e6",
-        "compute": "#e0a36f", "signal": "#94a3b8",
+        "compute": "#e0a36f", "healthcare": "#77bfa3", "swarm": "#b8a0dc",
+        "signal": "#94a3b8",
     }
     motif = semantic_cover_motif(headline, category)
     accent = accent_by_motif[motif]
-    lines = textwrap.wrap(headline, width=18, break_long_words=False)[:3]
-    title = "".join(
-        f'<text x="112" y="{430 + index * 82}" class="title">{xml_escape(line)}</text>'
-        for index, line in enumerate(lines)
-    )
     motif_markup = {
         "document": '<rect x="980" y="150" width="330" height="470" rx="20" class="shape"/><path d="M1040 260h210M1040 330h210M1040 400h150" class="line"/><circle cx="1145" cy="530" r="64" class="node"/>',
         "layers": '<path d="M970 250l190-100 190 100-190 100zM970 390l190-100 190 100-190 100zM970 530l190-100 190 100-190 100z" class="shape"/><circle cx="1160" cy="390" r="34" class="node"/>',
         "workflow": '<circle cx="1160" cy="390" r="175" class="shape"/><circle cx="1160" cy="215" r="38" class="node"/><circle cx="1315" cy="470" r="38" class="node"/><circle cx="1005" cy="470" r="38" class="node"/><path d="M1198 225c85 25 135 82 125 178M1288 504c-63 67-141 78-220 22M1028 426c-9-85 31-151 100-190" class="line"/>',
         "compute": '<rect x="990" y="220" width="210" height="210" rx="18" class="shape"/><path d="M1040 270h110v110h-110zM1200 325h120M1200 365h120M1200 405h120M1095 430v105M1055 430v105M1135 430v105" class="line"/><g class="nodes"><circle cx="1260" cy="325" r="12"/><circle cx="1320" cy="325" r="12"/><circle cx="1260" cy="365" r="12"/><circle cx="1320" cy="365" r="12"/><circle cx="1260" cy="405" r="12"/><circle cx="1320" cy="405" r="12"/></g>',
+        "healthcare": '<path d="M1110 215h100v125h125v100h-125v125h-100V440H985V340h125z" class="shape"/><path d="M880 640c120-130 210-35 300-145s170-15 285-145" class="line"/><circle cx="880" cy="640" r="24" class="node"/><circle cx="1180" cy="495" r="24" class="node"/><circle cx="1465" cy="350" r="24" class="node"/>',
+        "swarm": '<g class="nodes"><circle cx="1040" cy="245" r="30"/><circle cx="1190" cy="190" r="30"/><circle cx="1335" cy="275" r="30"/><circle cx="995" cy="445" r="30"/><circle cx="1190" cy="405" r="38"/><circle cx="1390" cy="475" r="30"/><circle cx="1110" cy="610" r="30"/><circle cx="1310" cy="625" r="30"/></g><path d="M1040 245l150-55 145 85M1040 245l-45 200 195-40 200 70M995 445l115 165 80-205 120 220 80-150M1190 190v215" class="line"/>',
         "signal": '<path d="M990 560l90-210 95 90 165-250" class="line strong"/><circle cx="1080" cy="350" r="28" class="node"/><circle cx="1175" cy="440" r="28" class="node"/><circle cx="1340" cy="190" r="28" class="node"/>',
     }[motif]
     svg = f'''<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
 <title id="title">{xml_escape(headline)}</title><desc id="desc">SPECTRA根据文章主题生成的编辑示意图</desc>
-<style>.bg{{fill:#0c1118}}.grid{{stroke:#26303c;stroke-width:1}}.shape{{fill:none;stroke:{accent};stroke-width:5}}.line{{fill:none;stroke:{accent};stroke-width:5;stroke-linecap:round;stroke-linejoin:round}}.strong{{stroke-width:9}}.node{{fill:#0c1118;stroke:{accent};stroke-width:7}}.nodes{{fill:{accent}}}.kicker{{fill:{accent};font:700 25px system-ui,sans-serif;letter-spacing:4px}}.title{{fill:#eef2f7;font:700 57px system-ui,sans-serif}}.credit{{fill:#7f8b9a;font:500 22px system-ui,sans-serif}}</style>
+<style>.bg{{fill:#0c1118}}.grid{{stroke:#26303c;stroke-width:1}}.shape{{fill:none;stroke:{accent};stroke-width:5}}.line{{fill:none;stroke:{accent};stroke-width:5;stroke-linecap:round;stroke-linejoin:round}}.strong{{stroke-width:9}}.node{{fill:#0c1118;stroke:{accent};stroke-width:7}}.nodes{{fill:{accent}}}</style>
 <rect width="1600" height="900" class="bg"/><path d="M0 150h1600M0 300h1600M0 450h1600M0 600h1600M0 750h1600M200 0v900M400 0v900M600 0v900M800 0v900M1000 0v900M1200 0v900M1400 0v900" class="grid"/>
-<text x="112" y="118" class="kicker">{xml_escape(category.upper())} / VERIFIED INTELLIGENCE</text>{title}
-<text x="112" y="790" class="credit">来源：{xml_escape(credit)} · SPECTRA 编辑示意</text>{motif_markup}
+{motif_markup}
 </svg>'''
     target.write_text(svg, encoding="utf-8")
     return f"assets/editorial/{filename}"
@@ -91,6 +85,7 @@ def resolve_cover_image(
     intelligence_type: str,
     *,
     source_url: str = "",
+    official_image_url: str = "",
     headline: str = "",
     category: str = "",
     credit: str = "",
@@ -98,11 +93,29 @@ def resolve_cover_image(
 ) -> dict:
     for item in manifest.get("covers", []):
         if item.get("event_id") == event_id:
-            return {key: value for key, value in item.items() if key != "event_id"}
+            return {
+                **{key: value for key, value in item.items() if key != "event_id"},
+                "semantic_match": "source_matched",
+                "review_status": "approved",
+            }
     if source_url:
         for item in manifest.get("covers", []):
             if item.get("source_url") == source_url:
-                return {key: value for key, value in item.items() if key != "event_id"}
+                return {
+                    **{key: value for key, value in item.items() if key != "event_id"},
+                    "semantic_match": "source_matched",
+                    "review_status": "approved",
+                }
+    if official_image_url.startswith("https://"):
+        return {
+            "url": official_image_url,
+            "kind": "official",
+            "label": "官方图片",
+            "credit": credit or "原始来源",
+            "source_url": source_url,
+            "semantic_match": "source_matched",
+            "review_status": "approved",
+        }
     if headline and generated_dirs:
         relative_url = ""
         for target_dir in generated_dirs:
@@ -113,6 +126,9 @@ def resolve_cover_image(
             "label": "主题示意图",
             "credit": "SPECTRA",
             "source_url": source_url or None,
+            "semantic_motif": semantic_cover_motif(headline, category),
+            "semantic_match": "passed",
+            "review_status": "pending",
         }
     fallback_key = {
         "type.industry_market": "行业与市场",
@@ -132,7 +148,7 @@ def resolve_cover_image(
 STORY_COPY = {
     "evt_20260810_scivbench_auto": {
         "story_id": "story_202633_scivbench",
-        "article_type": "deep_dive",
+        "article_type": "core_event",
         "headline": "视频评测的下一关：科学机制是否正确？",
         "dek": "Sci-VBench用1,253项专家样例测试16个视频模型。结果指向一个正在扩大的缺口：画面可以足够逼真，但科学过程和因果链仍可能是错的。",
         "one_line_takeaway": "视频生成的竞争正从画质和提示词对齐，进入机制正确性与可验证结构的评测阶段。",
@@ -149,7 +165,7 @@ STORY_COPY = {
     },
     "evt_20260807_wananimate2": {
         "story_id": "story_202633_wananimate2",
-        "article_type": "deep_dive",
+        "article_type": "core_event",
         "headline": "Wan-Animate-2把角色动画推向端到端驱动",
         "dek": "Wan-Animate-2开放推理脚本、基础权重和蒸馏权重，并将驱动视频直接接入角色动画管线。对创作者而言，动作迁移、身份保持与视角控制开始被收束到同一套工作流。",
         "one_line_takeaway": "角色动画的竞争开始从单点动作迁移，转向身份、动作、视角和推理效率的一体化工作流。",
@@ -166,7 +182,7 @@ STORY_COPY = {
     },
     "evt_20260809_logishot": {
         "story_id": "story_202633_logishot",
-        "article_type": "deep_dive",
+        "article_type": "core_event",
         "headline": "跨镜头一致性开始从外观进入世界状态",
         "dek": "LogiShot用上下文视频编码和视觉记忆处理跨镜头逻辑一致性，并构建11万样本的数据集。它瞄准的不是单镜头更好看，而是人物、物体和事件在下一镜里仍然说得通。",
         "one_line_takeaway": "多镜头视频的核心问题正从角色长得像，转向跨镜头世界状态和叙事逻辑能否延续。",
@@ -183,7 +199,7 @@ STORY_COPY = {
     },
     "evt_20260806_gauge": {
         "story_id": "story_202633_gauge",
-        "article_type": "deep_dive",
+        "article_type": "core_event",
         "headline": "世界模型“看起来对”，不等于物理量真的对",
         "dek": "GAUGE把物理引擎和视频世界模型放进同一套真实测量框架。作者发现，一段轨迹即使视觉上合理，仍可能在加速度、动量传递或振荡时序上出现系统性错误。",
         "one_line_takeaway": "物理一致性正在从视觉印象题，变成可以用真实测量和参数恢复诊断的工程问题。",
@@ -200,7 +216,7 @@ STORY_COPY = {
     },
     "evt_20260808_phys": {
         "story_id": "story_202633_phys",
-        "article_type": "deep_dive",
+        "article_type": "core_event",
         "headline": "1.3B流式模型开始承接14B教师的物理先验",
         "dek": "PhyS把12万条真实物理交互视频、14B教师模型和1.3B因果DiT连接成一条蒸馏链路。目标不是只生成更真实的片段，而是在轻量流式推理中保留物理状态。",
         "one_line_takeaway": "物理视频数据、时序奖励和教师蒸馏正在形成轻量流式世界模型的完整优化路径。",
@@ -448,6 +464,58 @@ VERIFIED_HEADLINE_OVERRIDES = {
     "evt_20260812_tencent_q2_ai": "腾讯财报披露AI相关预付款用途与收入增长",
     "evt_20260825_gemini_legal": "Google Cloud发布面向法律行业的Gemini Enterprise",
 }
+
+CHINESE_TEXT_RE = re.compile(r"[\u3400-\u9fff]")
+SENSATIONAL_HEADLINE_MARKERS = (
+    "！", "惊天", "颠覆", "护城河被打破", "反向接管母公司", "文明涌现", "真芯片",
+)
+ATTRIBUTION_PREFIX_RE = re.compile(
+    r"^(?:据[^，。]{1,24}(?:报道|介绍|披露|文章)，|文章指出，|[^，。]{1,24}称，)"
+)
+
+
+def neutral_fallback_headline(event: dict, review_item: dict, claims: list[dict]) -> str:
+    """Never ship an English or clickbait source headline after Writer demotion."""
+    analysis = review_item.get("agent_analysis") or {}
+    title = str(
+        VERIFIED_HEADLINE_OVERRIDES.get(event["event_id"])
+        or analysis.get("canonical_title")
+        or event.get("canonical_title")
+        or ""
+    ).strip()
+    unsafe = not CHINESE_TEXT_RE.search(title) or any(marker in title for marker in SENSATIONAL_HEADLINE_MARKERS)
+    if unsafe and claims:
+        title = ATTRIBUTION_PREFIX_RE.sub("", reader_facing_text(claims[0].get("text", ""))).strip("。！？ ")
+    if len(title) > 54:
+        title = title[:52].rstrip("，,; ") + "…"
+    return title or "近7日人工智能情报更新"
+
+
+def fallback_summary_paragraphs(claims: list[dict], paragraph_size: int = 3) -> list[str]:
+    """Turn verified atoms into readable short paragraphs without inventing transitions."""
+    sentences: list[str] = []
+    seen_bases: set[str] = set()
+    for item in claims:
+        text = reader_facing_text(item.get("text", "")).strip("。 ")
+        basis = re.sub(r"\W+", "", ATTRIBUTION_PREFIX_RE.sub("", text)).lower()
+        if text and basis and basis not in seen_bases:
+            sentences.append(text)
+            seen_bases.add(basis)
+    paragraphs = []
+    for start in range(0, len(sentences), paragraph_size):
+        group = sentences[start:start + paragraph_size]
+        if not group:
+            continue
+        first = group[0]
+        prefix_match = ATTRIBUTION_PREFIX_RE.match(first)
+        source_prefix = prefix_match.group(0) if prefix_match else ""
+        normalized = [first]
+        for sentence in group[1:]:
+            if source_prefix:
+                sentence = ATTRIBUTION_PREFIX_RE.sub("", sentence)
+            normalized.append(sentence)
+        paragraphs.append("。".join(part.rstrip("。") for part in normalized if part) + "。")
+    return paragraphs
 
 
 # P2 copy is intentionally conservative. These records have passed collection,
@@ -881,28 +949,26 @@ def source_label(url: str) -> str:
 
 
 def generic_copy(event: dict, review_item: dict, rank: int) -> dict:
-    title = VERIFIED_HEADLINE_OVERRIDES.get(event["event_id"], event["canonical_title"])
     claims = review_item["claims"]
+    title = neutral_fallback_headline(event, review_item, claims)
     fact = event["fact_summary"]
-    reason = review_item["decision_reason"]
     entity = event["primary_entity"]["name"]
     digest = hashlib.sha256(event["event_id"].encode()).hexdigest()[:12]
+    summary_paragraphs = fallback_summary_paragraphs(claims)
+    readable_facts = [reader_facing_text(item.get("text", "")) for item in claims]
     copy = {
         "story_id": f"story_{digest}",
-        "article_type": "deep_dive" if rank < 5 else "brief",
+        "article_type": "core_event" if rank < 5 else "brief",
         "headline": title,
-        "dek": claims[0]["text"] if claims else fact,
-        "one_line_takeaway": reason,
+        "dek": readable_facts[0] if readable_facts else fact,
+        "one_line_takeaway": readable_facts[0] if readable_facts else fact,
         "category": ROUTE_CATEGORY.get(event["primary_route"], "视觉智能"),
-        "what": fact,
-        "fact_points": list(dict.fromkeys(
-            reader_facing_text(item.get("text", ""))
-            for item in claims
-            if reader_facing_text(item.get("text", ""))
-        )),
-        "why": reason,
-        "take": f"这条信号值得围绕{entity}的真实能力边界、成本与工作流适配继续验证。" if rank < 5 else None,
-        "how": claims[-1]["text"] if claims else fact,
+        "what": summary_paragraphs[0] if summary_paragraphs else fact,
+        "fact_points": list(dict.fromkeys(item for item in readable_facts if item)),
+        "summary_paragraphs": summary_paragraphs,
+        "why": "",
+        "take": None,
+        "how": "\n\n".join(summary_paragraphs[1:]),
         "watch": ["是否出现独立复现或真实产品数据？", "能力变化能否进入稳定工作流？"],
         "numbers": [],
         "visual_data": None,
@@ -914,12 +980,12 @@ def generic_copy(event: dict, review_item: dict, rank: int) -> dict:
     return copy
 
 
-def publication_deep_event_ids(
+def publication_core_event_ids(
     selected_event_ids: list[str],
     writer_drafts: dict[str, dict],
     draft_bundle: dict | None,
 ) -> list[str]:
-    """Only model drafts that crossed readiness and validation may ship as deep stories."""
+    """Only model drafts that crossed readiness and validation may ship as core events."""
     selected = selected_event_ids[:5]
     if draft_bundle is None:
         # Preserve deterministic legacy fixtures that predate the Writer.
@@ -962,7 +1028,10 @@ def build_news_briefs(
     briefs = []
     end_date = report_date(window_end) if window_end else None
     start_value = window_start or candidate_run.get("window_start")
-    start_date = report_date(start_value) if start_value else (end_date - timedelta(days=6) if end_date else None)
+    start_date = report_date(start_value) if start_value else None
+    if end_date:
+        calendar_start = end_date - timedelta(days=6)
+        start_date = max(start_date, calendar_start) if start_date else calendar_start
     feed_candidates = candidate_run.get("feed_candidates") or candidate_run.get("selected_candidates", [])
     for candidate in feed_candidates:
         if not candidate.get("front_display_eligible", True):
@@ -991,7 +1060,11 @@ def build_news_briefs(
         summary = compact_brief_summary(
             copy.get("summary") or llm_analysis.get("what") or source.get("raw_excerpt") or "来源已收录，核心事实仍待核验。"
         )
-        headline = copy.get("headline") or candidate["canonical_title"]
+        headline = (
+            copy.get("headline")
+            or llm_analysis.get("canonical_title")
+            or candidate["canonical_title"]
+        )
         source_badge, verification_status = brief_source_status(source)
         tags = [ROUTE_CATEGORY.get(candidate["primary_route"], "视觉智能")]
         for values in (candidate.get("tags") or {}).values():
@@ -1069,13 +1142,16 @@ def build_timeline(
         item["event_id"]: report_date(item["event_at"])
         for item in events
     }
-    # A weekly issue always ends on the collection date. The old implementation
+    # A rolling digest always ends on the collection date. The old implementation
     # extended forward from the latest event to fill seven slots, which could
     # display future dates. Seven calendar days inclusive means end - 6 days.
-    # A rolling 7x24-hour window can touch eight local calendar dates. Preserve
-    # both boundary dates so events are never silently omitted from the UI.
-    start = report_date(window_start) if window_start else report_date(window_end) - timedelta(days=6)
     end = report_date(window_end)
+    # Collection retains a rolling 7x24-hour pool, but a reader-facing seven-day
+    # issue must contain exactly seven Shanghai calendar dates. Do not expose the
+    # eighth partial boundary date in the timeline.
+    calendar_start = end - timedelta(days=6)
+    source_start = report_date(window_start) if window_start else calendar_start
+    start = max(source_start, calendar_start)
     tones = ["purple", "blue", "cyan", "orange", "pink", "green", "muted"]
     timeline = []
     for offset in range((end - start).days + 1):
@@ -1119,7 +1195,7 @@ def build_trends(events: list[dict]) -> list[dict]:
         maturity, impact = radar_positions.get(route, (40 + index * 8, 68 + index * 5))
         trends.append({
             "trend_id": "trend_" + hashlib.sha256(route.encode()).hexdigest()[:12], "label": category,
-            "headline": f"{category}形成本周集中信号", "summary": f"{names}共同构成{category}方向的本周证据，需要继续观察独立复现与产品化表现。",
+            "headline": f"{category}形成近7日集中信号", "summary": f"{names}共同构成{category}方向的近7日证据，需要继续观察独立复现与产品化表现。",
             "status": "升温" if count >= 2 else "待验证", "score": min(95, 74 + count * 7),
             "delta": f"+{6 + count * 4:02d}", "maturity": maturity, "impact": impact,
             "tone": tones[index], "event_ids": [item["event_id"] for item in items],
@@ -1145,6 +1221,9 @@ def main() -> None:
     review = json.loads(review_path.read_text())
     candidate_run = json.loads((ROOT / args.candidates).read_text()) if args.candidates else None
     collection = json.loads((ROOT / args.collection).read_text()) if args.collection else None
+    source_records = {
+        item.get("source_id"): item for item in (collection or {}).get("source_records", [])
+    }
     draft_bundle = json.loads((ROOT / args.drafts).read_text()) if args.drafts else None
     writer_drafts = {item["event_id"]: item for item in (draft_bundle or {}).get("drafts", [])}
     cover_manifest = load_cover_manifest()
@@ -1158,6 +1237,12 @@ def main() -> None:
 
     ordered_events = sorted(events.values(), key=lambda item: ({"priority.p0": 0, "priority.p1": 1, "priority.p2": 2}.get(item["priority"], 9), item["event_at"]))
     stories = []
+    image_review_path = output_path.parent / "image-review.json"
+    prior_image_review = (
+        json.loads(image_review_path.read_text(encoding="utf-8"))
+        if image_review_path.exists() else {}
+    )
+    prior_approved_images = set(prior_image_review.get("approved_story_ids") or [])
     for rank, event in enumerate(ordered_events):
         event_id = event["event_id"]
         review_item = reviews[event_id]
@@ -1183,6 +1268,7 @@ def main() -> None:
             "url": review_item["url"],
             "role": "primary",
         }
+        source_record = source_records.get(event["primary_source_id"]) or {}
         key_numbers = [
             {"label": label, "value": value, "claim_id": claim_ids[claim_index]}
             for label, value, claim_index in copy["numbers"]
@@ -1217,6 +1303,7 @@ def main() -> None:
                 event_id,
                 intelligence_type,
                 source_url=source["url"],
+                official_image_url=str(source_record.get("official_image_url") or ""),
                 headline=copy["headline"],
                 category=copy["category"],
                 credit=source["label"],
@@ -1231,13 +1318,22 @@ def main() -> None:
             "priority": event["priority"],
             "reading_time_minutes": copy["reading"],
             "editorial_status": "fact_checked",
-            "drafted_by": "deep_story_writer_llm" if writer_draft else "deterministic_template",
+            "drafted_by": "core_event_writer_llm" if writer_draft else "deterministic_template",
             "reviewer": None,
             "reviewed_at": None,
             "revision_note": "一手来源已核验；编辑判断仍需发布者确认。",
             "editorial_score": copy["score"],
             "published_at": event["event_at"],
         }
+        if (
+            story["story_id"] in prior_approved_images
+            and story["cover_image"].get("kind") in {"editorial_diagram", "generated"}
+        ):
+            story["cover_image"].update({
+                "review_status": "approved",
+                "reviewed_by": prior_image_review.get("reviewed_by"),
+                "reviewed_at": prior_image_review.get("reviewed_at"),
+            })
         stories.append(story)
 
     story_by_event = {story["primary_event_id"]: story for story in stories}
@@ -1255,14 +1351,14 @@ def main() -> None:
     selected_top_event_ids = [
         item for item in verified["editorial_selection"]["top_event_ids"] if item in story_by_event
     ][:5]
-    top_event_ids = publication_deep_event_ids(selected_top_event_ids, writer_drafts, draft_bundle)
+    top_event_ids = publication_core_event_ids(selected_top_event_ids, writer_drafts, draft_bundle)
     top_story_ids = [story_by_event[event_id]["story_id"] for event_id in top_event_ids]
     # Readiness and Writer validation own the deep/quick split. Sparse events
-    # remain useful, but must not be padded into artificial deep stories.
+    # remain useful, but must not be padded into artificial core events.
     for story in stories:
-        is_deep_dive = story["primary_event_id"] in top_event_ids
-        story["article_type"] = "deep_dive" if is_deep_dive else "brief"
-        story["reading_time_minutes"] = max(story["reading_time_minutes"], 5) if is_deep_dive else 2
+        is_core_event = story["primary_event_id"] in top_event_ids
+        story["article_type"] = "core_event" if is_core_event else "brief"
+        story["reading_time_minutes"] = max(story["reading_time_minutes"], 5) if is_core_event else 2
     exact_issue_one = set(events) == set(STORY_COPY)
     fallback_window_end = max(item["event_at"] for item in events.values())
     window_end_value = verified.get("display_window_end") or verified.get("window_end") or fallback_window_end
@@ -1283,21 +1379,21 @@ def main() -> None:
         "evt_20260818_hydra0",
         "evt_20260819_kuaishou_q2_ai",
     }
-    reviewed_thesis = verified.get("editorial_selection", {}).get("weekly_thesis")
+    reviewed_thesis = compatible_rolling_thesis(verified.get("editorial_selection", {}))
     if reviewed_thesis:
-        weekly_thesis = reviewed_thesis
+        rolling_thesis = reviewed_thesis
     elif current_signal_set.issubset(events):
-        weekly_thesis = (
+        rolling_thesis = (
             "8月12—19日，腾讯披露AI相关预付款用途，快手披露AIGC短视频营销素材支出同比增长超过70%；"
             "技术侧，CaliBench、GaussianDWM++与Hydra-0分别指向物理校准、可控4D驾驶场景和机器人控制。"
         )
     else:
-        weekly_thesis = (
-            f"本周{len(stories)}条已核验事件主要覆盖{trend_labels}；"
+        rolling_thesis = (
+            f"近7日{len(stories)}条已核验事件主要覆盖{trend_labels}；"
             f"其中{industry_count}条企业披露补充了AIGC商业化与AI相关投入信号。"
         )
     trend_one_line = (
-        f"事实：本周正式事件集中在{trend_labels}，并包含{industry_count}条行业市场信号；"
+        f"事实：近7日正式事件集中在{trend_labels}，并包含{industry_count}条行业市场信号；"
         "判断：下一阶段竞争将进一步转向可验证的时空稳定性、动作响应与真实任务价值。"
     )
     if exact_issue_one:
@@ -1305,8 +1401,7 @@ def main() -> None:
         period_end = report_date(max(item["event_at"] for item in events.values()))
     else:
         period_end = report_date(window_end_value)
-        period_start = report_date(display_window_start) if display_window_start else period_end - timedelta(days=6)
-    issue_year, issue_week, _ = period_end.isocalendar()
+        period_start = period_end - timedelta(days=6)
     today_new_count = sum(
         report_date(item["published_at"]) == period_end
         for item in [*stories, *news_briefs]
@@ -1314,18 +1409,32 @@ def main() -> None:
     )
     rolling_window_count = len(stories) + len(news_briefs)
 
+    is_rolling_digest = not exact_issue_one
+    report_date_value = period_end.isoformat()
     output = {
         "schema_version": "0.2",
-        "record_type": "weekly_issue_editorial_bundle",
+        "record_type": "rolling_digest_editorial_bundle",
+        "run_id": review.get("run_id") or (collection or {}).get("run_id") or verified.get("input_run_id"),
+        "source_run_id": (collection or {}).get("run_id") or verified.get("input_run_id"),
+        "report_type": "rolling_7_day_digest",
+        "workflow": {
+            "status": "draft",
+            "stage": "generated",
+            "review_status": review.get("review_status"),
+            "publish_status": "not_published",
+        },
         "issue": {
-            "issue_id": f"issue_{issue_year}_w{issue_week:02d}",
-            "title": f"本周视觉行业情报 · {issue_year}年第{issue_week:02d}周",
+            "issue_id": f"digest_{period_end.strftime('%Y%m%d')}" if is_rolling_digest else f"issue_{issue_year}_w{issue_week:02d}",
+            "title": f"近7日视觉行业情报 · 截至{report_date_value}",
+            "report_date": report_date_value,
+            "window_days": (period_end - period_start).days + 1,
+            "data_cutoff_at": window_end_value,
             "period_start": period_start.isoformat(),
             "period_end": period_end.isoformat(),
             "updated_at": verified["verified_at"],
-            "weekly_thesis": weekly_thesis,
+            "rolling_thesis": rolling_thesis,
             "trend_one_line": trend_one_line,
-            "thesis_dek": f"本周{len(stories)}个正式事件经过原文核验，形成{len(trends)}条值得持续观察的趋势判断。",
+            "thesis_dek": f"近7日{len(stories)}个正式事件经过原文核验，形成{len(trends)}条值得持续观察的趋势判断。",
             "lead_story_id": top_story_ids[0] if top_story_ids else stories[0]["story_id"],
             "top_story_ids": top_story_ids,
             "brief_story_ids": [
@@ -1338,7 +1447,7 @@ def main() -> None:
             "total_intelligence_count": len(stories) + len(news_briefs),
             "today_new_count": today_new_count,
             "rolling_window_count": rolling_window_count,
-            "deep_dive_count": sum(story["article_type"] == "deep_dive" for story in stories),
+            "core_event_count": sum(story["article_type"] == "core_event" for story in stories),
             "brief_count": len(news_briefs),
             "reviewed_count": verified["summary"]["p1_reviewed"],
             "watchlist_count": verified["summary"]["watchlist_events"],
@@ -1361,7 +1470,7 @@ def main() -> None:
         # draft from leaking `../../../` paths into the GitHub Pages homepage.
         html = re.sub(r'href="[^"]*tokens\.css(?:\?v=\d+)?"', 'href="tokens.css?v=4"', html, count=1)
         html = re.sub(r'href="[^"]*app/globals\.css(?:\?v=\d+)?"', 'href="app/globals.css?v=19"', html, count=1)
-        html = re.sub(r'href="[^"]*app/hallmark-editorial\.css(?:\?v=\d+)?"', 'href="app/hallmark-editorial.css?v=13"', html, count=1)
+        html = re.sub(r'href="[^"]*app/hallmark-editorial\.css(?:\?v=\d+)?"', 'href="app/hallmark-editorial.css?v=14"', html, count=1)
         payload = json.dumps(output, ensure_ascii=False, separators=(",", ":")).replace("<", "\\u003c")
         embedded = f'<!-- ISSUE_DATA_START --><script id="issue-data" type="application/json">{payload}</script><!-- ISSUE_DATA_END -->'
         html, replacements = re.subn(r"<!-- ISSUE_DATA_START -->.*?<!-- ISSUE_DATA_END -->", lambda _: embedded, html, count=1, flags=re.S)

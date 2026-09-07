@@ -888,7 +888,7 @@ def collect_werss(source: dict[str, Any], ctx: Context) -> tuple[list[dict[str, 
             refresh_limit = max(0, min(int(source.get("refresh_limit", 1)), len(available_accounts)))
             if refresh_limit:
                 # Monday/Thursday runs cover complementary halves of the
-                # watchlist. The weekly anchor rotates so no publisher stays
+                # watchlist. The rolling anchor rotates so no publisher stays
                 # permanently at the edge of the selection.
                 run_date = ctx.window_end.date()
                 week_anchor = run_date.toordinal() - run_date.weekday()

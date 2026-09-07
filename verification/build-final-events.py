@@ -10,11 +10,16 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import sys
 from pathlib import Path
 from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from spectra_agent.compat import rolling_thesis
 
 
 def slug(value: str) -> str:
@@ -139,7 +144,7 @@ def build_bundle(review: dict[str, Any], collector: dict[str, Any], candidate_ru
 
     ranked = sorted(events, key=lambda item: ({"priority.p0": 0, "priority.p1": 1, "priority.p2": 2}.get(item["priority"], 9), item["event_at"]))
     top_ids = [item["event_id"] for item in ranked[: min(5, len(ranked))]]
-    thesis = review.get("editorial_selection", {}).get("weekly_thesis") or "本周视觉智能信号正在从单点能力更新，转向可验证、可控制、可进入工作流的系统变化。"
+    thesis = rolling_thesis(review.get("editorial_selection", {})) or "近7日视觉智能信号正在从单点能力更新，转向可验证、可控制、可进入工作流的系统变化。"
     return {
         "schema_version": "0.2", "record_type": "verified_event_bundle",
         "verified_at": review["verified_at"],
@@ -158,7 +163,7 @@ def build_bundle(review: dict[str, Any], collector: dict[str, Any], candidate_ru
             "excluded_events": sum(item["decision"] == "exclude" for item in records),
         },
         "editorial_selection": {
-            "weekly_thesis": thesis,
+            "rolling_thesis": thesis,
             "top_event_ids": top_ids,
             "timeline_event_ids": [event["event_id"] for event in sorted(events, key=lambda item: item["event_at"])],
             "watch_candidate_ids": [item["candidate_id"] for item in records if item["decision"] == "watch"],

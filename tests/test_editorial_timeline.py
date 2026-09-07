@@ -1,4 +1,6 @@
 import importlib.util
+import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -13,13 +15,23 @@ SPEC.loader.exec_module(MODULE)
 
 
 class EditorialTimelineTest(unittest.TestCase):
+    def test_builder_can_run_directly_outside_repository_cwd(self):
+        result = subprocess.run(
+            [sys.executable, str(MODULE_PATH), "--help"],
+            cwd="/tmp",
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+
     def test_future_issues_do_not_use_event_specific_manual_story_overrides(self):
         self.assertFalse(hasattr(MODULE, "BLOG_SUMMARY_OVERRIDES"))
 
-    def test_only_readiness_qualified_writer_drafts_ship_as_deep_stories(self):
+    def test_only_readiness_qualified_writer_drafts_ship_as_core_events(self):
         selected = ["evt_ready", "evt_sparse", "evt_failed"]
         writer_drafts = {"evt_ready": {"event_id": "evt_ready"}}
-        actual = MODULE.publication_deep_event_ids(selected, writer_drafts, {"drafts": list(writer_drafts.values())})
+        actual = MODULE.publication_core_event_ids(selected, writer_drafts, {"drafts": list(writer_drafts.values())})
         self.assertEqual(actual, ["evt_ready"])
 
     def test_cover_manifest_resolves_specific_asset_and_safe_fallback(self):
@@ -56,6 +68,22 @@ class EditorialTimelineTest(unittest.TestCase):
         self.assertEqual(cover["url"], "https://cdn.example.com/legal.jpg")
         self.assertEqual(cover["kind"], "official")
 
+    def test_source_record_official_image_precedes_generated_cover(self):
+        cover = MODULE.resolve_cover_image(
+            {"covers": [], "fallbacks": {}},
+            "evt_new",
+            "type.product_release",
+            source_url="https://example.com/article",
+            official_image_url="https://cdn.example.com/official.jpg",
+            headline="企业模型发布新版本",
+            category="产品与公司",
+            generated_dirs=[Path("/tmp/should-not-be-used")],
+        )
+
+        self.assertEqual(cover["url"], "https://cdn.example.com/official.jpg")
+        self.assertEqual(cover["kind"], "official")
+        self.assertEqual(cover["review_status"], "approved")
+
     def test_missing_official_cover_generates_topic_specific_svg(self):
         with tempfile.TemporaryDirectory() as directory:
             cover = MODULE.resolve_cover_image(
@@ -71,6 +99,8 @@ class EditorialTimelineTest(unittest.TestCase):
             svg = Path(directory) / Path(cover["url"]).name
 
             self.assertEqual(cover["kind"], "editorial_diagram")
+            self.assertEqual(cover["review_status"], "pending")
+            self.assertEqual(cover["semantic_match"], "passed")
             self.assertTrue(svg.exists())
             self.assertIn("从芯片到万卡集群", svg.read_text(encoding="utf-8"))
 
@@ -135,7 +165,7 @@ class EditorialTimelineTest(unittest.TestCase):
         self.assertEqual(timeline[4]["event_ids"], ["evt_1"])
         self.assertNotIn("08.23", [day["date"] for day in timeline])
 
-    def test_timeline_preserves_both_dates_touched_by_rolling_window(self):
+    def test_timeline_limits_rolling_window_to_seven_local_calendar_dates(self):
         events = [{
             "event_id": "evt_1", "event_at": "2026-08-25T12:00:00Z",
             "primary_route": "extended.foundation_multimodal",
@@ -145,9 +175,35 @@ class EditorialTimelineTest(unittest.TestCase):
             "2026-09-01T00:00:00Z", "2026-08-25T00:00:00Z",
         )
         self.assertEqual([day["date"] for day in timeline], [
-            "08.25", "08.26", "08.27", "08.28", "08.29", "08.30", "08.31", "09.01"
+            "08.26", "08.27", "08.28", "08.29", "08.30", "08.31", "09.01"
         ])
-        self.assertEqual(timeline[0]["story_ids"], ["story_1"])
+        self.assertNotIn("story_1", [story_id for day in timeline for story_id in day["story_ids"]])
+
+    def test_explicit_rolling_start_does_not_expand_briefs_to_eight_dates(self):
+        candidates = {
+            "selected_candidates": [
+                {
+                    "candidate_id": "cand_boundary",
+                    "canonical_title": "Partial eighth date",
+                    "primary_source_id": "src_1",
+                    "source_ids": ["src_1"],
+                    "published_at": "2026-08-25T12:00:00Z",
+                    "primary_route": "extended.ai_agent_tools",
+                    "intelligence_type": "type.product_release",
+                    "tags": {},
+                    "score": 10,
+                }
+            ]
+        }
+        collection = {"source_records": [{
+            "source_id": "src_1", "source_type": "professional_view",
+            "canonical_url": "https://example.com", "raw_excerpt": "Excerpt",
+        }]}
+        briefs = MODULE.build_news_briefs(
+            candidates, collection, set(),
+            "2026-09-01T00:00:00Z", "2026-08-25T00:00:00Z",
+        )
+        self.assertEqual(briefs, [])
 
     def test_p2_briefs_exclude_human_reviewed_candidates_and_keep_accuracy_boundary(self):
         candidates = {

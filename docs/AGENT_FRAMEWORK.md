@@ -44,16 +44,16 @@ fact_selection（确定性节点）
   从正式事件中选择可写 claims、证据、允许判断与禁止外推项
   输出：fact-selection.json（锁定的写作事实白名单）
   ↓
-deep_story writer（新增，可选 LLM，当前优先）
+core_event writer（可选 LLM，当前优先）
   仅使用 fact-selection 中的 fact_units、evidence_context 与 allowed_judgment 生成原创中文文章
   不增加新事实、不弱化归因、不整篇复制来源
   先执行深读就绪度检查：至少3条独立核验事实、3个原子事实、150字事实包和2段证据上下文
   不足的事件自动降为快速解读；Writer失败的事件也不得以兜底模板冒充深读
-  输出：deep-story-drafts.json；失败内容进入 blocked，不硬凑深读
+  输出：core-event-drafts.json；失败内容进入 blocked，不硬凑核心事件
   ↓
 editorial renderer
-  合并 P1 深读、P2 短讯、趋势雷达和一周时间轴
-  输出：editorial-issue.json + weekly-report.html
+  合并 P1 核心事件、P2 短讯、趋势雷达和近7日时间轴
+  输出：editorial-issue.json + rolling-digest.html
   ↓
 p2_localizer（qwen3:8b）
   将英文P2标题与摘要忠实转为中文，保留原文和P2待核验状态
@@ -76,7 +76,7 @@ validate_issue
 ## LLM 的职责
 
 - `qwen3:8b`：候选分类、标签、初筛、P2 辅助处理。
-- `qwen3:14b`：只对已核验且正文完整的正式事件生成 `deep_story`，与8B串行运行。
+- `qwen3:14b`：只对已核验且正文完整的正式事件生成 `core_event`，与8B串行运行。
 - Verification Harness 与人工审核共同约束 LLM；模型判断不能替代来源证据。
 
 ## 降级策略

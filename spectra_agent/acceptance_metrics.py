@@ -5,12 +5,18 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 from typing import Any
 
-
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_RUNS_DIR = ROOT / "spectra_agent" / "runs"
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from spectra_agent.compat import compatible_artifact
+from spectra_agent.paths import DEFAULT_DATA_ROOT
+
+DEFAULT_RUNS_DIR = DEFAULT_DATA_ROOT / "runs"
 
 
 def read_json(path: Path, default: Any = None) -> Any:
@@ -49,7 +55,7 @@ def metrics_for_run(run_dir: Path, require_completed: bool = True) -> dict[str, 
         return None
     candidates = read_json(run_dir / "candidates.json", {})
     verified = read_json(run_dir / "verified-events.json", {})
-    checkpoint = read_json(run_dir / "p1-long-editorial-checkpoint.json", {"jobs": {}})
+    checkpoint = read_json(compatible_artifact(run_dir, "core-event-checkpoint.json"), {"jobs": {}})
     review = read_json(run_dir / "p1-review.json", {"records": []})
     issue = read_json(run_dir / "editorial-issue.json", {})
     adjustments = read_json(run_dir / "manual-editorial-adjustments.json", {"records": []})

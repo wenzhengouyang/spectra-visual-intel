@@ -39,7 +39,7 @@ class CollectorContractTest(unittest.TestCase):
         self.assertEqual(record["access_status"], "success")
         self.assertEqual(set(record), {
             "schema_version", "record_type", "source_id", "registry_id", "source_type", "source_name",
-            "publisher", "author", "source_url", "canonical_url", "raw_title", "raw_text", "raw_excerpt",
+            "publisher", "author", "source_url", "canonical_url", "raw_title", "raw_text", "raw_excerpt", "official_image_url",
             "published_at", "collected_at", "language", "content_hash", "access_status", "http_status",
             "failure_reason", "discovered_by", "discovery_context", "rights_scope", "processing_status"
         })
@@ -111,6 +111,22 @@ class CollectorContractTest(unittest.TestCase):
         self.assertLessEqual(len(records[0]["raw_excerpt"]), 82)
         self.assertTrue(records[0]["raw_excerpt"].endswith("…"))
         self.assertEqual(health["truncated_excerpts"], 1)
+
+    def test_feed_official_image_enters_source_record(self):
+        source = {
+            "registry_id": "reg_feed_image", "adapter": "rss", "source_name": "Test",
+            "source_type": "official_announcement", "publisher": "Publisher",
+            "url": "https://example.com/feed.xml", "rights_scope": "excerpt", "language": "en",
+        }
+        feed = b'''<?xml version="1.0"?><rss version="2.0" xmlns:media="http://search.yahoo.com/mrss/"><channel><title>Test</title><item>
+          <title>AI model release</title><link>https://example.com/release</link>
+          <pubDate>Mon, 10 Aug 2026 10:00:00 GMT</pubDate>
+          <description>Official release notes.</description>
+          <media:thumbnail url="https://cdn.example.com/release.jpg" />
+        </item></channel></rss>'''
+        with patch.object(MODULE, "fetch_bytes", return_value=feed):
+            records, _ = MODULE.collect_feed(source, self.ctx, [])
+        self.assertEqual(records[0]["official_image_url"], "https://cdn.example.com/release.jpg")
 
     def test_registry_includes_compliant_blog_and_podcast_sources(self):
         path = Path(__file__).parents[1] / "collector" / "source_registry.v0.2.json"

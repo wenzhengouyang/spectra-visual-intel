@@ -26,6 +26,11 @@ def clean(draft: dict) -> tuple[dict, list[str]]:
     actions = []
     for index, paragraph in enumerate(result.get("paragraphs") or []):
         text = paragraph.strip()
+        if text.lower().strip(" ：:[]{}\"") in {
+            "judgment", "headline", "dek", "paragraphs", "claim_ids",
+        }:
+            actions.append(f"removed paragraph[{index}]: leaked JSON field name")
+            continue
         if judgment and text == judgment:
             actions.append(f"removed paragraph[{index}]: duplicates judgment")
             continue

@@ -25,7 +25,7 @@ def main():
     selected = data["selected_candidates"]
     lines = [
         "# 结构化处理与核验候选 v0.1", "",
-        "> 输入：第一次自动采集的 143 条 `source_record`；本文件是核验工作池，不是正式周报。", "",
+        "> 输入：第一次自动采集的 143 条 `source_record`；本文件是核验工作池，不是正式滚动摘要。", "",
         "## 1. 处理结果", "",
         f"143 条原始记录中有 {summary['successful_input_records']} 条采集成功；硬性排除 {summary['hard_excluded']} 条，"
         f"另有 {summary['soft_demoted']} 条触发负向词并被降权。标题近似去重折叠 {summary['near_duplicate_records_collapsed']} 条；"
@@ -72,7 +72,7 @@ def main():
         "- 论文摘要只能支持候选筛选，关键数字、结论和限制必须回到论文正文；",
         "- 13 个 GitHub Commit 只形成一个仓库动态，不得拆成 13 条新闻；",
         "- 自动驾驶和手术机器人等具身垂直应用只降权、不硬删，以符合 PRD 对具身应用核心场景的要求；",
-        "- 25 条全部核验成本仍较高，下一步应先处理 P1，再决定最终进入周报的 5—10 个事件。", ""
+        "- 25 条全部核验成本仍较高，下一步应先处理 P1，再决定最终进入滚动摘要的 5—10 个事件。", ""
     ])
     Path(args.output).write_text("\n".join(lines), encoding="utf-8")
 

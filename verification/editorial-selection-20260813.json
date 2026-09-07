@@ -1,5 +1,5 @@
 {
-  "weekly_thesis": "本周视频模型优化开始同时推进长时生成、跨镜头一致性与显式物理建模；具身智能侧的关键变化，是评测与训练数据正在从视觉逼真转向可测量的物理正确性。",
+  "rolling_thesis": "本周视频模型优化开始同时推进长时生成、跨镜头一致性与显式物理建模；具身智能侧的关键变化，是评测与训练数据正在从视觉逼真转向可测量的物理正确性。",
   "verified_by": "user editorial selection + Codex primary-source verification",
   "include_candidate_ids": [
     "cand_d2cd4cccc8535e3d",

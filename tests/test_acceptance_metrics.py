@@ -27,7 +27,7 @@ class AcceptanceMetricsTest(unittest.TestCase):
         write(run / "p1-review.json", {"records": [{"review_policy": {"tier": "sample_review"}, "suggested_evidence": [
             {"human_fact_decision": "keep"}, {"human_fact_decision": "modify"},
         ]}]})
-        write(run / "p1-long-editorial-checkpoint.json", {"jobs": {
+        write(run / "core-event-checkpoint.json", {"jobs": {
             "evt_1": {"status": writer_status}, "evt_sparse": {"status": "demoted"},
         }})
         write(run / "editorial-issue.json", {"editorial_stories": [{}, {}, {}], "news_briefs": [{}]})

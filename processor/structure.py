@@ -73,7 +73,7 @@ LLM_ANALYSIS_SCHEMA: dict[str, Any] = {
                     "same_event_group": {"type": "string"},
                     "what": {"type": "string"},
                     "why": {"type": "string"},
-                    "importance_score": {"type": "integer", "minimum": 0, "maximum": 100, "description": "0-100分。50为一般候选，70以上为本周重要，85以上仅用于行业级重大变化。"},
+                    "importance_score": {"type": "integer", "minimum": 0, "maximum": 100, "description": "0-100分。50为一般候选，70以上为近7日重要，85以上仅用于行业级重大变化。"},
                     "novelty_score": {"type": "integer", "minimum": 0, "maximum": 100, "description": "0-100分。衡量相对已知方法的新增程度，不得使用1-10量表。"},
                     "strategy_relevance_score": {"type": "integer", "minimum": 0, "maximum": 100, "description": "0-100分。衡量对视频/图像模型产品策略的直接相关性。"},
                     "confidence": {"type": "string", "enum": ["low", "medium", "high"]},
@@ -456,7 +456,7 @@ def aggregate(scored: list[dict[str, Any]]) -> list[dict[str, Any]]:
             "negative_signals": sorted({term for item in group for term in item["soft_negative_hits"]}),
             "aggregation": {
                 "source_count": len(records),
-                "method": "fixed_repository_weekly_cluster" if is_github_cluster else ("same_event_rule" if event_rule and len(records) > 1 else ("near_title_dedupe" if len(records) > 1 else "single_source")),
+                "method": "fixed_repository_rolling_cluster" if is_github_cluster else ("same_event_rule" if event_rule and len(records) > 1 else ("near_title_dedupe" if len(records) > 1 else "single_source")),
                 "note": "多个提交仅构成一个仓库动态候选，不按多条新闻计数。" if is_github_cluster else (f"按可审计规则 {event_rule} 合并跨来源同事件。" if event_rule and len(records) > 1 else None)
             },
             "hard_gates": {
@@ -479,7 +479,7 @@ def aggregate(scored: list[dict[str, Any]]) -> list[dict[str, Any]]:
 def verification_questions(route: str, repo: bool,
                            source_types: set[str | None] | None = None) -> list[str]:
     if repo:
-        return ["仓库是否在本周正式首次开源？", "哪些提交属于能力或代码变化，而非文档维护？", "是否存在官方发布说明或模型权重？"]
+        return ["仓库是否在近7日正式首次开源？", "哪些提交属于能力或代码变化，而非文档维护？", "是否存在官方发布说明或模型权重？"]
     source_types = source_types or set()
     if "financial_report" in source_types:
         return [
@@ -689,7 +689,7 @@ def candidate_rationale(candidate: dict[str, Any]) -> str:
     if candidate.get("selection_reason") == "previously_verified_regression_sample":
         return "该信号已在真实样刊中完成二轮核验，本轮用于检验自动链路能否稳定召回。"
     if candidate["track"] == "track.fixed":
-        return "固定关注仓库在本周出现集中更新，需要确认是否构成正式开源、模型发布或能力变化。"
+        return "固定关注仓库在近7日出现集中更新，需要确认是否构成正式开源、模型发布或能力变化。"
     route_text = {
         "visual_value.evaluation": "可能补充视频/图像模型的评测维度、指标或诊断方法",
         "frontier.video_generation": "可能改变视频生成在时长、一致性、控制或生产效率上的能力边界",
@@ -1078,7 +1078,7 @@ def process(payload: dict[str, Any], config: dict[str, Any]) -> dict[str, Any]:
             "routed_before_aggregation": len(routed),
             "candidate_events_after_aggregation": len(candidates),
             "near_duplicate_records_collapsed": sum(max(0, c["aggregation"]["source_count"] - 1) for c in candidates if c["aggregation"]["method"] == "near_title_dedupe"),
-            "same_event_records_collapsed": sum(max(0, c["aggregation"]["source_count"] - 1) for c in candidates if c["aggregation"]["method"] in {"fixed_repository_weekly_cluster", "same_event_rule"}),
+            "same_event_records_collapsed": sum(max(0, c["aggregation"]["source_count"] - 1) for c in candidates if c["aggregation"]["method"] in {"fixed_repository_rolling_cluster", "same_event_rule"}),
             "selected_for_verification": len(selected),
             "feed_candidate_count": len(feed_candidates),
             "selected_by_intelligence_type": dict(Counter(c["intelligence_type"] for c in selected)),

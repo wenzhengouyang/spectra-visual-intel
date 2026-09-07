@@ -11,9 +11,9 @@ import tempfile
 from pathlib import Path
 
 try:
-    from spectra_agent.run import DEFAULT_CONFIG, ROOT, read_json, resolve_config
+    from spectra_agent.run import DEFAULT_CONFIG, ROOT, read_json, resolve_config, runs_dir
 except ImportError:
-    from run import DEFAULT_CONFIG, ROOT, read_json, resolve_config
+    from run import DEFAULT_CONFIG, ROOT, read_json, resolve_config, runs_dir
 
 
 def parse_selection(value: str | None, size: int) -> set[int]:
@@ -80,7 +80,7 @@ def main() -> int:
     args = parser.parse_args()
 
     _, config = resolve_config(args.config)
-    run_dir = ROOT / config["runs_dir"] / args.run_id
+    run_dir = runs_dir(config) / args.run_id
     review_path = run_dir / "p1-review.json"
     if not review_path.exists():
         raise SystemExit(f"review queue not found: {review_path}")

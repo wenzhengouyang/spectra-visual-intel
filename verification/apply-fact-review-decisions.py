@@ -5,9 +5,16 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from spectra_agent.compat import rolling_thesis
 
 
 def read(path: str) -> dict[str, Any]:
@@ -57,8 +64,9 @@ def apply_decisions(review: dict[str, Any], decisions: dict[str, Any]) -> dict[s
     review["review_status"] = "approved"
     review["verified_by"] = decisions["verified_by"]
     review["verified_at"] = decisions.get("verified_at") or datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-    if decisions.get("weekly_thesis"):
-        review["editorial_selection"] = {"weekly_thesis": decisions["weekly_thesis"]}
+    thesis = rolling_thesis(decisions)
+    if thesis:
+        review["editorial_selection"] = {"rolling_thesis": thesis}
     return review
 
 

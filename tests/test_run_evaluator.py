@@ -90,6 +90,19 @@ class RunEvaluatorTest(unittest.TestCase):
             self.assertTrue((run / "eval-report.json").exists())
             self.assertTrue((run / "eval-report.md").exists())
 
+    def test_writer_demotion_rate_excludes_sparse_fact_packages(self):
+        with tempfile.TemporaryDirectory() as temp:
+            run, config = self.make_run(Path(temp))
+            write(run / "core-event-checkpoint.json", {"jobs": {
+                "sparse": {"status": "demoted"},
+                "passed": {"status": "completed"},
+                "writer_failed": {"status": "demoted_after_failed_long_story"},
+            }})
+            report = evaluate_run(run, config, run.parent)
+        self.assertEqual(report["review_behavior"]["writer_jobs"], 3)
+        self.assertEqual(report["review_behavior"]["writer_demotions"], 1)
+        self.assertEqual(report["review_behavior"]["writer_demotion_rate"], 0.5)
+
 
 if __name__ == "__main__":
     unittest.main()

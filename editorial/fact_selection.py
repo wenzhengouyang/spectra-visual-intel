@@ -44,6 +44,8 @@ AUDIT_ONLY_PATTERNS = (
     "仍需交叉验证",
     "保留归因和预测边界",
     "人工确认事实与证据可用",
+    "人工确认来源正文与事实证据可用",
+    "人工确认来源与事实证据可用",
 )
 
 
@@ -190,7 +192,8 @@ def build_fact_selection(verified: dict[str, Any], review: dict[str, Any],
                 "mode": "long_form",
                 "min_fact_units": 8,
                 "min_fact_characters": 300,
-                "min_characters": 600,
+                "min_characters": 0,
+                "preferred_characters": 600,
                 "max_characters": 1000,
             }
         audit_packet = {

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""SPECTRA one-command, human-gated weekly intelligence agent.
+"""SPECTRA one-command, human-gated rolling intelligence agent.
 
 Commands:
   run     collect + structure + create P1 review queue, then pause
@@ -30,6 +30,16 @@ try:
     from llm_client import load_local_env
 except ImportError:  # `python -m unittest` imports this file as spectra_agent.run
     from spectra_agent.llm_client import load_local_env
+
+try:
+    from paths import runs_path
+except ImportError:
+    from spectra_agent.paths import runs_path
+
+try:
+    from compat import canonical_artifact, compatible_artifact, config_section
+except ImportError:
+    from spectra_agent.compat import canonical_artifact, compatible_artifact, config_section
 
 try:
     from acceptance_metrics import distinct_completed_runs, metrics_for_run, rolling_summary, write_outputs
@@ -77,7 +87,7 @@ def write_json(path: Path, payload: dict[str, Any]) -> None:
 
 def prepare_static_draft(run_dir: Path, static_page: Path) -> Path:
     """Copy the report shell and every relative dependency it references."""
-    static_draft = run_dir / "weekly-report.html"
+    static_draft = run_dir / "rolling-digest.html"
     shutil.copyfile(static_page, static_draft)
     for relative_path in STATIC_ASSETS:
         source = ROOT / relative_path
@@ -95,26 +105,26 @@ def prepare_static_draft(run_dir: Path, static_page: Path) -> Path:
 def validate_static_package(run_dir: Path, static_draft: Path, issue: dict[str, Any]) -> None:
     """Fail closed when a generated report is not a self-contained local package."""
     if not static_draft.is_file() or static_draft.stat().st_size == 0:
-        raise WorkflowError("generated weekly report is missing")
+        raise WorkflowError("generated rolling digest is missing")
     html = static_draft.read_text(encoding="utf-8")
     for marker in ("<!-- ISSUE_DATA_START -->", "<!-- ISSUE_DATA_END -->"):
         if html.count(marker) != 1:
-            raise WorkflowError(f"weekly report needs exactly one {marker}")
+            raise WorkflowError(f"rolling digest needs exactly one {marker}")
     if html.count('id="issue-data"') != 1:
-        raise WorkflowError("weekly report needs exactly one embedded issue payload")
+        raise WorkflowError("rolling digest needs exactly one embedded issue payload")
     payload_matches = re.findall(
         r'<script\b[^>]*\bid="issue-data"[^>]*>(.*?)</script>',
         html,
         flags=re.IGNORECASE | re.DOTALL,
     )
     if len(payload_matches) != 1:
-        raise WorkflowError("weekly report issue payload is missing or duplicated")
+        raise WorkflowError("rolling digest issue payload is missing or duplicated")
     try:
         embedded_issue = json.loads(payload_matches[0])
     except json.JSONDecodeError as exc:
-        raise WorkflowError(f"weekly report issue payload is invalid JSON: {exc}") from exc
+        raise WorkflowError(f"rolling digest issue payload is invalid JSON: {exc}") from exc
     if embedded_issue != issue:
-        raise WorkflowError("weekly report issue payload does not match editorial-issue.json")
+        raise WorkflowError("rolling digest issue payload does not match editorial-issue.json")
 
     run_root = run_dir.resolve()
 
@@ -140,7 +150,7 @@ def validate_static_package(run_dir: Path, static_draft: Path, issue: dict[str, 
         if href and not re.match(r"^(?:https?:)?//", href.group(1)):
             stylesheet_urls.append(href.group(1))
     if not stylesheet_urls:
-        raise WorkflowError("weekly report has no packaged stylesheet references")
+        raise WorkflowError("rolling digest has no packaged stylesheet references")
     for stylesheet_url in stylesheet_urls:
         require_packaged_file(stylesheet_url, "stylesheet")
 
@@ -157,7 +167,7 @@ def resolve_config(path: str) -> tuple[Path, dict[str, Any]]:
 
 
 def runs_dir(config: dict[str, Any]) -> Path:
-    return ROOT / config["runs_dir"]
+    return runs_path(config, ROOT)
 
 
 def latest_pointer(config: dict[str, Any]) -> Path:
@@ -202,9 +212,53 @@ def update_state(run_dir: Path, **changes: Any) -> dict[str, Any]:
             f.truncate()
             json.dump(state, f, ensure_ascii=False, indent=2)
             f.write("\n")
+            sync_issue_workflow(run_dir, state)
             return state
         finally:
             fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+
+
+def sync_issue_workflow(run_dir: Path, state: dict[str, Any]) -> None:
+    """Project the canonical run state into the generated JSON and HTML."""
+    issue_path = run_dir / "editorial-issue.json"
+    if not issue_path.exists():
+        return
+    try:
+        issue = read_json(issue_path)
+        review_status = (
+            read_json(run_dir / "p1-review.json").get("review_status")
+            if (run_dir / "p1-review.json").exists()
+            else None
+        )
+    except (OSError, ValueError, json.JSONDecodeError):
+        return
+    issue["workflow"] = {
+        "status": state.get("status"),
+        "stage": state.get("current_stage"),
+        "review_status": review_status,
+        "publish_status": state.get("publish_status", "not_published"),
+        "paused_reason": state.get("paused_reason"),
+        "updated_at": state.get("updated_at"),
+    }
+    write_json(issue_path, issue)
+    html_path = canonical_artifact(run_dir, "rolling-digest.html")
+    if not html_path.exists():
+        return
+    html = html_path.read_text(encoding="utf-8")
+    payload = json.dumps(issue, ensure_ascii=False, separators=(",", ":")).replace("<", "\\u003c")
+    replacement = (
+        '<!-- ISSUE_DATA_START --><script id="issue-data" type="application/json">'
+        f"{payload}</script><!-- ISSUE_DATA_END -->"
+    )
+    html, count = re.subn(
+        r"<!-- ISSUE_DATA_START -->.*?<!-- ISSUE_DATA_END -->",
+        lambda _: replacement,
+        html,
+        count=1,
+        flags=re.S,
+    )
+    if count == 1:
+        html_path.write_text(html, encoding="utf-8")
 
 
 def log(run_dir: Path, stage: str, message: str, **details: Any) -> None:
@@ -502,10 +556,6 @@ def find_incremental_baseline(config: dict[str, Any], end: datetime, exclude: Pa
     return max(candidates, default=(None, None), key=lambda item: item[0])[1]
 
 
-# Compatibility alias for integrations created before daily collection.
-find_weekly_baseline = find_incremental_baseline
-
-
 def annotate_display_window(collection_path: Path, config: dict[str, Any]) -> None:
     """Add the rolling collection window used by the daily page."""
     collection = read_json(collection_path)
@@ -714,7 +764,7 @@ def review_template(collection: dict[str, Any], candidates: dict[str, Any], run_
     return {
         "version": "0.2", "record_type": "p1_human_review", "run_id": run_id,
         "review_status": "pending", "verified_at": None, "verified_by": None,
-        "editorial_selection": {"weekly_thesis": ""},
+        "editorial_selection": {"rolling_thesis": ""},
         "records": records, "additional_source_records": [],
     }
 
@@ -896,7 +946,7 @@ def materialize_review_metadata(review: dict[str, Any], candidates: dict[str, An
 def write_review_instructions(run_dir: Path, count: int, gated_count: int = 0) -> None:
     text = f"""# P1 人工核验闸门
 
-本次共有 **{count} 条 P1 候选**。主流程已暂停，不会在核验完成前生成或发布周报。
+本次共有 **{count} 条 P1 候选**。主流程已暂停，不会在核验完成前生成或发布滚动情报。
 
 另有 **{gated_count} 条**因正文完整度或事实措辞保真未通过，已写入 `gated-review.json`。这些记录不会进入 `p1-review.json` 或P1深读；只有补齐正文或人工确认并按原文限定重写后，才能在后续运行中重新参与筛选。
 
@@ -935,7 +985,7 @@ def create_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
         "schema_version": "0.1", "record_type": "spectra_agent_run", "run_id": run_id,
         "status": "initialized", "created_at": utc_now(), "updated_at": utc_now(),
         "current_stage": "initialize", "paused_reason": None, "error": None,
-        "publish_status": "not_ready",
+        "publish_status": "not_published",
         "llm_requested": bool(args.llm),
         "llm": None,
         "artifacts": {
@@ -944,11 +994,11 @@ def create_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
             "verification_candidates": "verification-candidates.json",
             "evidence_review": "evidence-review.json",
             "p1_fact_expansion_checkpoint": "p1-fact-expansion-checkpoint.json",
-            "p1_long_editorial_checkpoint": "p1-long-editorial-checkpoint.json",
-            "p1_long_editorial_audit": "p1-long-editorial-audit.json",
+            "core_event_checkpoint": "core-event-checkpoint.json",
+            "core_event_audit": "core-event-audit.json",
             "discussion_radar": "discussion-radar.json",
             "verified": "verified-events.json", "issue": "editorial-issue.json",
-            "web_draft": "weekly-report.html", "report": "run-report.md",
+            "web_draft": "rolling-digest.html", "report": "run-report.md",
         },
         "history": [],
     }
@@ -1057,7 +1107,7 @@ def create_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
             update_state(
                 run_dir,
                 collection_mode="full_baseline",
-                incremental_fallback_reason="scheduled_weekly_baseline_or_valid_same_week_baseline_not_found",
+                incremental_fallback_reason="scheduled_rolling_baseline_or_valid_recent_baseline_not_found",
             )
         annotate_display_window(collection_path, config)
         command(run_dir, "validate_collection", [sys.executable, "scripts/validate-source-run.py", str(collection_path)])
@@ -1318,10 +1368,11 @@ def resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
             "--output", str(fact_selection_path),
         ])
 
-        deep_story_config = config.get("deep_story_writer") or config.get("editorial_writer") or {}
-        editorial_drafts_path = run_dir / "deep-story-drafts.json"
-        editorial_audit_path = run_dir / "p1-long-editorial-audit.json"
-        background_mode = deep_story_config.get("generation_mode") == "serial_background"
+        core_event_config = config_section(config, "core_event_writer")
+        editorial_drafts_path = canonical_artifact(run_dir, "core-event-drafts.json")
+        editorial_audit_path = canonical_artifact(run_dir, "core-event-audit.json")
+        editorial_checkpoint_path = canonical_artifact(run_dir, "core-event-checkpoint.json")
+        background_mode = core_event_config.get("generation_mode") == "serial_background"
         if state.get("llm_requested") and background_mode and not args.editorial_worker and not resume_from_editorial_review:
             worker_token, active_pid = reserve_editorial_worker(run_dir)
             if not worker_token:
@@ -1377,41 +1428,41 @@ def resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
                 "run_id": run_dir.name,
                 "status": "waiting_for_editorial",
                 "worker_pid": process.pid,
-                "checkpoint": str(run_dir / "p1-long-editorial-checkpoint.json"),
+                "checkpoint": str(editorial_checkpoint_path),
                 "publish_status": "not_published",
             }, ensure_ascii=False, indent=2))
             return 0
-        if state.get("llm_requested") and deep_story_config.get("enabled", True):
+        if state.get("llm_requested") and core_event_config.get("enabled", True):
             update_state(run_dir, current_stage="p1_editorial_background")
             # A retry must never reuse a draft bundle left by an earlier writer
             # attempt that subsequently failed validation.
             if editorial_drafts_path.exists():
                 editorial_drafts_path.unlink()
             try:
-                deep_story_command = [
-                    llm_python(config), "editorial/p1_long_pipeline.py",
+                core_event_command = [
+                    llm_python(config), "editorial/core_event_pipeline.py",
                     "--verified", str(verified_path),
                     "--fact-selection", str(fact_selection_path),
                     "--output", str(editorial_drafts_path),
                     "--audit-output", str(editorial_audit_path),
-                    "--checkpoint", str(run_dir / "p1-long-editorial-checkpoint.json"),
+                    "--checkpoint", str(editorial_checkpoint_path),
                 ]
-                if deep_story_config.get("model"):
-                    deep_story_command += ["--model", str(deep_story_config["model"])]
-                if deep_story_config.get("num_ctx"):
-                    deep_story_command += ["--num-ctx", str(deep_story_config["num_ctx"])]
-                if deep_story_config.get("num_predict"):
-                    deep_story_command += ["--num-predict", str(deep_story_config["num_predict"])]
-                if deep_story_config.get("max_attempts"):
-                    deep_story_command += ["--max-attempts", str(deep_story_config["max_attempts"])]
-                command(run_dir, "p1_editorial_background", deep_story_command)
+                if core_event_config.get("model"):
+                    core_event_command += ["--model", str(core_event_config["model"])]
+                if core_event_config.get("num_ctx"):
+                    core_event_command += ["--num-ctx", str(core_event_config["num_ctx"])]
+                if core_event_config.get("num_predict"):
+                    core_event_command += ["--num-predict", str(core_event_config["num_predict"])]
+                if core_event_config.get("max_attempts"):
+                    core_event_command += ["--max-attempts", str(core_event_config["max_attempts"])]
+                command(run_dir, "p1_editorial_background", core_event_command)
             except WorkflowError:
-                if deep_story_config.get("required", False):
+                if core_event_config.get("required", False):
                     raise
                 log(run_dir, "p1_editorial_background", "writer_failed_using_quick_read_fallback")
 
         if args.editorial_only:
-            checkpoint = read_json(run_dir / "p1-long-editorial-checkpoint.json")
+            checkpoint = read_json(editorial_checkpoint_path)
             jobs = list((checkpoint.get("jobs") or {}).values())
             update_state(
                 run_dir,
@@ -1428,7 +1479,7 @@ def resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
                 "auto_passed": sum(item.get("status") == "completed" for item in jobs),
                 "demoted": sum(str(item.get("status", "")).startswith("demoted") for item in jobs),
                 "audit": str(editorial_audit_path),
-                "checkpoint": str(run_dir / "p1-long-editorial-checkpoint.json"),
+                "checkpoint": str(editorial_checkpoint_path),
                 "publish_status": "not_published",
             }, ensure_ascii=False, indent=2))
             return 0
@@ -1436,10 +1487,48 @@ def resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
         update_state(run_dir, current_stage="generate")
         issue_path = run_dir / "editorial-issue.json"
         static_draft = prepare_static_draft(run_dir, ROOT / config["static_page"])
-        generate_command = [sys.executable, "editorial/build-editorial-issue.py", "--verified", str(verified_path.relative_to(ROOT)), "--review", str(review_path.relative_to(ROOT)), "--candidates", str((run_dir / "candidates.json").relative_to(ROOT)), "--collection", str((run_dir / "collection.json").relative_to(ROOT)), "--output", str(issue_path.relative_to(ROOT)), "--static", str(static_draft.relative_to(ROOT))]
+        # Run data may live outside the source checkout. The builder accepts
+        # absolute paths, so never force data artifacts through relative_to(ROOT).
+        generate_command = [
+            sys.executable, "editorial/build-editorial-issue.py",
+            "--verified", str(verified_path),
+            "--review", str(review_path),
+            "--candidates", str(run_dir / "candidates.json"),
+            "--collection", str(run_dir / "collection.json"),
+            "--output", str(issue_path),
+            "--static", str(static_draft),
+        ]
         if editorial_drafts_path.exists():
-            generate_command += ["--drafts", str(editorial_drafts_path.relative_to(ROOT))]
+            generate_command += ["--drafts", str(editorial_drafts_path)]
         command(run_dir, "generate", generate_command)
+        issue = read_json(issue_path)
+        minimum_core_events = int(
+            (config.get("publication_quality") or {}).get("minimum_core_events", 1)
+        )
+        core_event_count = sum(
+            story.get("article_type") == "core_event"
+            for story in issue.get("editorial_stories", [])
+        )
+        if core_event_count < minimum_core_events:
+            update_state(
+                run_dir,
+                status="waiting_for_editorial_review",
+                current_stage="content_quality_review",
+                paused_reason=(
+                    f"core_event quality gate: {core_event_count}/{minimum_core_events}"
+                ),
+                error=None,
+                publish_status="not_published",
+            )
+            print(json.dumps({
+                "run_id": run_dir.name,
+                "status": "waiting_for_editorial_review",
+                "current_stage": "content_quality_review",
+                "core_event_count": core_event_count,
+                "minimum_core_events": minimum_core_events,
+                "publish_status": "not_published",
+            }, ensure_ascii=False, indent=2))
+            return 2
         localizer_config = config.get("p2_localizer") or config.get("p2_translation") or {}
         localization_review = run_dir / "p2-localization-review.json"
         if state.get("llm_requested") and localizer_config.get("enabled", True):
@@ -1460,6 +1549,25 @@ def resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
                 localize_command += ["--num-ctx", str(localizer_config["num_ctx"])]
             command(run_dir, "p2_localizer", localize_command)
         issue = read_json(issue_path)
+        blocked_localizations = int((issue.get("localization") or {}).get("blocked_briefs", 0))
+        if blocked_localizations:
+            update_state(
+                run_dir,
+                status="waiting_for_editorial_review",
+                current_stage="localization_review",
+                paused_reason=f"{blocked_localizations} localized briefs require review",
+                error=None,
+                publish_status="not_published",
+            )
+            print(json.dumps({
+                "run_id": run_dir.name,
+                "status": "waiting_for_editorial_review",
+                "current_stage": "localization_review",
+                "blocked_briefs": blocked_localizations,
+                "review_file": str(localization_review),
+                "publish_status": "not_published",
+            }, ensure_ascii=False, indent=2))
+            return 2
         pending_image_ids = [
             story.get("story_id")
             for story in issue.get("editorial_stories", [])
@@ -1530,12 +1638,12 @@ def resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
         acceptance = metrics_for_run(run_dir)
         if acceptance:
             write_json(run_dir / "acceptance-metrics.json", acceptance)
-            runs_dir = ROOT / "spectra_agent" / "runs"
-            acceptance_summary = rolling_summary(distinct_completed_runs(runs_dir, 3), 3)
+            acceptance_runs_dir = runs_dir(config)
+            acceptance_summary = rolling_summary(distinct_completed_runs(acceptance_runs_dir, 3), 3)
             write_outputs(
                 acceptance_summary,
-                runs_dir / "acceptance-summary.json",
-                runs_dir / "acceptance-summary.md",
+                acceptance_runs_dir / "acceptance-summary.json",
+                acceptance_runs_dir / "acceptance-summary.md",
             )
         log(run_dir, "complete", "workflow_completed", events=count, stories=len(issue["editorial_stories"]))
         print(json.dumps({
@@ -1602,7 +1710,7 @@ def show_status(args: argparse.Namespace, config: dict[str, Any]) -> int:
         result["next"] = f"complete {run_dir / 'p1-review.json'}, then run resume"
     elif state["status"] == "waiting_for_editorial":
         result["worker_pid"] = state.get("editorial_worker_pid")
-        result["checkpoint"] = str(run_dir / "p1-long-editorial-checkpoint.json")
+        result["checkpoint"] = str(compatible_artifact(run_dir, "core-event-checkpoint.json"))
         result["worker_log"] = str(run_dir / "p1-editorial-worker.log")
         result["recovery"] = f"if the worker stops, run: python3 spectra_agent/run.py resume --run-id {run_dir.name} --retry"
     print(json.dumps(result, ensure_ascii=False, indent=2))

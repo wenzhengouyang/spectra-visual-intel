@@ -12,6 +12,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 try:
+    from spectra_agent.compat import canonical_artifact
+    from spectra_agent.paths import publish_cache_path
     from spectra_agent.run import (
         DEFAULT_CONFIG,
         ROOT,
@@ -19,10 +21,13 @@ try:
         WorkflowError,
         read_json,
         resolve_config,
+        runs_dir,
         validate_static_package,
         write_json,
     )
 except ImportError:
+    from compat import canonical_artifact
+    from paths import publish_cache_path
     from run import (
         DEFAULT_CONFIG,
         ROOT,
@@ -30,6 +35,7 @@ except ImportError:
         WorkflowError,
         read_json,
         resolve_config,
+        runs_dir,
         validate_static_package,
         write_json,
     )
@@ -55,13 +61,14 @@ def validate_run(run_dir: Path, config: dict) -> dict:
     if review.get("review_status") != "approved":
         raise WorkflowError("P1 review is not approved")
     issue = read_json(run_dir / "editorial-issue.json")
-    report = run_dir / "weekly-report.html"
+    report = canonical_artifact(run_dir, "rolling-digest.html")
     validate_static_package(run_dir, report, issue)
     command([
         sys.executable,
         "scripts/validate-editorial-issue.py",
         "--editorial", str(run_dir / "editorial-issue.json"),
         "--verified", str(run_dir / "verified-events.json"),
+        "--config", str(DEFAULT_CONFIG),
     ], ROOT)
     if (config.get("publishing") or {}).get("require_publication_checks", True):
         if not (run_dir / "eval-report.json").exists():
@@ -80,8 +87,10 @@ def prepare_checkout(config: dict) -> Path:
     publishing = config.get("publishing") or {}
     remote = publishing.get("remote", "origin")
     branch = publishing.get("branch", "main")
-    remote_url = command(["git", "remote", "get-url", remote], ROOT, capture=True)
-    checkout = ROOT / "spectra_agent/.publish-remote"
+    remote_url = publishing.get("remote_url")
+    if not remote_url:
+        remote_url = command(["git", "remote", "get-url", remote], ROOT, capture=True)
+    checkout = publish_cache_path(config)
     if not (checkout / ".git").exists():
         checkout.parent.mkdir(parents=True, exist_ok=True)
         command(["git", "clone", "--branch", branch, "--single-branch", remote_url, str(checkout)], ROOT)
@@ -92,7 +101,7 @@ def prepare_checkout(config: dict) -> Path:
 
 
 def copy_package(run_dir: Path, checkout: Path) -> list[str]:
-    shutil.copyfile(run_dir / "weekly-report.html", checkout / "index.html")
+    shutil.copyfile(canonical_artifact(run_dir, "rolling-digest.html"), checkout / "index.html")
     paths = ["index.html"]
     for relative in STATIC_ASSETS:
         source = run_dir / relative
@@ -116,7 +125,7 @@ def main() -> int:
     args = parser.parse_args()
 
     _, config = resolve_config(args.config)
-    run_dir = ROOT / config["runs_dir"] / args.run_id
+    run_dir = runs_dir(config) / args.run_id
     try:
         validate_run(run_dir, config)
         if not args.push:

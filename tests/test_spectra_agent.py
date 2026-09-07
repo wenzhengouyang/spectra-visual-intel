@@ -21,6 +21,7 @@ from spectra_agent.run import (
     resume_is_allowed,
     review_template,
     select_review_candidates,
+    update_state,
     validate_static_package,
     worker_lock_path,
 )
@@ -31,6 +32,27 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class SpectraAgentGateTest(unittest.TestCase):
+    def test_state_update_projects_workflow_into_issue_and_page(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            run_dir = Path(temporary_directory)
+            (run_dir / "run.json").write_text(json.dumps({
+                "run_id": "daily-20260907", "status": "running",
+                "current_stage": "generate", "publish_status": "not_published",
+            }))
+            (run_dir / "p1-review.json").write_text(json.dumps({"review_status": "approved"}))
+            (run_dir / "editorial-issue.json").write_text(json.dumps({"issue": {}}))
+            (run_dir / "rolling-digest.html").write_text(
+                '<!-- ISSUE_DATA_START --><script id="issue-data" type="application/json">{}</script><!-- ISSUE_DATA_END -->'
+            )
+            update_state(
+                run_dir, status="waiting_for_editorial_review",
+                current_stage="content_quality_review", paused_reason="0/1",
+            )
+            issue = json.loads((run_dir / "editorial-issue.json").read_text())
+            self.assertEqual(issue["workflow"]["stage"], "content_quality_review")
+            self.assertEqual(issue["workflow"]["review_status"], "approved")
+            self.assertIn('"content_quality_review"', (run_dir / "rolling-digest.html").read_text())
+
     @classmethod
     def setUpClass(cls):
         cls.collection = json.loads((ROOT / "collector/runs/first-live-run-v0.2.json").read_text())
@@ -155,7 +177,7 @@ class SpectraAgentGateTest(unittest.TestCase):
             html = draft.read_text(encoding="utf-8")
             self.assertIn('href="tokens.css?v=4"', html)
             self.assertIn('href="app/globals.css?v=19"', html)
-            self.assertIn('href="app/hallmark-editorial.css?v=13"', html)
+            self.assertIn('href="app/hallmark-editorial.css?v=14"', html)
             self.assertIn('id="verifiedBriefIndex"', html)
             self.assertTrue((run_dir / "tokens.css").exists())
             self.assertTrue((run_dir / "app/globals.css").exists())

@@ -138,7 +138,7 @@
           "properties": {
             "record_type": { "const": "editorial_story" },
             "story_id": { "type": "string", "pattern": "^story_" },
-            "article_type": { "enum": ["brief", "deep_dive", "data_point", "field_signal"] },
+            "article_type": { "enum": ["brief", "core_event", "data_point", "field_signal"] },
             "headline": { "type": "string", "minLength": 6, "maxLength": 64 },
             "dek": { "type": "string", "minLength": 20, "maxLength": 220 },
             "one_line_takeaway": { "type": "string", "minLength": 15, "maxLength": 140 },

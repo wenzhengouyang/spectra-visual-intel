@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Merge a weekly baseline, a delta pull, and optional full-window retries."""
+"""Merge a rolling-window baseline, a delta pull, and optional full-window retries."""
 
 from __future__ import annotations
 

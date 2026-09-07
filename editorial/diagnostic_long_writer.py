@@ -67,25 +67,6 @@ INSTRUCTIONS = """你是SPECTRA的中文情报编辑，读者是AI产品策略�
 - 过渡连接：第2段及之后段落**必须**以过渡词开头（"此外"、"同时"、"另外"、"具体而言"），形成自然段落衔接。
 - 同段归因：同一段落内，同一来源的后续句子直接陈述，无需逐句归因。
 
-正确示例（单一来源 - 全部来自VentureBeat）：
-✓ 第1段：据VentureBeat报道，AI代理在企业中获得更多自主权。这种自主权体现在代理能够规划、决策并在系统间行动，无需人类在每一步批准。（直接展开事实，有归因）
-✓ 第2段：此外，代理行为可能具有概率性。这要求治理机制必须在数据层实现，而非依赖抽象政策。（过渡词开头，无归因）
-✓ 第3段：同时，企业需要建立清晰的审批流程。治理系统会自动记录代理的每个决策节点。（过渡词开头，无归因）
-
-错误示例（导语式开头 - 第1段无归因）：
-✗ 第1段：AI代理技术正在改变企业运营方式。（❌ 这是导语，不是正文！第1段必须有归因）
-✗ 第2段：据VentureBeat报道，AI代理在企业中获得更多自主权...（❌ 归因应该在第1段）
-
-错误示例（单一来源但过度归因）：
-✗ 第1段：据VentureBeat报道，AI代理在企业中获得更多自主权...
-✗ 第2段：据VentureBeat报道，代理行为可能具有概率性...（❌ 禁止重复归因！应以"此外"开头）
-✗ 第3段：据VentureBeat报道，企业需要建立审批流程...（❌ 禁止重复归因！应以"同时"开头）
-
-正确示例（多来源）：
-✓ 第1段：据Nature报道，新算法在图像识别上取得突破...（第一个来源，有归因）
-✓ 第2段：此外，该算法在医疗场景的应用也很广泛...（同一来源，无需归因）
-✓ 第3段：据OpenAI博客介绍，他们采用了类似的架构...（新来源，需要归因）
-
 每条事实最多出现一次，标题、摘要与正文不得机械重复。不得新增数字、实体、效果、因果或行业趋势。
 judgment只能改写allowed_judgment，控制在一到两句；allowed_judgment为空时judgment必须返回空字符串。不要输出事实编号或"人工确认、已核验、证据边界"等审计语言。
 段落数组中只能放读者正文，不得把headline、dek、judgment等JSON字段名当成段落文字输出。
@@ -159,16 +140,12 @@ PROHIBITED_EXTRAPOLATIONS = (
     "高效且实用", "后续安排可能", "预计将", "将要", "有望", "可能会"
 )
 
-# 常见中文连接词 - 作为表达习惯允许使用，不进行严格检测
-# 这些词在中文技术写作中是惯用表达，即使英文原文未明确使用对应词汇
-ALLOWED_CHINESE_CONNECTORS = (
-    "体现", "表明", "显示出", "反映", "证明", "确保",
-    "凸显", "提升", "改善", "推动", "促进", "帮助"
-)
-
-# 条件允许的推断词 - 只有在原文或evidence_context中明确包含时才允许
+# 因果、效果与判断词只有在映射事实或其 evidence_context 明确出现时才允许。
+# 不能因为它们是常见中文连接词，就把编辑推断伪装成事实连接。
 CONDITIONAL_INFERENCE_MARKERS = (
-    "有助于", "加速", "意味着", "显著", "重要进展"
+    "有助于", "加速", "显著", "重要进展", "体现", "表明", "显示出",
+    "反映", "证明", "确保", "凸显", "提升", "改善", "推动", "促进",
+    "帮助", "意味着", "使得", "导致", "令", "让", "成为",
 )
 
 
@@ -185,6 +162,59 @@ def ranked_claims(text: str, facts: list[dict], minimum_score: float = 0.08) -> 
         if score >= minimum_score:
             ranked.append((score, fact["claim_id"]))
     return sorted(ranked, reverse=True)
+
+
+def normalized_comparison_text(text: str) -> str:
+    value = re.sub(r"^(?:据[^，。]{1,24}(?:报道|介绍|披露|称)，|论文(?:指出|介绍|称)，)", "", text or "")
+    return re.sub(r"[^\w\u3400-\u9fff]+", "", value).lower()
+
+
+def near_duplicate(left: str, right: str, threshold: float) -> tuple[bool, float]:
+    left_normalized = normalized_comparison_text(left)
+    right_normalized = normalized_comparison_text(right)
+    if not left_normalized or not right_normalized:
+        return False, 0.0
+    ratio = difflib.SequenceMatcher(None, left_normalized, right_normalized).ratio()
+    shorter, longer = sorted((left_normalized, right_normalized), key=len)
+    containment = len(shorter) / max(1, len(longer)) if shorter in longer else 0.0
+    score = max(ratio, containment)
+    return score >= threshold, score
+
+
+def cross_field_duplicate_errors(result: dict) -> list[str]:
+    """Reject field reuse while allowing a headline to summarize a longer body."""
+    headline = str(result.get("headline") or "")
+    dek = str(result.get("dek") or "")
+    paragraphs = [str(item or "") for item in result.get("paragraphs") or []]
+    errors: list[str] = []
+    duplicate, score = near_duplicate(headline, dek, 0.88)
+    if duplicate:
+        errors.append(f"dek repeats headline: {score:.2f}")
+    for index, paragraph in enumerate(paragraphs):
+        duplicate, score = near_duplicate(dek, paragraph, 0.72)
+        if duplicate:
+            errors.append(f"paragraph[{index}] repeats dek: {score:.2f}")
+        for sentence_index, sentence in enumerate(sentence_parts(paragraph)):
+            duplicate, score = near_duplicate(headline, sentence, 0.90)
+            if duplicate:
+                errors.append(
+                    f"paragraph[{index}] sentence[{sentence_index}] repeats headline: {score:.2f}"
+                )
+            duplicate, score = near_duplicate(dek, sentence, 0.86)
+            if duplicate:
+                errors.append(
+                    f"paragraph[{index}] sentence[{sentence_index}] repeats dek: {score:.2f}"
+                )
+    return errors
+
+
+def inference_marker_supported(marker: str, support: str, facts: list[dict], claim_ids: list[str]) -> bool:
+    if marker in support:
+        return True
+    return any(
+        marker in str(fact.get("evidence_context") or "")
+        for fact in facts if fact["claim_id"] in claim_ids
+    )
 
 
 def revision_targets(errors: list[str], draft: dict) -> set[tuple[str, int]]:
@@ -265,6 +295,7 @@ def apply_long_revision(draft: dict, revision: dict, allowed: set[tuple[str, int
         raise ValueError(f"revision returned wrong event_id for {event_id}")
     revised = copy.deepcopy(draft)
     seen: set[tuple[str, int]] = set()
+    paragraph_texts: list[str] = []
     for patch in revision.get("patches") or []:
         target = patch.get("target")
         index = int(patch.get("paragraph_index", -1))
@@ -278,7 +309,17 @@ def apply_long_revision(draft: dict, revision: dict, allowed: set[tuple[str, int
             paragraphs = revised.get("paragraphs") or []
             if not 0 <= index < len(paragraphs):
                 raise ValueError(f"{event_id}: revision paragraph index out of range")
-            paragraphs[index] = patch["text"]
+            # Check for duplicate paragraph text
+            patch_text = patch["text"]
+            for earlier_text in paragraph_texts:
+                similarity = difflib.SequenceMatcher(None, patch_text, earlier_text).ratio()
+                if similarity >= 0.80:
+                    raise ValueError(
+                        f"{event_id}: revision paragraph patch has {similarity:.0%} similarity "
+                        f"to another paragraph - refusing duplicate content"
+                    )
+            paragraph_texts.append(patch_text)
+            paragraphs[index] = patch_text
         else:
             if index != -1:
                 raise ValueError(f"{event_id}: non-paragraph patch must use paragraph_index -1")
@@ -357,6 +398,7 @@ def audit_article(result: dict, facts: list[dict], allowed_judgment: str = "",
             marker in paragraphs[0] for marker in LONG_FORM_ATTRIBUTION_MARKERS
         )
     )
+    errors.extend(cross_field_duplicate_errors(result))
 
     for index, paragraph in enumerate(paragraphs):
         extra = normalized_numbers(paragraph) - allowed_numbers
@@ -400,7 +442,6 @@ def audit_article(result: dict, facts: list[dict], allowed_judgment: str = "",
                 errors.append(
                     f"paragraph[{index}] sentence[{sentence_index}] lacks claim support: {sentence}"
                 )
-                continue
             sentence_support = " ".join(
                 fact["text"] for fact in facts if fact["claim_id"] in sentence_claim_ids
             )
@@ -417,20 +458,15 @@ def audit_article(result: dict, facts: list[dict], allowed_judgment: str = "",
                         f"paragraph[{index}] sentence[{sentence_index}] prohibited extrapolation "
                         f"'{marker}': {sentence}"
                     )
-            # 条件允许的推断词 - 检查原文是否支持（跳过中文连接词）
+            # 因果、效果与判断词必须由映射事实或其证据上下文明确支持。
             for marker in CONDITIONAL_INFERENCE_MARKERS:
-                if marker in sentence and marker not in sentence_support:
-                    # 进一步检查 evidence_context
-                    supported_by_context = any(
-                        marker in fact.get("evidence_context", "")
-                        for fact in facts if fact["claim_id"] in sentence_claim_ids
+                if marker in sentence and not inference_marker_supported(
+                    marker, sentence_support, facts, sentence_claim_ids
+                ):
+                    errors.append(
+                        f"paragraph[{index}] sentence[{sentence_index}] unsupported inference "
+                        f"'{marker}': {sentence}"
                     )
-                    if not supported_by_context:
-                        errors.append(
-                            f"paragraph[{index}] sentence[{sentence_index}] unsupported inference "
-                            f"'{marker}': {sentence}"
-                        )
-            # 注意：ALLOWED_CHINESE_CONNECTORS 不进行检测，作为表达习惯允许
         for earlier_index, earlier in enumerate((result.get("paragraphs") or [])[:index]):
             ratio = difflib.SequenceMatcher(None, paragraph, earlier).ratio()
             if ratio >= 0.62:
@@ -462,7 +498,6 @@ def audit_article(result: dict, facts: list[dict], allowed_judgment: str = "",
             sentence_claim_ids = [claim_id for _, claim_id in sentence_ranked[:3]]
             if not sentence_claim_ids:
                 errors.append(f"{field} sentence[{sentence_index}] lacks claim support: {sentence}")
-                continue
             sentence_support = " ".join(
                 fact["text"] for fact in facts if fact["claim_id"] in sentence_claim_ids
             )
@@ -472,18 +507,14 @@ def audit_article(result: dict, facts: list[dict], allowed_judgment: str = "",
                     errors.append(
                         f"{field} sentence[{sentence_index}] prohibited extrapolation '{marker}': {sentence}"
                     )
-            # 条件允许的推断词（跳过中文连接词）
+            # 因果、效果与判断词必须有对应事实支持。
             for marker in CONDITIONAL_INFERENCE_MARKERS:
-                if marker in sentence and marker not in sentence_support:
-                    supported_by_context = any(
-                        marker in fact.get("evidence_context", "")
-                        for fact in facts if fact["claim_id"] in sentence_claim_ids
+                if marker in sentence and not inference_marker_supported(
+                    marker, sentence_support, facts, sentence_claim_ids
+                ):
+                    errors.append(
+                        f"{field} sentence[{sentence_index}] unsupported inference '{marker}': {sentence}"
                     )
-                    if not supported_by_context:
-                        errors.append(
-                            f"{field} sentence[{sentence_index}] unsupported inference '{marker}': {sentence}"
-                        )
-            # 注意：ALLOWED_CHINESE_CONNECTORS 不进行检测
     judgment_value = str(result.get("judgment") or "")
     if allowed_judgment:
         judgment_tokens = meaningful_tokens(judgment_value)
@@ -496,6 +527,12 @@ def audit_article(result: dict, facts: list[dict], allowed_judgment: str = "",
         extra = normalized_numbers(judgment_value) - normalized_numbers(allowed_judgment)
         if extra:
             errors.append(f"judgment unsupported numbers: {sorted(extra)}")
+        for marker in PROHIBITED_EXTRAPOLATIONS:
+            if marker in judgment_value:
+                errors.append(f"judgment prohibited extrapolation '{marker}'")
+        for marker in CONDITIONAL_INFERENCE_MARKERS:
+            if marker in judgment_value and marker not in allowed_judgment:
+                errors.append(f"judgment unsupported inference '{marker}'")
     elif judgment_value:
         errors.append("judgment not allowed when allowed_judgment is empty")
     return {

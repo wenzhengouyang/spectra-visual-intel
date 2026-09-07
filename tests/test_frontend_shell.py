@@ -32,6 +32,11 @@ class FrontendShellTest(unittest.TestCase):
         self.assertIn("关注方向与匹配情报", self.html)
         self.assertIn('id="channelDescription"', self.html)
 
+    def test_core_event_contract_is_used_end_to_end(self):
+        self.assertIn('article_type === \'core_event\'', self.html)
+        self.assertIn('bundle.issue.core_event_count', self.html)
+        self.assertIn('id="coreEventIndex"', self.html)
+
 
 if __name__ == "__main__":
     unittest.main()

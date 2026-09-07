@@ -3,7 +3,7 @@ import tempfile
 import json
 from pathlib import Path
 
-from editorial.p1_long_pipeline import build_bundle
+from editorial.core_event_pipeline import build_bundle
 from editorial.diagnostic_long_writer import (
     audit_article, backfill_verified_facts, revise_long_story,
 )
@@ -114,7 +114,7 @@ def valid_result():
     }
 
 
-class P1LongPipelineTest(unittest.TestCase):
+class CoreEventPipelineTest(unittest.TestCase):
     def test_demotes_event_with_fewer_than_eight_human_verified_facts(self):
         client = FakeClient(valid_result())
         bundle, audit = build_bundle(verified(), selection(3), client)
@@ -226,6 +226,39 @@ class P1LongPipelineTest(unittest.TestCase):
         self.assertEqual(audit["status"], "needs_review")
         self.assertTrue(any("unsupported inference '显著'" in error for error in audit["errors"]))
         self.assertTrue(audit["sentence_claim_mapping"])
+
+    def test_audit_rejects_dek_reused_as_body_paragraph(self):
+        result = valid_result()
+        result["paragraphs"][0] = result["dek"]
+        audit = audit_article(
+            result, selection(8)["selections"][0]["reader_packet"]["fact_units"],
+            selection(8)["selections"][0]["reader_packet"]["allowed_judgment"],
+            selection(8)["selections"][0]["reader_packet"]["writing_profile"],
+        )
+        self.assertEqual(audit["status"], "needs_review")
+        self.assertTrue(any("repeats dek" in error for error in audit["errors"]))
+
+    def test_audit_rejects_unsupported_causal_connector(self):
+        result = valid_result()
+        result["paragraphs"][0] += "这意味着法律团队可以确保所有处理结果准确。"
+        audit = audit_article(
+            result, selection(8)["selections"][0]["reader_packet"]["fact_units"],
+            selection(8)["selections"][0]["reader_packet"]["allowed_judgment"],
+            selection(8)["selections"][0]["reader_packet"]["writing_profile"],
+        )
+        self.assertEqual(audit["status"], "needs_review")
+        self.assertTrue(any("unsupported inference '意味着'" in error for error in audit["errors"]))
+        self.assertTrue(any("unsupported inference '确保'" in error for error in audit["errors"]))
+
+    def test_audit_allows_effect_word_explicitly_present_in_mapped_fact(self):
+        result = valid_result()
+        result["paragraphs"][0] += fact(6)["text"]
+        audit = audit_article(
+            result, selection(8)["selections"][0]["reader_packet"]["fact_units"],
+            selection(8)["selections"][0]["reader_packet"]["allowed_judgment"],
+            {"min_characters": 0, "max_characters": 2000},
+        )
+        self.assertFalse(any("unsupported inference '让'" in error for error in audit["errors"]))
 
     def test_length_backfill_uses_verified_fact_units_only(self):
         draft = {

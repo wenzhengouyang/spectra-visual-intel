@@ -3,11 +3,11 @@
 <plist version="1.0">
 <dict>
   <key>Label</key>
-  <string>com.spectra.visual-intel.daily</string>
+  <string>com.spectra.visual-intel.dingtalk</string>
   <key>ProgramArguments</key>
   <array>
     <string>/Users/wenzheng/Library/Application Support/SPECTRA/runtime/.venv-llm/bin/python</string>
-    <string>/Users/wenzheng/Library/Application Support/SPECTRA/runtime/spectra_agent/daily_runner.py</string>
+    <string>/Users/wenzheng/Library/Application Support/SPECTRA/runtime/spectra_agent/dingtalk_push.py</string>
     <string>--config</string>
     <string>spectra_agent/config.v0.1.json</string>
   </array>
@@ -16,7 +16,7 @@
   <key>StartCalendarInterval</key>
   <dict>
     <key>Hour</key>
-    <integer>8</integer>
+    <integer>10</integer>
     <key>Minute</key>
     <integer>0</integer>
   </dict>
@@ -28,8 +28,8 @@
     <string>1</string>
   </dict>
   <key>StandardOutPath</key>
-  <string>/Users/wenzheng/Library/Application Support/SPECTRA/data/logs/launchd.out.log</string>
+  <string>/Users/wenzheng/Library/Application Support/SPECTRA/data/logs/dingtalk.out.log</string>
   <key>StandardErrorPath</key>
-  <string>/Users/wenzheng/Library/Application Support/SPECTRA/data/logs/launchd.err.log</string>
+  <string>/Users/wenzheng/Library/Application Support/SPECTRA/data/logs/dingtalk.err.log</string>
 </dict>
 </plist>

@@ -1,4 +1,5 @@
 import json
+import plistlib
 import tempfile
 import unittest
 from datetime import datetime
@@ -10,6 +11,17 @@ from spectra_agent.review_cli import decisions_for, parse_selection
 
 
 class DailyRuntimeTest(unittest.TestCase):
+    def test_launchd_schedules_collection_at_eight_and_dingtalk_at_ten(self):
+        root = Path(__file__).resolve().parents[1]
+        with (root / "spectra_agent/launchd/com.spectra.visual-intel.daily.plist").open("rb") as handle:
+            collection = plistlib.load(handle)
+        with (root / "spectra_agent/launchd/com.spectra.visual-intel.dingtalk.plist").open("rb") as handle:
+            dingtalk = plistlib.load(handle)
+        self.assertEqual(collection["StartCalendarInterval"], {"Hour": 8, "Minute": 0})
+        self.assertNotIn("/Documents/", collection["WorkingDirectory"])
+        self.assertIn("Application Support/SPECTRA/runtime", collection["WorkingDirectory"])
+        self.assertEqual(dingtalk["StartCalendarInterval"], {"Hour": 10, "Minute": 0})
+
     def test_daily_run_id_uses_configured_local_date(self):
         now = datetime(2026, 9, 3, 23, 30, tzinfo=ZoneInfo("UTC"))
         self.assertEqual(daily_run_id("Asia/Shanghai", now), "daily-20260904")

@@ -359,7 +359,7 @@ textarea {
 
 .legend,
 .text-button,
-.week-chip,
+.digest-chip,
 .story-group-head p {
   color: var(--color-muted);
   font-size: var(--text-xs);
@@ -1315,6 +1315,47 @@ footer {
   margin-bottom: 0;
 }
 
+/* 核心事件列表样式 - 使用竖线引导和大间距设计 */
+.summary-copy .core-event-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.summary-copy .core-event-list li {
+  position: relative;
+  padding-left: 1.2em;
+  margin-bottom: 1.5rem;
+  color: var(--color-ink-2);
+  font-size: var(--text-md);
+  line-height: 1.9;
+}
+
+.summary-copy .core-event-list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--color-primary);
+  opacity: 0.3;
+}
+
+.summary-copy .core-event-list li:first-child {
+  color: var(--color-ink);
+  font-weight: 500;
+}
+
+.summary-copy .core-event-list li:first-child::before {
+  background: var(--color-primary);
+  opacity: 0.5;
+}
+
+.summary-copy .core-event-list li:last-child {
+  margin-bottom: 0;
+}
+
 .summary-judgment,
 .summary-watch {
   display: grid;
@@ -1389,7 +1430,7 @@ body[data-current-view="interests"] .interest-panel p {
   line-height: 1.65;
 }
 
-.deep-dive-group.interest-empty-state .story-group-head {
+.core-event-group.interest-empty-state .story-group-head {
   display: none;
 }
 
@@ -2842,6 +2883,20 @@ body.is-reading .editorial-feature > .article-dek {
 body.is-reading .editorial-feature > .editorial-judgment {
   margin-top: var(--space-md);
   padding: var(--space-sm) var(--space-md);
+}
+
+/* Hallmark · pre-emit critique: P4 H4 E4 S5 R5 V4
+ * Brief headlines are primary information, never teaser copy. Keep the full
+ * title visible at every width instead of trading meaning for equal card rows.
+ */
+.news-brief-card h4 a {
+  display: block;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: initial;
+  -webkit-line-clamp: unset;
 }
 
 @media (max-width: 768px) {

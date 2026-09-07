@@ -17,9 +17,14 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 try:
-    from spectra_agent.run import DEFAULT_CONFIG, ROOT, read_json, resolve_config
+    from spectra_agent.run import DEFAULT_CONFIG, ROOT, read_json, resolve_config, runs_dir
 except ImportError:
-    from run import DEFAULT_CONFIG, ROOT, read_json, resolve_config
+    from run import DEFAULT_CONFIG, ROOT, read_json, resolve_config, runs_dir
+
+try:
+    from spectra_agent.paths import logs_path
+except ImportError:
+    from paths import logs_path
 
 
 ACTIVE_STATUSES = {"initialized", "running", "waiting_for_editorial"}
@@ -61,13 +66,23 @@ def main() -> int:
     parser.add_argument("--run-id")
     parser.add_argument("--days", type=int, default=7)
     parser.add_argument("--no-llm", action="store_true")
+    parser.add_argument("--probe", action="store_true", help="validate the installed runtime without collecting")
     args = parser.parse_args()
 
     _, config = resolve_config(args.config)
+    if args.probe:
+        required = [
+            ROOT / "spectra_agent/run.py",
+            ROOT / config.get("llm_python", ".venv-llm/bin/python"),
+            ROOT / config.get("collector_python", ".venv-collector/bin/python"),
+            ROOT / "visual-intelligence-prototype.html",
+        ]
+        missing = [str(path) for path in required if not path.exists()]
+        print(json.dumps({"status": "ready" if not missing else "invalid", "root": str(ROOT), "missing": missing}, ensure_ascii=False))
+        return 0 if not missing else 3
     run_id = args.run_id or daily_run_id(config.get("timezone", "Asia/Shanghai"))
-    run_dir = ROOT / config["runs_dir"] / run_id
-    runtime = config.get("local_runtime") or {}
-    log_dir = ROOT / runtime.get("logs_dir", "spectra_agent/logs")
+    run_dir = runs_dir(config) / run_id
+    log_dir = logs_path(config)
     lock_path = log_dir / "daily-runner.lock"
     lock_path.parent.mkdir(parents=True, exist_ok=True)
 

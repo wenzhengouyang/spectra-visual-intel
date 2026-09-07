@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("file", nargs="?", default="processor/runs/first-structured-run-v0.1.json")
+parser.add_argument("file", help="structured candidate JSON to validate")
 parser.add_argument("--config", default="processor/config.v0.1.json")
 args = parser.parse_args()
 path = Path(args.file)
@@ -84,13 +84,13 @@ collapsed = data["summary"].get("same_event_records_collapsed", 0)
 if github:
     if len(github) != 1:
         errors.append(f"Wan-Animate-2提交应聚合为一个事件，实际候选数{len(github)}")
-    elif github[0]["aggregation"].get("method") != "fixed_repository_weekly_cluster":
+    elif github[0]["aggregation"].get("method") != "fixed_repository_rolling_cluster":
         errors.append("Wan-Animate-2候选未使用仓库周聚合规则")
 all_candidates = selected + data.get("overflow_candidates", [])
 expected_collapsed = sum(
     max(0, item.get("aggregation", {}).get("source_count", 0) - 1)
     for item in all_candidates
-    if item.get("aggregation", {}).get("method") in {"fixed_repository_weekly_cluster", "same_event_rule"}
+    if item.get("aggregation", {}).get("method") in {"fixed_repository_rolling_cluster", "same_event_rule"}
 )
 # The summary covers every aggregated candidate, including candidates removed
 # by hard gates or score thresholds; selected + overflow is only the publishable

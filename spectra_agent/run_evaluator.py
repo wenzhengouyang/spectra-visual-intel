@@ -11,17 +11,26 @@ import argparse
 import hashlib
 import json
 import random
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 try:
     from acceptance_metrics import metrics_for_run
 except ImportError:
     from spectra_agent.acceptance_metrics import metrics_for_run
 
+try:
+    from compat import compatible_artifact
+except ImportError:
+    from spectra_agent.compat import compatible_artifact
 
-ROOT = Path(__file__).resolve().parents[1]
+
 DEFAULT_CONFIG = ROOT / "spectra_agent/config.v0.1.json"
 
 
@@ -121,6 +130,8 @@ def _review_metrics(review: dict[str, Any], checkpoint: dict[str, Any]) -> dict[
                 if decision in {"modify", "drop"} or fact.get("reviewed_by") not in {"auto_fact_lock", "verification_policy"}:
                     auto_edited += 1
     jobs = list((checkpoint.get("jobs") or {}).values())
+    # Sparse fact packages never entered Writer, so they do not belong in the
+    # Writer success/demotion denominator.
     eligible = [job for job in jobs if job.get("status") != "demoted"]
     demoted = [job for job in eligible if str(job.get("status") or "").startswith("demoted")]
     return {
@@ -181,13 +192,13 @@ def _sample_facts(review: dict[str, Any], rate: float, seed: int) -> dict[str, A
     }
 
 
-def _publication_checks(run_dir: Path, issue: dict[str, Any]) -> list[dict[str, Any]]:
+def _publication_checks(run_dir: Path, issue: dict[str, Any], config: dict[str, Any] | None = None) -> list[dict[str, Any]]:
     issue_path = run_dir / "editorial-issue.json"
-    html_path = run_dir / "weekly-report.html"
+    html_path = compatible_artifact(run_dir, "rolling-digest.html")
     if not issue_path.exists() and not html_path.exists():
         return [_check("publication_not_yet_generated", True, "当前阶段尚无发布物", "info")]
     if not issue or not html_path.exists():
-        return [_check("publication_pair_present", False, "editorial-issue.json 与 weekly-report.html 必须成对存在")]
+        return [_check("publication_pair_present", False, "editorial-issue.json 与 rolling-digest.html 必须成对存在")]
     try:
         # Reuse the exact fail-closed validator used by the production path.
         try:
@@ -195,7 +206,17 @@ def _publication_checks(run_dir: Path, issue: dict[str, Any]) -> list[dict[str, 
         except ImportError:
             from spectra_agent.run import validate_static_package
         validate_static_package(run_dir, html_path, issue)
-        return [_check("publication_package_valid", True, "复用主流程发布前校验并通过")]
+        try:
+            from publication_quality import publication_quality_errors
+        except ImportError:
+            from spectra_agent.publication_quality import publication_quality_errors
+        quality_errors = publication_quality_errors(
+            issue, config or read_json(DEFAULT_CONFIG, {}), asset_root=run_dir
+        )
+        return [
+            _check("publication_package_valid", True, "复用主流程发布前校验并通过"),
+            _check("reader_content_quality", not quality_errors, "; ".join(quality_errors) or "中文、深读与配图门槛通过"),
+        ]
     except Exception as exc:  # report evidence; caller decides whether to block
         return [_check("publication_package_valid", False, str(exc))]
 
@@ -206,7 +227,7 @@ def _strategy_fingerprint(config: dict[str, Any], collection: dict[str, Any]) ->
         "collection_config": config.get("collection_config"),
         "processor_config": config.get("processor_config"),
         "p1_fact_expander": config.get("p1_fact_expander"),
-        "deep_story_writer": config.get("deep_story_writer"),
+        "core_event_writer": config.get("core_event_writer"),
         "p2_localizer": config.get("p2_localizer"),
         "window_days": (config.get("schedule") or {}).get("window_days"),
     }
@@ -289,12 +310,16 @@ def evaluate_run(
         "gated": read_json(run_dir / "gated-review.json", {}),
         "verified": read_json(run_dir / "verified-events.json", {}),
         "issue": read_json(run_dir / "editorial-issue.json", {}),
-        "checkpoint": read_json(run_dir / "p1-long-editorial-checkpoint.json", {}),
+        "checkpoint": read_json(compatible_artifact(run_dir, "core-event-checkpoint.json"), {}),
     }
     state = artifacts["state"]
     collection = artifacts["collection"]
     structural = _artifact_checks(run_dir, artifacts)
-    publication = (publication_validator or _publication_checks)(run_dir, artifacts["issue"])
+    publication = (
+        publication_validator(run_dir, artifacts["issue"])
+        if publication_validator
+        else _publication_checks(run_dir, artifacts["issue"], config)
+    )
     collection_quality = _collection_metrics(collection, state)
     review_behavior = _review_metrics(artifacts["review"], artifacts["checkpoint"])
     sample = _sample_facts(
@@ -307,12 +332,21 @@ def evaluate_run(
         _check("source_success_rate", (collection_quality["source_success_rate"] or 0) >= float(thresholds.get("source_success_rate_min", 0.9)), str(collection_quality["source_success_rate"])),
         _check("duplicate_processing_rate", (collection_quality["duplicate_processing_rate"] or 0) <= float(thresholds.get("duplicate_processing_rate_max", 0.15)), str(collection_quality["duplicate_processing_rate"])),
         _check("sample_fact_failure_rate", sample["failure_rate"] is not None and sample["failure_rate"] <= float(thresholds.get("sample_fact_failure_rate_max", 0.05)), str(sample["failure_rate"])),
+        _check(
+            "writer_demotion_rate",
+            (review_behavior["writer_demotion_rate"] or 0) <= float(thresholds.get("writer_demotion_rate_max", 0.2)),
+            str(review_behavior["writer_demotion_rate"]),
+        ),
     ]
     failures = [item for item in structural + publication + threshold_checks if item["severity"] == "error" and not item["passed"]]
-    publication_ready = bool(artifacts["verified"] and artifacts["issue"] and (run_dir / "weekly-report.html").exists())
+    publication_ready = bool(
+        artifacts["verified"]
+        and artifacts["issue"]
+        and compatible_artifact(run_dir, "rolling-digest.html").exists()
+    )
     review_complete = (artifacts["review"] or {}).get("review_status") == "approved"
     cohort_eligible = publication_ready and review_complete and all(
-        item["passed"] for item in publication if item["severity"] == "error"
+        item["passed"] for item in publication + threshold_checks if item["severity"] == "error"
     )
     report = {
         "schema_version": "1.0",

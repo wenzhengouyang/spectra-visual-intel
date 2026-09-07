@@ -22,7 +22,7 @@ from editorial.diagnostic_long_writer import (  # noqa: E402
 from editorial.finalize_diagnostic_long_stories import clean  # noqa: E402
 
 CHECKPOINT_SCHEMA_VERSION = "0.2"
-WRITER_PROMPT_VERSION = "p1_long_writer.v1.2"
+WRITER_PROMPT_VERSION = "core_event_writer.v1.2.2"
 
 
 def write_checkpoint(path: Path | None, payload: dict[str, Any]) -> None:
@@ -50,7 +50,7 @@ def build_bundle(verified: dict[str, Any], selection: dict[str, Any], client,
     current_window = selection.get("source_window") or {}
     checkpoint = {
         "schema_version": CHECKPOINT_SCHEMA_VERSION,
-        "record_type": "p1_long_job_checkpoint",
+        "record_type": "core_event_job_checkpoint",
         "prompt_version": WRITER_PROMPT_VERSION,
         "model": expected_model,
         "source_window": current_window,
@@ -300,7 +300,7 @@ def build_bundle(verified: dict[str, Any], selection: dict[str, Any], client,
         records.append(audit_record)
     bundle = {
         "schema_version": "0.2",
-        "record_type": "deep_story_draft_bundle",
+        "record_type": "core_event_draft_bundle",
         "prompt_version": WRITER_PROMPT_VERSION,
         "generation_mode": "serial_background_local_14b",
         "drafts": drafts,
@@ -310,7 +310,7 @@ def build_bundle(verified: dict[str, Any], selection: dict[str, Any], client,
     }
     audit_bundle = {
         "schema_version": "0.1",
-        "record_type": "p1_long_editorial_audit",
+        "record_type": "core_event_editorial_audit",
         "internal_only": True,
         "publication_status": "not_approved",
         "records": records,

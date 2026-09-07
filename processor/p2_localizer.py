@@ -24,11 +24,12 @@ if str(ROOT) not in sys.path:
 
 from spectra_agent.llm_client import create_llm_client, load_local_env
 from verification.verification_harness import numbers_match, normalized_numbers as semantic_numbers
+from processor.language_quality import has_readable_chinese
 
 
 CHINESE_RE = re.compile(r"[\u3400-\u9fff]")
-ENGLISH_CONNECTOR_RE = re.compile(
-    r"(?i)\b(?:the|and|or|but|is|are|was|were|with|without|for|from|into|onto|of|to|in|on|at|by|why|how)\b"
+SENSATIONAL_HEADLINE_RE = re.compile(
+    r"[！!]|重磅|炸裂|惊天|刚刚[，,]|史上最|真香|颠覆|吊打|碾压|杀疯|震住|封神|官宣"
 )
 NUMBER_RE = re.compile(r"\d+(?:[.,]\d+)*(?:%|％)?")
 ENGLISH_MONTHS = {
@@ -47,17 +48,11 @@ def has_chinese(value: str | None) -> bool:
     return bool(value and CHINESE_RE.search(value))
 
 
-def has_readable_chinese(value: str | None, field: str) -> bool:
-    """Reject English sentences decorated with only a token amount of Chinese."""
-    text = str(value or "").strip()
-    minimum = 2
-    chinese_count = len(CHINESE_RE.findall(text))
-    english_connectors = len(ENGLISH_CONNECTOR_RE.findall(text))
-    return chinese_count >= minimum and english_connectors <= 1
-
-
 def fields_needing_translation(brief: dict[str, Any]) -> list[str]:
-    return [field for field in ("headline", "dek") if not has_readable_chinese(brief.get(field), field)]
+    fields = [field for field in ("headline", "dek") if not has_readable_chinese(brief.get(field), field)]
+    if SENSATIONAL_HEADLINE_RE.search(str(brief.get("headline") or "")) and "headline" not in fields:
+        fields.append("headline")
+    return fields
 
 
 def raw_number_tokens(value: str) -> set[str]:
@@ -114,6 +109,8 @@ def validate_localized_brief(brief: dict[str, Any]) -> list[str]:
                 validate_translation(str(original), value, field)
             except ValueError as exc:
                 errors.append(str(exc))
+    if SENSATIONAL_HEADLINE_RE.search(str(brief.get("headline") or "")):
+        errors.append("headline_uses_sensational_media_wording")
     return errors
 
 
@@ -170,7 +167,7 @@ def schema_for(ids: list[str]) -> dict[str, Any]:
 INSTRUCTIONS = """你是中文AI产业情报编辑，只负责忠实本地化，不负责补充事实或判断。
 规则：
 1. 将指定字段转为自然、准确、简洁的中文；模型名、公司名、论文名和必要缩写可保留英文。
-2. 标题不夸张、不扩写结论；摘要只转述输入已有内容，不添加背景、因果或预测。
+2. 标题改写为中性的新闻标题，删除“震惊、刚刚、官宣、颠覆、吊打”等媒体口号，但不得改变事实或数字；摘要只转述输入已有内容，不添加背景、因果或预测。
 3. 所有数字、百分比、版本号必须完整保留。
 4. 若某字段无需翻译，原样返回。
 5. 严格按JSON Schema输出，不输出解释。

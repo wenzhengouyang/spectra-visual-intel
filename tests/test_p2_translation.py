@@ -12,7 +12,7 @@ from processor.p2_localizer import (
 class P2TranslationTests(unittest.TestCase):
     def test_only_non_chinese_fields_are_targeted(self):
         brief = {"headline": "OpenAI releases Model 5", "dek": "OpenAI发布Model 5。"}
-        self.assertEqual(fields_needing_translation(brief), ["headline"])
+        self.assertEqual(fields_needing_translation(brief), ["headline", "dek"])
 
     def test_translation_preserves_source_and_review_status(self):
         brief = {

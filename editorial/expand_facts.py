@@ -118,7 +118,8 @@ def build(candidates: dict[str, Any], collection: dict[str, Any],
             "mode": "long_form",
             "min_fact_units": 8,
             "min_fact_characters": 300,
-            "min_characters": 600,
+            "min_characters": 0,
+            "preferred_characters": 600,
             "max_characters": 1200,
         }
         expanded_plans[event_id]["audit_packet"]["diagnostic_expansion"] = {
