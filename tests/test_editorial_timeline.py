@@ -34,6 +34,16 @@ class EditorialTimelineTest(unittest.TestCase):
         actual = MODULE.publication_core_event_ids(selected, writer_drafts, {"drafts": list(writer_drafts.values())})
         self.assertEqual(actual, ["evt_ready"])
 
+    def test_english_event_title_falls_back_to_a_chinese_verified_claim(self):
+        event = {"event_id": "evt_new", "canonical_title": "English only title"}
+        review = {"agent_analysis": {"canonical_title": "Still English"}}
+        claims = [
+            {"text": "据来源报道，English claim only."},
+            {"text": "该系统提示新增了不复现歌词和书籍段落的规则。"},
+        ]
+        headline = MODULE.neutral_fallback_headline(event, review, claims)
+        self.assertIn("系统提示", headline)
+
     def test_cover_manifest_resolves_specific_asset_and_safe_fallback(self):
         manifest = {
             "covers": [{"event_id": "evt_1", "url": "assets/editorial/one.jpg", "kind": "editorial"}],

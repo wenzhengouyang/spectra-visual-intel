@@ -463,6 +463,7 @@ def domain_scope(route: str) -> str:
 VERIFIED_HEADLINE_OVERRIDES = {
     "evt_20260812_tencent_q2_ai": "腾讯财报披露AI相关预付款用途与收入增长",
     "evt_20260825_gemini_legal": "Google Cloud发布面向法律行业的Gemini Enterprise",
+    "evt_39d45e3610efd0f0": "Anthropic公开Claude消费端系统提示，并说明版权内容复现限制",
 }
 
 CHINESE_TEXT_RE = re.compile(r"[\u3400-\u9fff]")
@@ -485,7 +486,11 @@ def neutral_fallback_headline(event: dict, review_item: dict, claims: list[dict]
     ).strip()
     unsafe = not CHINESE_TEXT_RE.search(title) or any(marker in title for marker in SENSATIONAL_HEADLINE_MARKERS)
     if unsafe and claims:
-        title = ATTRIBUTION_PREFIX_RE.sub("", reader_facing_text(claims[0].get("text", ""))).strip("。！？ ")
+        candidates = [
+            ATTRIBUTION_PREFIX_RE.sub("", reader_facing_text(item.get("text", ""))).strip("。！？ ")
+            for item in claims
+        ]
+        title = next((candidate for candidate in candidates if CHINESE_TEXT_RE.search(candidate)), "")
     if len(title) > 54:
         title = title[:52].rstrip("，,; ") + "…"
     return title or "近7日人工智能情报更新"
@@ -707,6 +712,33 @@ P2_BRIEF_COPY = {
 
 
 EXPANDED_STORY_COPY = {
+    "evt_39d45e3610efd0f0": {
+        "headline": "Anthropic公开Claude消费端系统提示，并说明版权内容复现限制",
+        "dek": "Simon Willison引述公开内容称，Anthropic披露了Claude消费端应用的系统提示，其中明确限制复现歌词、诗歌、书籍段落及特定视觉作品。",
+        "one_line_takeaway": "公开的系统提示展示了Claude对文本与视觉作品复现请求的处理边界。",
+        "what": (
+            "据Simon Willison报道，Anthropic公开了Claude.ai与Claude移动应用使用的系统提示，公开范围不包括Claude Cowork或Claude Code。"
+            "公开内容还说明，Anthropic的开发者文档站点按便于大语言模型使用的方式设计。\n\n"
+            "提示内容要求Claude不完整或部分复现歌词、诗歌以及书籍和文章段落。对于同一对话中缩小范围或改写后的歌词复现请求，Claude会继续拒绝，并转而提供描述或分析。"
+        ),
+        "why": "本条仅呈现已公开系统提示所写明的行为边界，不把提示规则等同于所有Claude产品或所有实际输出的统一表现。",
+        "how": (
+            "视觉内容方面，提示要求Claude不复现特定艺术作品、专辑或书籍封面、海报、标识、应用图标组或产品设计，并按照最终画面的整体效果判断请求。"
+            "交互风格方面，提示要求回复保持聚焦、简短和精炼，并避免使用若干特定措辞。"
+        ),
+        "fact_points": [
+            "Anthropic公开了Claude.ai与移动应用的系统提示，未覆盖Claude Cowork或Claude Code。",
+            "提示限制复现歌词、诗歌、书籍与文章段落，也限制复现特定视觉作品和品牌设计。",
+            "同一对话中改写或缩小范围的歌词复现请求仍会被拒绝，并可改为描述或分析。",
+            "提示要求Claude保持回复聚焦、简短和精炼。",
+        ],
+        "summary_paragraphs": [
+            "Anthropic公开了Claude消费端应用的系统提示及其内容复现边界。",
+            "规则同时覆盖文字作品、视觉作品、连续请求处理和回复风格。",
+        ],
+        "watch": ["这些规则是否扩展到Claude Cowork或Claude Code？", "公开提示与实际产品行为是否持续一致？"],
+        "reading": 3,
+    },
     "evt_20260812_tencent_q2_ai": {
         "what": (
             "腾讯在2026年第二季度财报中披露：收入为2,048亿元，同比增长11%；毛利润为1,184亿元，同比增长13%；"

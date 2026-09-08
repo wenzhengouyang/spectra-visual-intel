@@ -1221,6 +1221,18 @@ def create_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
 def resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
     run_dir = locate_run(config, args.run_id)
     state = read_json(run_dir / "run.json")
+    resumed_localization_issue = None
+    resumed_localization_review = None
+    if (
+        state.get("current_stage") in {"localization_review", "image_preview"}
+        or state.get("status") == "failed"
+    ):
+        existing_issue = run_dir / "editorial-issue.json"
+        existing_review = run_dir / "p2-localization-review.json"
+        if existing_issue.exists():
+            resumed_localization_issue = read_json(existing_issue)
+        if existing_review.exists():
+            resumed_localization_review = read_json(existing_review)
     if state["status"] == "completed":
         print(json.dumps({"run_id": run_dir.name, "status": "completed", "message": "nothing to resume"}, ensure_ascii=False, indent=2))
         return 0
@@ -1502,6 +1514,13 @@ def resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
             generate_command += ["--drafts", str(editorial_drafts_path)]
         command(run_dir, "generate", generate_command)
         issue = read_json(issue_path)
+        if resumed_localization_issue is not None:
+            from processor.p2_localizer import restore_reviewed_localizations
+            restored = restore_reviewed_localizations(
+                issue, resumed_localization_issue, resumed_localization_review,
+            )
+            write_json(issue_path, issue)
+            log(run_dir, "generate", "validated_localization_progress_restored", **restored)
         minimum_core_events = int(
             (config.get("publication_quality") or {}).get("minimum_core_events", 1)
         )

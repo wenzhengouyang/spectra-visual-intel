@@ -91,9 +91,24 @@ def prepare_checkout(config: dict) -> Path:
     if not remote_url:
         remote_url = command(["git", "remote", "get-url", remote], ROOT, capture=True)
     checkout = publish_cache_path(config)
-    if not (checkout / ".git").exists():
+    valid_checkout = False
+    if (checkout / ".git").exists():
+        probe = subprocess.run(
+            ["git", "rev-parse", "--is-inside-work-tree"],
+            cwd=checkout, text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+            check=False,
+        )
+        valid_checkout = probe.returncode == 0 and probe.stdout.strip() == "true"
+    if not valid_checkout:
+        if checkout.exists():
+            # A network interruption can leave only a partial .git directory.
+            # It is a disposable publish cache, never a source checkout.
+            shutil.rmtree(checkout)
         checkout.parent.mkdir(parents=True, exist_ok=True)
-        command(["git", "clone", "--branch", branch, "--single-branch", remote_url, str(checkout)], ROOT)
+        command([
+            "git", "clone", "--depth", "1", "--branch", branch, "--single-branch",
+            remote_url, str(checkout),
+        ], ROOT)
     if command(["git", "status", "--porcelain"], checkout, capture=True):
         raise WorkflowError(f"publish checkout has uncommitted changes: {checkout}")
     command(["git", "pull", "--ff-only", "origin", branch], checkout)

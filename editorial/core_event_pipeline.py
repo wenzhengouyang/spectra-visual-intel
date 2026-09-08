@@ -25,6 +25,31 @@ CHECKPOINT_SCHEMA_VERSION = "0.2"
 WRITER_PROMPT_VERSION = "core_event_writer.v1.2.2"
 
 
+def completed_draft_from_audit(event_id: str, cleaned: dict[str, Any], facts: list[dict],
+                               audit: dict[str, Any]) -> dict[str, Any]:
+    """Convert an audited article into the canonical core-event draft shape."""
+    if audit.get("status") != "passed":
+        raise ValueError(f"{event_id}: cannot complete a draft that failed editorial audit")
+    mappings = audit["paragraph_claim_mapping"]
+    all_claim_ids = [fact["claim_id"] for fact in facts]
+    return {
+        "event_id": event_id,
+        "headline": cleaned["headline"],
+        "dek": cleaned["dek"],
+        "one_line_takeaway": cleaned["judgment"],
+        "factual_paragraphs": [
+            {"text": text, "claim_ids": mappings[index]["claim_ids"]}
+            for index, text in enumerate(cleaned["paragraphs"])
+        ],
+        "judgment": cleaned["judgment"],
+        "watch_next": [],
+        "claim_support": {
+            "headline": all_claim_ids, "dek": all_claim_ids,
+            "one_line_takeaway": all_claim_ids, "judgment": all_claim_ids,
+        },
+    }
+
+
 def write_checkpoint(path: Path | None, payload: dict[str, Any]) -> None:
     if not path:
         return
@@ -204,24 +229,7 @@ def build_bundle(verified: dict[str, Any], selection: dict[str, Any], client,
                     }
                     write_checkpoint(checkpoint_path, checkpoint)
                     continue
-                mappings = audit["paragraph_claim_mapping"]
-                all_claim_ids = [fact["claim_id"] for fact in facts]
-                completed_draft = {
-                    "event_id": event_id,
-                    "headline": cleaned["headline"],
-                    "dek": cleaned["dek"],
-                    "one_line_takeaway": cleaned["judgment"],
-                    "factual_paragraphs": [
-                        {"text": text, "claim_ids": mappings[index]["claim_ids"]}
-                        for index, text in enumerate(cleaned["paragraphs"])
-                    ],
-                    "judgment": cleaned["judgment"],
-                    "watch_next": [],
-                    "claim_support": {
-                        "headline": all_claim_ids, "dek": all_claim_ids,
-                        "one_line_takeaway": all_claim_ids, "judgment": all_claim_ids,
-                    },
-                }
+                completed_draft = completed_draft_from_audit(event_id, cleaned, facts, audit)
                 jobs[event_id] = {
                     "status": "completed", "attempts": attempt,
                     "draft": completed_draft, "audit_record": audit_record,
@@ -342,7 +350,7 @@ def main() -> int:
     Path(args.output).write_text(json.dumps(bundle, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     Path(args.audit_output).write_text(json.dumps(audit, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({
-        "deep_stories": len(bundle["drafts"]), "blocked": len(bundle["blocked"]),
+        "core_events": len(bundle["drafts"]), "blocked": len(bundle["blocked"]),
         "demoted": len(bundle["demoted"]), "audit": args.audit_output,
     }, ensure_ascii=False))
     return 0

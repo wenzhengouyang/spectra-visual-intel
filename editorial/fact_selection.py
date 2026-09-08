@@ -46,6 +46,9 @@ AUDIT_ONLY_PATTERNS = (
     "人工确认事实与证据可用",
     "人工确认来源正文与事实证据可用",
     "人工确认来源与事实证据可用",
+    "人工核验原始来源与事实证据后保留",
+    "人工核验后列入观察",
+    "人工复核后不纳入本次正式内容",
 )
 
 
@@ -166,6 +169,12 @@ def build_fact_selection(verified: dict[str, Any], review: dict[str, Any],
             risk_reasons.append("full_text_missing")
 
         reader_judgment, judgment_audit_notes = split_judgment_layers(item["decision_reason"])
+        # Candidate disposition and reader-facing editorial judgment are separate
+        # layers. A reviewed judgment may be supplied explicitly after the facts
+        # are locked; generic review-process wording must never leak into copy.
+        explicit_reader_judgment = str(item.get("reader_judgment") or "").strip()
+        if explicit_reader_judgment:
+            reader_judgment = explicit_reader_judgment
         embedded_audit_notes.extend(
             {"claim_id": None, "text": note, "origin": "decision_reason"}
             for note in judgment_audit_notes

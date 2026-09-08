@@ -4,6 +4,7 @@ from processor.p2_localizer import (
     apply_translation,
     fields_needing_translation,
     quarantine_failed_briefs,
+    restore_reviewed_localizations,
     validate_localized_brief,
     validate_translation,
 )
@@ -47,6 +48,9 @@ class P2TranslationTests(unittest.TestCase):
     def test_month_may_is_not_uncertainty(self):
         validate_translation("Announced at I/O in May", "于5月在I/O大会上公布", "headline")
 
+    def test_bare_english_year_may_gain_chinese_year_unit(self):
+        validate_translation("2026 Interim Report", "2026年中期报告", "headline")
+
     def test_english_sentence_with_chinese_decoration_is_rejected(self):
         errors = validate_localized_brief({
             "headline": "Anthropic and OpenAI are joining 人工智能",
@@ -73,6 +77,27 @@ class P2TranslationTests(unittest.TestCase):
         self.assertEqual(issue["issue"]["total_intelligence_count"], 2)
         self.assertEqual(issue["presentation"]["timeline_days"][0]["brief_ids"], ["brief_ok"])
         self.assertEqual(queue["status"], "waiting_for_review")
+
+    def test_resume_restores_valid_copy_and_applies_supplied_review_copy(self):
+        issue = {"news_briefs": [
+            {"brief_id": "cached", "headline": "Cached report", "dek": "Cached body"},
+            {"brief_id": "fixed", "headline": "2026 Interim Report", "dek": "Revenue grew 70% in 2026"},
+        ]}
+        cached = {"news_briefs": [{
+            "brief_id": "cached", "headline": "已缓存的报告", "dek": "已缓存的正文。",
+            "original_headline": "Cached report", "original_dek": "Cached body",
+            "localization_status": "machine_localized_validated",
+            "localized_fields": ["headline", "dek"],
+        }]}
+        review = {"records": [{
+            "brief_id": "fixed", "review_status": "approved",
+            "decision": "supply_chinese_copy", "headline_zh": "2026年中期报告",
+            "dek_zh": "报告称，2026年收入增长70%。",
+        }]}
+        result = restore_reviewed_localizations(issue, cached, review)
+        self.assertEqual(result, {"restored": 1, "supplied": 1, "excluded": 0})
+        self.assertEqual(issue["news_briefs"][0]["headline"], "已缓存的报告")
+        self.assertEqual(issue["news_briefs"][1]["headline"], "2026年中期报告")
 
 
 if __name__ == "__main__":

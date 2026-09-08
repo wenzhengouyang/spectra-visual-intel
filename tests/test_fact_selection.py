@@ -10,6 +10,19 @@ class FactSelectionTest(unittest.TestCase):
         self.assertEqual(reader, "")
         self.assertEqual(audit, ["人工确认事实与证据可用"])
 
+    def test_interactive_review_reason_never_becomes_reader_judgment(self):
+        reader, audit = split_judgment_layers("人工核验原始来源与事实证据后保留。")
+        self.assertEqual(reader, "")
+        self.assertEqual(audit, ["人工核验原始来源与事实证据后保留"])
+
+    def test_explicit_reader_judgment_is_kept_separate_from_review_reason(self):
+        review = json.loads(json.dumps(self.review, ensure_ascii=False))
+        review["records"][0]["decision_reason"] = "人工核验原始来源与事实证据后保留。"
+        review["records"][0]["reader_judgment"] = "该产品把动作测试与视觉质量放进同一评估流程。"
+        bundle = build_fact_selection(self.verified, review, self.collection)
+        reader = bundle["selections"][0]["reader_packet"]
+        self.assertEqual(reader["allowed_judgment"], "该产品把动作测试与视觉质量放进同一评估流程。")
+
     @classmethod
     def setUpClass(cls):
         event_id = "evt_20260820_unitree_evolution"

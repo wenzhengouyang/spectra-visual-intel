@@ -63,6 +63,9 @@ def number_basis(value: str) -> str:
     text = value or ""
     for month, replacement in ENGLISH_MONTHS.items():
         text = re.sub(rf"(?i)\b{month}\b", replacement, text)
+    # A four-digit calendar year is often bare in English but naturally gains
+    # “年” in Chinese. Normalize both sides before semantic unit comparison.
+    text = re.sub(r"\b((?:19|20)\d{2})\b(?!年)", r"\1年", text)
     return text
 
 
@@ -137,6 +140,49 @@ def quarantine_failed_briefs(issue: dict[str, Any], failed: list[dict[str, Any]]
         "count": len(failed),
         "records": list(failed_by_id.values()),
     }
+
+
+def restore_reviewed_localizations(issue: dict[str, Any], cached_issue: dict[str, Any] | None,
+                                   review_queue: dict[str, Any] | None) -> dict[str, int]:
+    """Reuse validated copy and apply explicit review decisions after a resumed run."""
+    cached = {
+        brief.get("brief_id"): brief
+        for brief in (cached_issue or {}).get("news_briefs", [])
+        if brief.get("localization_status") == "machine_localized_validated"
+        and not validate_localized_brief(brief)
+    }
+    restored = 0
+    for brief in issue.get("news_briefs", []):
+        prior = cached.get(brief.get("brief_id"))
+        if not prior:
+            continue
+        for field in ("headline", "dek", "original_headline", "original_dek",
+                      "localization_status", "localized_fields"):
+            if field in prior:
+                brief[field] = copy.deepcopy(prior[field])
+        restored += 1
+
+    supplied = 0
+    excluded_ids: set[str] = set()
+    records = (review_queue or {}).get("records", [])
+    by_id = {brief.get("brief_id"): brief for brief in issue.get("news_briefs", [])}
+    for record in records:
+        if record.get("review_status") != "approved":
+            continue
+        brief_id = record.get("brief_id")
+        if record.get("decision") == "exclude":
+            excluded_ids.add(brief_id)
+            continue
+        if record.get("decision") != "supply_chinese_copy" or brief_id not in by_id:
+            continue
+        apply_translation(by_id[brief_id], {
+            "headline_zh": str(record.get("headline_zh") or ""),
+            "dek_zh": str(record.get("dek_zh") or ""),
+        })
+        supplied += 1
+    if excluded_ids:
+        quarantine_failed_briefs(issue, [{"brief_id": brief_id} for brief_id in excluded_ids])
+    return {"restored": restored, "supplied": supplied, "excluded": len(excluded_ids)}
 
 
 def schema_for(ids: list[str]) -> dict[str, Any]:
