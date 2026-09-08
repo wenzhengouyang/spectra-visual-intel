@@ -93,10 +93,12 @@ def resolve_cover_image(
 ) -> dict:
     for item in manifest.get("covers", []):
         if item.get("event_id") == event_id:
+            generated = item.get('kind') == 'generated'
             return {
                 **{key: value for key, value in item.items() if key != "event_id"},
-                "semantic_match": "source_matched",
-                "review_status": "approved",
+                "semantic_motif": semantic_cover_motif(headline, category) if generated else item.get('semantic_motif'),
+                "semantic_match": "passed" if generated else "source_matched",
+                "review_status": "pending" if generated else "approved",
             }
     if source_url:
         for item in manifest.get("covers", []):
@@ -1275,6 +1277,10 @@ def main() -> None:
         if image_review_path.exists() else {}
     )
     prior_approved_images = set(prior_image_review.get("approved_story_ids") or [])
+    prior_approved_covers = {
+        item.get('story_id'): item.get('asset_fingerprint')
+        for item in prior_image_review.get('approved_covers', [])
+    }
     for rank, event in enumerate(ordered_events):
         event_id = event["event_id"]
         review_item = reviews[event_id]
@@ -1288,6 +1294,7 @@ def main() -> None:
                 "one_line_takeaway": writer_draft["one_line_takeaway"],
                 "what": paragraphs[0]["text"],
                 "fact_points": [item["text"] for item in paragraphs],
+                "summary_paragraphs": [item["text"] for item in paragraphs],
                 "how": "\n\n".join(item["text"] for item in paragraphs[1:]),
                 "why": writer_draft["judgment"],
                 "take": None,
@@ -1357,14 +1364,17 @@ def main() -> None:
             "editorial_score": copy["score"],
             "published_at": event["event_at"],
         }
-        if (
-            story["story_id"] in prior_approved_images
-            and story["cover_image"].get("kind") in {"editorial_diagram", "generated"}
-        ):
+        cover_url = str(story['cover_image'].get('url') or '')
+        cover_path = output_path.parent / cover_url
+        cover_fingerprint = hashlib.sha256(cover_path.read_bytes()).hexdigest() if cover_path.is_file() else None
+        if (story["story_id"] in prior_approved_images
+            and prior_approved_covers.get(story['story_id']) == cover_fingerprint
+            and story["cover_image"].get("kind") in {"editorial_diagram", "generated"}):
             story["cover_image"].update({
                 "review_status": "approved",
                 "reviewed_by": prior_image_review.get("reviewed_by"),
                 "reviewed_at": prior_image_review.get("reviewed_at"),
+                "asset_fingerprint": cover_fingerprint,
             })
         stories.append(story)
 

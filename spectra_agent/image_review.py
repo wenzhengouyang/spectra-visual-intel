@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 from datetime import datetime, timezone
@@ -52,6 +53,13 @@ def pending_covers(issue: dict) -> list[dict]:
     return pending
 
 
+def asset_fingerprint(run_dir: Path, url: str) -> str:
+    path = run_dir / url
+    if not path.is_file():
+        raise ValueError(f'cover asset is missing: {path}')
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Human preview gate for generated SPECTRA covers")
     parser.add_argument("--run-dir", required=True)
@@ -82,7 +90,8 @@ def main() -> int:
         expected = expected_cover_motif(str(story.get("headline") or ""), str(story.get("category") or ""))
         if cover.get("semantic_motif") != expected or cover.get("semantic_match") != "passed":
             raise ValueError(f"{story['story_id']} failed semantic cover matching")
-        cover.update({"review_status": "approved", "reviewed_by": args.reviewer, "reviewed_at": reviewed_at})
+        cover.update({"review_status": "approved", "reviewed_by": args.reviewer, "reviewed_at": reviewed_at,
+                      "asset_fingerprint": asset_fingerprint(run_dir, str(cover.get('url') or ''))})
     write_json(issue_path, issue)
     if html_path.exists():
         embed_issue(html_path, issue)
@@ -91,6 +100,9 @@ def main() -> int:
         "reviewed_at": reviewed_at,
         "reviewed_by": args.reviewer,
         "approved_story_ids": sorted(selected),
+        "approved_covers": [{"story_id": story["story_id"],
+            "asset_fingerprint": asset_fingerprint(run_dir, story["cover_image"]["url"])}
+            for story in issue.get("editorial_stories", []) if story.get("story_id") in selected],
         "pending": pending_covers(issue),
     }
     write_json(run_dir / "image-review.json", report)

@@ -156,6 +156,9 @@ def restore_reviewed_localizations(issue: dict[str, Any], cached_issue: dict[str
         prior = cached.get(brief.get("brief_id"))
         if not prior:
             continue
+        if ((prior.get('original_headline') or prior.get('headline')) != brief.get('headline')
+                or (prior.get('original_dek') or prior.get('dek')) != brief.get('dek')):
+            continue
         for field in ("headline", "dek", "original_headline", "original_dek",
                       "localization_status", "localized_fields"):
             if field in prior:

@@ -92,7 +92,6 @@
         <div class="panel-heading editorial-heading"><div><span class="section-kicker">ROLLING EDITORIAL</span><h2>近7日情报文章</h2></div><span class="digest-chip" id="storyMix">文章加载中</span></div>
         <div class="editorial-browse">
           <section class="story-group core-event-group"><div class="story-group-head"><div><span>CORE EVENT</span><h3>核心事件</h3></div><p id="coreEventCount">—</p></div><div class="story-card-grid" id="coreEventIndex"></div></section>
-          <section class="story-group verified-brief-group"><div class="story-group-head"><div><span>QUICK READ</span><h3>快速解读</h3></div><p id="verifiedBriefCount">—</p></div><div class="story-card-grid verified-brief-grid" id="verifiedBriefIndex"></div></section>
           <section class="story-group brief-group"><div class="story-group-head"><div><span>ROLLING BRIEFING</span><h3>近7日短讯</h3></div><p id="briefCount">—</p></div><div class="brief-list" id="briefIndex"></div></section>
         </div>
         <div class="article-reader" id="articleReader" hidden><div class="reader-heading"><span>ARTICLE READER</span><button id="backToArticles">← 返回文章列表</button></div><article class="editorial-feature" id="editorialArticle"></article></div>
@@ -350,16 +349,13 @@
       const briefs = bundle.news_briefs.filter(storyMatches);
       const hasAny = coreEvents.length > 0 || verifiedBriefs.length > 0 || briefs.length > 0;
       document.getElementById('coreEventCount').textContent = `${coreEvents.length} 个`;
-      document.getElementById('verifiedBriefCount').textContent = `${verifiedBriefs.length} 篇`;
-      document.getElementById('briefCount').textContent = `${briefs.length} 条`;
+      document.getElementById('briefCount').textContent = `${briefs.length + verifiedBriefs.length} 条`;
       document.querySelector('.core-event-group').hidden = coreEvents.length === 0 && hasAny;
-      document.querySelector('.verified-brief-group').hidden = verifiedBriefs.length === 0;
-      document.querySelector('.brief-group').hidden = briefs.length === 0;
+      document.querySelector('.brief-group').hidden = (briefs.length + verifiedBriefs.length) === 0;
       const interestEmpty = mineOnly && interests.length === 0;
       const emptyCopy = interestEmpty ? '尚未建立关注档案。请在上方选择关注领域，完成后这里才会出现个性化情报。' : '当前筛选下暂无内容';
       document.getElementById('coreEventIndex').innerHTML = coreEvents.map(story => storyCard(story, bundle.editorial_stories.indexOf(story))).join('') || `<div class="empty-search interest-empty">${emptyCopy}</div>`;
-      document.getElementById('verifiedBriefIndex').innerHTML = verifiedBriefs.map(story => briefCard(story, bundle.editorial_stories.indexOf(story))).join('');
-      document.getElementById('briefIndex').innerHTML = briefs.map(newsBriefCard).join('') || (interestEmpty ? '' : '<div class="empty-search">当前筛选下暂无短讯</div>');
+      document.getElementById('briefIndex').innerHTML = verifiedBriefs.map(story => briefCard(story, bundle.editorial_stories.indexOf(story))).join('') + briefs.map(newsBriefCard).join('') || (interestEmpty ? '' : '<div class="empty-search">当前筛选下暂无短讯</div>');
       document.querySelectorAll('[data-story-card]').forEach(card => card.classList.toggle('active', card.dataset.storyCard === selectedStoryId));
     }
 
@@ -423,7 +419,7 @@
       document.getElementById('trendCount').textContent = `${bundle.presentation.trend_radar.length}条趋势 · ${bundle.issue.story_count}个事件支撑`;
       document.getElementById('timelineCount').textContent = `共 ${String(bundle.issue.total_intelligence_count || bundle.issue.story_count).padStart(2,'0')} 条 ↗`;
       const quickReadCount = bundle.editorial_stories.filter(story => story.article_type === 'brief').length;
-      document.getElementById('storyMix').textContent = `${bundle.issue.core_event_count}个核心事件 · ${quickReadCount}篇快读 · ${bundle.issue.brief_count}条短讯`;
+      document.getElementById('storyMix').textContent = `${bundle.issue.core_event_count}个核心事件 · ${quickReadCount + bundle.issue.brief_count}条短讯`;
       document.getElementById('footerSummary').textContent = `${bundle.issue.story_count}条正式事件 · ${bundle.issue.core_event_count}个核心事件 · ${bundle.issue.brief_count}条短讯 · P2短讯保留待核验标识`;
       document.getElementById('navStoryCount').textContent = bundle.issue.total_intelligence_count || bundle.issue.story_count;
       const thesisText = bundle.issue.rolling_thesis || '';

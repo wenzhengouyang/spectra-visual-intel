@@ -89,6 +89,8 @@ def publication_quality_errors(
                     errors.append(f"{item_id}.generated_cover_topic_mismatch")
                 if require_image_review and cover.get("review_status") != "approved":
                     errors.append(f"{item_id}.generated_cover_needs_human_preview")
+                elif require_image_review and cover.get('asset_fingerprint') != _cover_fingerprint(cover, asset_root):
+                    errors.append(f"{item_id}.generated_cover_review_is_stale")
             fingerprint = _cover_fingerprint(cover, asset_root)
             duplicate = fingerprints.get(fingerprint)
             if duplicate:

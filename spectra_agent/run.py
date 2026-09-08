@@ -20,6 +20,8 @@ import shutil
 import subprocess
 import sys
 import traceback
+import time
+import threading
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
@@ -57,6 +59,9 @@ except ImportError:
 
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from spectra_agent.execution import RunLease, atomic_json, digest, publication_version
 DEFAULT_CONFIG = ROOT / "spectra_agent/config.v0.1.json"
 TERMINAL = {"completed", "failed"}
 STATIC_ASSETS = (
@@ -79,10 +84,7 @@ def read_json(path: Path) -> dict[str, Any]:
 
 
 def write_json(path: Path, payload: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(path.suffix + ".tmp")
-    temporary.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    temporary.replace(path)
+    atomic_json(path, payload)
 
 
 def prepare_static_draft(run_dir: Path, static_page: Path) -> Path:
@@ -193,10 +195,10 @@ def update_state(run_dir: Path, **changes: Any) -> dict[str, Any]:
     state_path = run_dir / "run.json"
 
     # Acquire exclusive lock on state file
-    with open(state_path, "r+", encoding="utf-8") as f:
+    with open(run_dir / 'state.lock', "a+", encoding="utf-8") as f:
         fcntl.flock(f.fileno(), fcntl.LOCK_EX)
         try:
-            state = json.load(f)
+            state = read_json(state_path)
             previous = {"status": state.get("status"), "stage": state.get("current_stage")}
             state.update(changes)
             state["updated_at"] = utc_now()
@@ -208,10 +210,7 @@ def update_state(run_dir: Path, **changes: Any) -> dict[str, Any]:
                     "to": current,
                 })
             # Write back to file with lock held
-            f.seek(0)
-            f.truncate()
-            json.dump(state, f, ensure_ascii=False, indent=2)
-            f.write("\n")
+            write_json(state_path, state)
             sync_issue_workflow(run_dir, state)
             return state
         finally:
@@ -304,7 +303,10 @@ def reserve_editorial_worker(run_dir: Path) -> tuple[str | None, int | None]:
             pid = lock.get("pid")
             # If pid is None, lock is reserved but worker hasn't claimed it yet
             if pid is None:
-                return None, None
+                reserved = parse_timestamp(lock.get('reserved_at', '1970-01-01T00:00:00Z'))
+                if (datetime.now(timezone.utc) - reserved).total_seconds() < 120:
+                    return None, None
+                path.unlink(missing_ok=True)
             # If pid exists and process is alive, lock is active
             if process_is_alive(pid):
                 return None, int(pid)
@@ -376,6 +378,14 @@ def release_editorial_worker(run_dir: Path) -> None:
         return
 
 
+def launch_editorial_worker(run_dir: Path, worker_command: list[str], worker_env: dict[str, str], worker_log):
+    try:
+        return subprocess.Popen(worker_command, cwd=ROOT, stdout=worker_log, stderr=worker_log,
+                                start_new_session=True, env=worker_env)
+    except Exception as exc:
+        worker_lock_path(run_dir).unlink(missing_ok=True)
+        log(run_dir, 'p1_editorial_queued', 'worker_start_failed', error=str(exc))
+        raise WorkflowError(f'background worker failed to start: {exc}') from exc
 def parse_timestamp(value: str) -> datetime:
     parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
     return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
@@ -572,6 +582,39 @@ def incremental_retry_source_ids(
     delta: dict[str, Any],
 ) -> list[str]:
     """Return only failed or newly introduced sources that need a full-window retry."""
+    return incremental_retry_plan(baseline, delta)[0]
+
+
+def active_rate_limit_cooldowns(
+    collection: dict[str, Any],
+    now: datetime,
+    cooldown_hours: int = 24,
+) -> list[str]:
+    """Return sources whose most recent 429 is still inside the cooldown."""
+    try:
+        observed_at = parse_timestamp(collection["collected_at"])
+    except (KeyError, TypeError, ValueError):
+        return []
+    if now - observed_at >= timedelta(hours=max(0, cooldown_hours)):
+        return []
+    cooled = []
+    for check in collection.get("source_checks", []):
+        error_text = " ".join(str(check.get(key) or "") for key in ("error", "warning", "failure_reason"))
+        if check.get("http_status") == 429 or re.search(r"(?:HTTP(?: Error)?\s*)?429\b|too many requests|rate.?limit", error_text, re.I):
+            cooled.append(check["registry_id"])
+    return sorted(cooled)
+
+
+def incremental_retry_plan(
+    baseline: dict[str, Any],
+    delta: dict[str, Any],
+) -> tuple[list[str], dict[str, str]]:
+    """Plan full-window recovery without hammering unavailable sources.
+
+    Incremental collection has already made the current request. A second,
+    seven-day request cannot repair an HTTP 429 or an unavailable local WeRSS
+    service, so those sources enter a visible cooldown instead.
+    """
     baseline_checks = {
         item["registry_id"]: item
         for item in baseline.get("source_checks", [])
@@ -591,7 +634,16 @@ def incremental_retry_source_ids(
         if check.get("status") == "failed"
     }
     newly_configured = set(delta_checks) - set(baseline_checks)
-    return sorted(failed_now | failed_before | newly_configured)
+    retry_ids = failed_now | failed_before | newly_configured
+    cooled: dict[str, str] = {}
+    for registry_id in sorted(retry_ids):
+        check = delta_checks.get(registry_id) or baseline_checks.get(registry_id) or {}
+        error_text = " ".join(str(check.get(key) or "") for key in ("error", "warning", "failure_reason"))
+        if check.get("http_status") == 429 or re.search(r"(?:HTTP(?: Error)?\s*)?429\b|too many requests|rate.?limit", error_text, re.I):
+            cooled[registry_id] = "rate_limited_429"
+        elif check.get("adapter") == "werss_api" and check.get("status") in {"failed", "degraded"}:
+            cooled[registry_id] = "werss_unavailable"
+    return sorted(retry_ids - set(cooled)), cooled
 
 
 def command(run_dir: Path, stage: str, args: list[str], timeout: int | None = None) -> None:
@@ -607,6 +659,18 @@ def command(run_dir: Path, stage: str, args: list[str], timeout: int | None = No
         # Default timeout: 30 minutes for most commands, 2 hours for LLM/collection
         timeout = 7200 if stage in {"llm_structure", "collect", "p1_editorial_background"} else 1800
 
+    started = time.monotonic()
+    stop = threading.Event()
+    def pulse():
+        while not stop.is_set():
+            write_json(run_dir / 'command-progress.json', {
+                'stage': stage, 'pid': os.getpid(), 'heartbeat_at': utc_now(),
+                'elapsed_seconds': round(time.monotonic() - started, 2),
+                'note': 'heartbeat is liveness, not proof of model progress',
+            })
+            stop.wait(5)
+    worker = threading.Thread(target=pulse, daemon=True)
+    worker.start()
     log(run_dir, stage, "command_started", command=args, timeout=timeout)
     try:
         result = subprocess.run(
@@ -619,6 +683,7 @@ def command(run_dir: Path, stage: str, args: list[str], timeout: int | None = No
         log(
             run_dir, stage, "command_finished",
             returncode=result.returncode,
+            duration_seconds=round(time.monotonic() - started, 3),
             stdout=result.stdout[-4000:] if result.stdout else "",
             stderr=result.stderr[-4000:] if result.stderr else "",
         )
@@ -631,13 +696,16 @@ def command(run_dir: Path, stage: str, args: list[str], timeout: int | None = No
         log(
             run_dir, stage, "command_timeout",
             timeout=timeout,
-            stdout=(exc.stdout or "")[-2000:],
-            stderr=(exc.stderr or "")[-2000:],
+            stdout=(exc.stdout.decode('utf-8', errors='replace') if isinstance(exc.stdout, bytes) else exc.stdout or '')[-2000:],
+            stderr=(exc.stderr.decode('utf-8', errors='replace') if isinstance(exc.stderr, bytes) else exc.stderr or '')[-2000:],
         )
         raise WorkflowError(
             f"{stage} timed out after {timeout} seconds. "
             f"Check {run_dir / 'run.log.jsonl'} for details."
         ) from exc
+    finally:
+        stop.set()
+        worker.join(timeout=6)
 
 
 def url_reachable(url: str, timeout: float = 2.0) -> bool:
@@ -703,11 +771,16 @@ def select_review_candidates(candidates: dict[str, Any], config: dict[str, Any])
         and ((item.get("hard_gates") or {}).get("content_completeness") or {}).get("status", "pass") == "pass"
         and ((item.get("hard_gates") or {}).get("fact_wording_fidelity") or {}).get("status", "pass") == "pass"
     ]
-    selected = sorted(
+    backbone = sorted(
         (item for item in all_candidates if item.get("verification_priority") == "priority.p1"),
         key=lambda item: (-item["score"], item["canonical_title"]),
-    )[:maximum]
-    selected_ids = {item["candidate_id"] for item in selected}
+    )
+    minimums = queue_config.get("intelligence_type_minimums", {})
+    if maximum < 1 or any(int(n) < 0 for n in minimums.values()) or sum(int(n) for n in minimums.values()) > maximum:
+        raise WorkflowError("review queue minimum quotas exceed capacity or are invalid")
+    selected = []
+    selected_ids = set()
+    warnings = []
 
     for intelligence_type, minimum in queue_config.get("intelligence_type_minimums", {}).items():
         present = sum(1 for item in selected if item.get("intelligence_type") == intelligence_type)
@@ -716,7 +789,7 @@ def select_review_candidates(candidates: dict[str, Any], config: dict[str, Any])
                 item for item in all_candidates
                 if item["candidate_id"] not in selected_ids
                 and item.get("intelligence_type") == intelligence_type
-                and (item.get("llm_analysis") or {}).get("recommended_disposition") in {"p1", "p2"}
+                and (item.get("verification_priority") == "priority.p1" or (item.get("llm_analysis") or {}).get("recommended_disposition") in {"p1", "p2"})
             ),
             key=lambda item: (
                 0 if (item.get("llm_analysis") or {}).get("recommended_disposition") == "p1" else 1,
@@ -730,6 +803,15 @@ def select_review_candidates(candidates: dict[str, Any], config: dict[str, Any])
             selected.append(item)
             selected_ids.add(item["candidate_id"])
             present += 1
+        if present < int(minimum):
+            warnings.append(f"{intelligence_type}: requested {minimum}, available {present}")
+    for item in backbone:
+        if len(selected) >= maximum:
+            break
+        if item["candidate_id"] not in selected_ids:
+            selected.append(item)
+            selected_ids.add(item["candidate_id"])
+    candidates["review_queue_warnings"] = warnings
     return selected
 
 
@@ -855,9 +937,11 @@ def attach_harness_evidence(review: dict[str, Any], evidence: dict[str, Any]) ->
 def materialize_fact_decisions(review: dict[str, Any]) -> dict[str, Any]:
     """Convert explicit fact-level human decisions into formal review claims."""
     for record in review.get("records", []):
-        if record.get("decision") not in {"include", "watch"} or record.get("claims"):
+        if record.get("decision") not in {"include", "watch"}:
             continue
         suggestions = record.get("suggested_evidence") or []
+        if not suggestions:
+            continue  # Legacy explicitly authored claims have no suggested queue.
         approve_all = record.get("approve_all_suggested_facts") is True
         claims = []
         pending = []
@@ -893,6 +977,7 @@ def materialize_fact_decisions(review: dict[str, Any]) -> dict[str, Any]:
                 f"{record['candidate_id']}: fact-level review incomplete; pending facts: {pending}"
             )
         record["claims"] = claims
+        record['facts_version'] = digest(claims)
     return review
 
 
@@ -920,7 +1005,12 @@ def materialize_review_metadata(review: dict[str, Any], candidates: dict[str, An
         if not candidate:
             raise WorkflowError(f"{record.get('candidate_id')}: structured candidate is missing")
         existing_event = record.get("event") or {}
-        record["verification_status"] = "verified_primary"
+        if record.get('verification_status') != 'verified_primary':
+            raise WorkflowError(f"{record['candidate_id']}: include requires explicit primary-source verification")
+        record.setdefault('reviewed_by', review.get('verified_by'))
+        record.setdefault('reviewed_at', review.get('verified_at'))
+        record.setdefault('review_method', 'automated_policy' if review.get('verified_by') == 'verification_policy'
+                          else 'legacy_top_level_review')
         risks = record.get("risk_flags") or []
         if not record.get("limitation"):
             record["limitation"] = (
@@ -971,8 +1061,34 @@ python3 spectra_agent/run.py resume --run-id {run_dir.name}
 
 def create_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    args.run_id = args.run_id or f"spectra_{stamp}"
+    target = runs_dir(config) / args.run_id
+    target.parent.mkdir(parents=True, exist_ok=True)
+    # A separate creation lease avoids making the run directory before preflight.
+    lease = RunLease(target.parent / '.creation-locks' / args.run_id)
+    if not lease.acquire():
+        raise WorkflowError(f"run creation already active: {args.run_id}")
+    try:
+        return _create_run(args, config)
+    finally:
+        lease.release()
+
+
+def _create_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     run_id = args.run_id or f"spectra_{stamp}"
     run_dir = runs_dir(config) / run_id
+    required = [ROOT / config['collection_config'], ROOT / config['processor_config'], ROOT / config['static_page']]
+    if args.from_collection:
+        required.append((ROOT / args.from_collection).resolve())
+    missing = [str(path) for path in required if not path.is_file()]
+    if missing:
+        raise WorkflowError('preflight missing required input/config: ' + ', '.join(missing))
+    for key in ('collector_python', 'llm_python'):
+        executable = Path(config.get(key, ''))
+        executable = executable if executable.is_absolute() else ROOT / executable
+        if (key == 'collector_python' or args.llm) and not executable.is_file():
+            raise WorkflowError(f'preflight missing {key}: {executable}')
     if run_dir.exists():
         raise WorkflowError(f"run already exists: {run_id}")
     run_dir.mkdir(parents=True)
@@ -1023,15 +1139,21 @@ def create_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
             desired_start = target_end - timedelta(days=int(args.days or config.get("schedule", {}).get("window_days", 7)))
             delta_path = run_dir / "collection.incremental.json"
             check_werss_service(config, run_dir)
+            cooldown_hours = int((config.get("incremental_collection") or {}).get("rate_limit_cooldown_hours", 24))
+            active_cooldowns = active_rate_limit_cooldowns(baseline, target_end, cooldown_hours)
             delta_cmd = [
                 collector_python(config), "collector/collect.py", "--config", config["collection_config"],
                 "--output", str(delta_path), "--start", delta_start.isoformat(), "--end", target_end.isoformat(),
             ]
+            for registry_id in active_cooldowns:
+                delta_cmd += ["--exclude-source", registry_id]
             if args.newscrawler_command:
                 delta_cmd += ["--newscrawler-command", args.newscrawler_command]
             command(run_dir, "collect_incremental", delta_cmd)
             delta = read_json(delta_path)
-            retry_ids = incremental_retry_source_ids(baseline, delta)
+            retry_ids, cooled_sources = incremental_retry_plan(baseline, delta)
+            if cooled_sources:
+                log(run_dir, "collect", "full_window_retry_cooled", sources=cooled_sources)
             retry_path = run_dir / "collection.full-window-retry.json"
             if retry_ids:
                 retry_cmd = [
@@ -1074,6 +1196,8 @@ def create_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
                 incremental_overlap_hours=overlap_hours,
                 incremental_changed_records=incremental_summary.get("changed_records", 0),
                 incremental_unchanged_records=incremental_summary.get("unchanged_records", 0),
+                full_window_retry_cooled_sources=cooled_sources,
+                active_rate_limit_cooldowns=active_cooldowns,
                 incremental_processing_mode=(
                     "deterministic_without_llm"
                     if not args.llm
@@ -1204,7 +1328,7 @@ def create_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
                 paused_reason=None,
             )
             log(run_dir, "auto_fact_lock", "all_p1_facts_auto_locked", **policy.get("counts", {}))
-            return resume_run(automatic_resume_args(args, run_id), config)
+            return _resume_run(automatic_resume_args(args, run_id), config)
 
         write_review_instructions(run_dir, len(template["records"]), gated_template["count"])
         update_state(run_dir, status="waiting_for_review", current_stage="human_review", paused_reason="P1 primary-source verification required")
@@ -1220,25 +1344,54 @@ def create_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
 
 def resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
     run_dir = locate_run(config, args.run_id)
+    creation = RunLease(run_dir.parent / '.creation-locks' / run_dir.name)
+    if not creation.acquire(wait=bool(os.environ.get(WORKER_TOKEN_ENV))):
+        print(json.dumps({'run_id': run_dir.name, 'status': 'already_running', 'stage': 'creating'}))
+        return 0
+    creation.release()
+    lease = RunLease(run_dir)
+    if not lease.acquire(wait=bool(os.environ.get(WORKER_TOKEN_ENV))):
+        print(json.dumps({'run_id': run_dir.name, 'status': 'already_running',
+                          'progress': read_json(run_dir / 'run.json') .get('current_stage'),
+                          'next': f'python3 spectra_agent/run.py status --run-id {run_dir.name}'}, ensure_ascii=False))
+        return 0
+    try:
+        return _resume_run(args, config)
+    finally:
+        lease.release()
+
+
+def _resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
+    run_dir = locate_run(config, args.run_id)
     state = read_json(run_dir / "run.json")
+    missing = [name for name in ('collection.json', 'candidates.json') if not (run_dir / name).is_file()]
+    if missing:
+        raise WorkflowError('resume preflight missing required artifacts: ' + ', '.join(missing))
     resumed_localization_issue = None
     resumed_localization_review = None
-    if (
-        state.get("current_stage") in {"localization_review", "image_preview"}
-        or state.get("status") == "failed"
-    ):
-        existing_issue = run_dir / "editorial-issue.json"
-        existing_review = run_dir / "p2-localization-review.json"
-        if existing_issue.exists():
-            resumed_localization_issue = read_json(existing_issue)
-        if existing_review.exists():
-            resumed_localization_review = read_json(existing_review)
-    if state["status"] == "completed":
+    existing_issue = run_dir / "editorial-issue.json"
+    existing_review = run_dir / "p2-localization-review.json"
+    if existing_issue.exists():
+        resumed_localization_issue = read_json(existing_issue)
+    if existing_review.exists():
+        resumed_localization_review = read_json(existing_review)
+    evaluation_path = run_dir / 'eval-report.json'
+    current_version = publication_version(run_dir)
+    evaluation_current = evaluation_path.exists() and read_json(evaluation_path).get('content_version') == current_version
+    if state["status"] == "completed" and not args.retry and evaluation_current:
         print(json.dumps({"run_id": run_dir.name, "status": "completed", "message": "nothing to resume"}, ensure_ascii=False, indent=2))
         return 0
-    resume_from_editorial_review = state["status"] == "waiting_for_editorial_review"
-    if not resume_is_allowed(state["status"], args.retry):
+    resume_from_editorial_review = state["status"] == "waiting_for_editorial_review" or (run_dir / 'core-event-checkpoint.json').exists()
+    if not resume_is_allowed(state["status"], args.retry) and not (args.retry and state['status'] in {'running', 'completed', 'waiting_for_editorial', 'interrupted'}):
         raise WorkflowError(f"run is {state['status']}; resume requires a review state (or --retry after fixing a failed run)")
+    # A resumed run is no longer complete. Clear the old terminal timestamp up
+    # front so pauses or interruptions cannot report contradictory state.
+    update_state(
+        run_dir,
+        status="running",
+        completed_at=None,
+        error=None,
+    )
     review_path = run_dir / "p1-review.json"
     if args.review:
         shutil.copyfile(ROOT / args.review, review_path)
@@ -1324,7 +1477,7 @@ def resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
                 paused_reason=None, error=None,
             )
             log(run_dir, "auto_fact_lock", "all_p1_facts_auto_locked", **policy.get("counts", {}))
-            return resume_run(automatic_resume_args(args, run_dir.name), config)
+            return _resume_run(automatic_resume_args(args, run_dir.name), config)
         write_review_instructions(run_dir, len(template["records"]), gated_template["count"])
         update_state(
             run_dir,
@@ -1425,11 +1578,10 @@ def resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
             ]
             worker_env = os.environ.copy()
             worker_env[WORKER_TOKEN_ENV] = worker_token
-            process = subprocess.Popen(
-                worker_command, cwd=ROOT, stdout=worker_log, stderr=worker_log,
-                start_new_session=True, env=worker_env,
-            )
-            worker_log.close()
+            try:
+                process = launch_editorial_worker(run_dir, worker_command, worker_env, worker_log)
+            finally:
+                worker_log.close()
             write_json(worker_lock_path(run_dir), {
                 "token": worker_token, "pid": process.pid,
                 "reserved_at": utc_now(), "command": "p1_editorial_worker",
@@ -1474,6 +1626,8 @@ def resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
                 log(run_dir, "p1_editorial_background", "writer_failed_using_quick_read_fallback")
 
         if args.editorial_only:
+            if not state.get('llm_requested') or not core_event_config.get('enabled', True) or not editorial_checkpoint_path.exists():
+                raise WorkflowError('--editorial-only requires enabled Writer and a current checkpoint')
             checkpoint = read_json(editorial_checkpoint_path)
             jobs = list((checkpoint.get("jobs") or {}).values())
             update_state(
@@ -1618,12 +1772,39 @@ def resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
         reader_quality_errors = publication_quality_errors(issue, config, asset_root=run_dir)
         if reader_quality_errors:
             raise WorkflowError("reader-facing publication quality failed: " + "; ".join(reader_quality_errors))
-        write_run_report(run_dir, read_json(run_dir / "collection.json"), read_json(run_dir / "candidates.json"), verified, issue)
         evaluation_config = config.get("run_evaluation") or {}
+        if (config.get('semantic_review') or {}).get('enabled', False):
+            update_state(run_dir, current_stage='semantic_review')
+            from spectra_agent.semantic_review import review_run
+            from spectra_agent.llm_client import create_llm_client
+            semantic_config = config['semantic_review']
+            prior_model = os.environ.get('SPECTRA_MODEL')
+            os.environ['SPECTRA_MODEL'] = semantic_config.get('model', 'qwen3:8b')
+            try:
+                semantic = review_run(run_dir, create_llm_client(semantic_config.get('provider', 'ollama')),
+                                      int(semantic_config.get('max_source_chars', 24000)))
+            finally:
+                if prior_model is None:
+                    os.environ.pop('SPECTRA_MODEL', None)
+                else:
+                    os.environ['SPECTRA_MODEL'] = prior_model
+            log(run_dir, 'semantic_review', 'shadow_review_completed', elapsed_seconds=semantic['elapsed_seconds'])
+            semantic_non_pass = [item for item in semantic['records'] if item['status'] != 'pass']
+            if semantic_non_pass and semantic_config.get('block_on_non_pass', True):
+                update_state(run_dir, status='waiting_for_editorial_review', current_stage='semantic_review',
+                             paused_reason=f"semantic review requires action for {len(semantic_non_pass)} stories",
+                             error=None, publish_status='not_published')
+                print(json.dumps({'run_id': run_dir.name, 'status': 'waiting_for_editorial_review',
+                    'current_stage': 'semantic_review', 'results': {status: sum(r['status'] == status for r in semantic['records'])
+                    for status in ('pass', 'rework', 'manual')}, 'report': str(run_dir / 'semantic-review.json'),
+                    'next': 'revise rework items; supplement evidence or review manual items; then resume --retry',
+                    'publish_status': 'not_published'}, ensure_ascii=False, indent=2))
+                return 2
         evaluation = None
         if evaluation_config.get("enabled", False):
             update_state(run_dir, current_stage="run_evaluation")
             evaluation = evaluate_run(run_dir, config, runs_dir(config))
+            evaluation['content_version'] = publication_version(run_dir)
             write_eval_report(
                 evaluation,
                 run_dir / "eval-report.json",
@@ -1654,16 +1835,19 @@ def resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
             evaluation_report="eval-report.json" if evaluation else None,
             automation_expansion_advice=(evaluation or {}).get("rolling_advice", {}).get("allow_expand"),
         )
-        acceptance = metrics_for_run(run_dir)
-        if acceptance:
-            write_json(run_dir / "acceptance-metrics.json", acceptance)
-            acceptance_runs_dir = runs_dir(config)
-            acceptance_summary = rolling_summary(distinct_completed_runs(acceptance_runs_dir, 3), 3)
-            write_outputs(
-                acceptance_summary,
-                acceptance_runs_dir / "acceptance-summary.json",
-                acceptance_runs_dir / "acceptance-summary.md",
-            )
+        write_run_report(run_dir, read_json(run_dir / 'collection.json'), read_json(run_dir / 'candidates.json'), verified, issue)
+        try:
+            acceptance = metrics_for_run(run_dir)
+            if acceptance:
+                write_json(run_dir / "acceptance-metrics.json", acceptance)
+                acceptance_runs_dir = runs_dir(config)
+                acceptance_summary = rolling_summary(distinct_completed_runs(acceptance_runs_dir, 3), 3)
+                write_outputs(acceptance_summary, acceptance_runs_dir / "acceptance-summary.json",
+                              acceptance_runs_dir / "acceptance-summary.md")
+            update_state(run_dir, metrics_status="completed")
+        except Exception as metrics_error:
+            update_state(run_dir, metrics_status="failed", metrics_error=str(metrics_error))
+            log(run_dir, "metrics", "auxiliary_metrics_failed", error=str(metrics_error))
         log(run_dir, "complete", "workflow_completed", events=count, stories=len(issue["editorial_stories"]))
         print(json.dumps({
             "run_id": run_dir.name,
@@ -1707,14 +1891,31 @@ def write_run_report(run_dir: Path, collection: dict[str, Any], candidates: dict
     lines.extend(f"- {item['registry_id']}：{item.get('error', 'unknown error')}" for item in failed)
     if not failed:
         lines.append("- 无")
-    lines += ["", "## 人工边界", "", "本期仅在P1原文核验文件批准后继续生成；Agent未自动跨越审核闸门。", ""]
+    review = read_json(run_dir / 'p1-review.json')
+    methods = sorted({record.get('review_method', 'unknown') for record in review.get('records', [])})
+    lines += ["", "## 审核边界", "",
+              f"- P1审核主体：{review.get('verified_by') or '未记录'}",
+              f"- P1审核方式：{', '.join(methods)}",
+              "- 采用内容、原文核验、自动评测与人工发布确认是四个独立状态。", ""]
     (run_dir / "run-report.md").write_text("\n".join(lines), encoding="utf-8")
 
 
 def show_status(args: argparse.Namespace, config: dict[str, Any]) -> int:
     run_dir = locate_run(config, args.run_id)
     state = read_json(run_dir / "run.json")
+    lease = RunLease(run_dir)
+    executor_active = not lease.acquire(record=False)
+    if not executor_active:
+        lease.release()
+    if state.get('status') in {'running', 'waiting_for_editorial'} and not executor_active:
+        age = (datetime.now(timezone.utc) - parse_timestamp(state.get('updated_at') or state.get('created_at'))).total_seconds()
+        if age > 30:
+            update_state(run_dir, status='interrupted', current_stage='interrupted',
+                         error=('recorded executor holds no run lease; a PID alone is not progress'),
+                         failed_stage=state.get('current_stage'))
+            state = read_json(run_dir / 'run.json')
     result = {key: state.get(key) for key in ("run_id", "status", "current_stage", "publish_status", "paused_reason", "error", "created_at", "updated_at", "completed_at") if state.get(key) is not None}
+    result['executor_active'] = executor_active
     result["run_dir"] = str(run_dir)
     if (run_dir / "eval-report.json").exists():
         evaluation = read_json(run_dir / "eval-report.json")
@@ -1732,6 +1933,35 @@ def show_status(args: argparse.Namespace, config: dict[str, Any]) -> int:
         result["checkpoint"] = str(compatible_artifact(run_dir, "core-event-checkpoint.json"))
         result["worker_log"] = str(run_dir / "p1-editorial-worker.log")
         result["recovery"] = f"if the worker stops, run: python3 spectra_agent/run.py resume --run-id {run_dir.name} --retry"
+    elif state['status'] == 'waiting_for_editorial_review' and state.get('current_stage') == 'image_preview':
+        result['next'] = f"preview covers, then run image_review.py for {run_dir} and resume"
+    elif state['status'] == 'waiting_for_editorial_review' and state.get('current_stage') == 'semantic_review':
+        result['next'] = f"review {run_dir / 'semantic-review.json'}, revise or supplement evidence, then resume --retry"
+    elif state['status'] == 'waiting_for_editorial_review':
+        result['next'] = f"review core-event-audit.json and Writer output in {run_dir}, then resume --retry"
+    elif state['status'] == 'failed':
+        result['next'] = f"fix the reported error, then run resume --run-id {run_dir.name} --retry"
+    elif state['status'] == 'interrupted':
+        result['next'] = f"run resume --run-id {run_dir.name} --retry; completed checkpoints will be reused"
+    elif state['status'] == 'completed':
+        result['next'] = 'publication remains a separate explicit action' if state.get('publish_status') != 'published' else 'published'
+    progress_path = run_dir / 'command-progress.json'
+    if progress_path.exists():
+        result['command_progress'] = read_json(progress_path)
+    stage_progress = {}
+    checkpoint = compatible_artifact(run_dir, 'core-event-checkpoint.json')
+    if checkpoint.exists():
+        jobs = list((read_json(checkpoint).get('jobs') or {}).values())
+        stage_progress['writer'] = {
+            'completed': sum(job.get('status') == 'completed' for job in jobs),
+            'total': len(jobs),
+        }
+    localization = run_dir / 'p2-localization-checkpoint.json'
+    if localization.exists():
+        value = read_json(localization)
+        stage_progress['localization'] = {'completed': value.get('processed', 0), 'total': value.get('total', 0)}
+    if stage_progress:
+        result['stage_progress'] = stage_progress
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0
 

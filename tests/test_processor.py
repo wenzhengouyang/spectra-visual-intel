@@ -98,6 +98,15 @@ class ProcessorTest(unittest.TestCase):
         candidate = MODULE.aggregate([scored])[0]
         self.assertEqual(candidate["intelligence_type"], "type.industry_market")
 
+    def test_generic_financial_title_includes_issuer(self):
+        item = record("2026 Interim Report", name="Kuaishou Technology HKEX Filings",
+                      source_type="financial_report")
+        item["publisher"] = "Kuaishou Technology"
+        item["raw_excerpt"] = "Kling AI video generation revenue and company results."
+        candidate = MODULE.aggregate([MODULE.score_record(item, CONFIG)])[0]
+        self.assertEqual(candidate["canonical_title"], "快手科技 — 2026年中期报告")
+        self.assertGreaterEqual(MODULE.score_record(item, CONFIG)["score"], 12)
+
     def test_official_product_release_is_product_release(self):
         item = record("Company launches a new video generation API", name="Official", source_type="official_announcement")
         item["raw_excerpt"] = "The product release includes pricing and a new controllable video feature."

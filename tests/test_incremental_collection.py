@@ -1,11 +1,11 @@
 import json
 import tempfile
 import unittest
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from collector.merge_incremental_runs import merge
-from spectra_agent.run import find_incremental_baseline, incremental_retry_source_ids
+from spectra_agent.run import active_rate_limit_cooldowns, find_incremental_baseline, incremental_retry_plan, incremental_retry_source_ids
 
 
 def record(source_id, url, digest, published, title="item"):
@@ -126,6 +126,41 @@ class IncrementalCollectionTest(unittest.TestCase):
             "failed_now",
             "new_source",
         ])
+
+    def test_rate_limited_source_is_cooled_instead_of_full_window_retry(self):
+        baseline = {"source_checks": []}
+        delta = {"source_checks": [{
+            "registry_id": "venturebeat", "adapter": "rss", "status": "failed",
+            "error": "HTTP Error 429: Too Many Requests",
+        }]}
+        retry, cooled = incremental_retry_plan(baseline, delta)
+        self.assertEqual(retry, [])
+        self.assertEqual(cooled, {"venturebeat": "rate_limited_429"})
+
+    def test_unavailable_werss_is_not_retried_over_full_window(self):
+        baseline = {"source_checks": [{
+            "registry_id": "werss", "adapter": "werss_api", "status": "failed",
+            "error": "connection refused",
+        }]}
+        delta = {"source_checks": [{
+            "registry_id": "werss", "adapter": "werss_api", "status": "failed",
+            "error": "WeRSS is not running",
+        }]}
+        retry, cooled = incremental_retry_plan(baseline, delta)
+        self.assertEqual(retry, [])
+        self.assertEqual(cooled, {"werss": "werss_unavailable"})
+
+    def test_recent_429_remains_in_source_cooldown(self):
+        now = datetime(2026, 9, 8, 2, tzinfo=timezone.utc)
+        collection = {
+            "collected_at": (now - timedelta(hours=3)).isoformat(),
+            "source_checks": [{
+                "registry_id": "venturebeat", "status": "failed",
+                "error": "HTTP Error 429: Too Many Requests",
+            }],
+        }
+        self.assertEqual(active_rate_limit_cooldowns(collection, now, 24), ["venturebeat"])
+        self.assertEqual(active_rate_limit_cooldowns(collection, now + timedelta(hours=22), 24), [])
 
     def test_thursday_selects_latest_same_week_collection(self):
         with tempfile.TemporaryDirectory() as temp:

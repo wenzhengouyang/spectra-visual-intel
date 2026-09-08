@@ -99,6 +99,14 @@ class P2TranslationTests(unittest.TestCase):
         self.assertEqual(issue["news_briefs"][0]["headline"], "已缓存的报告")
         self.assertEqual(issue["news_briefs"][1]["headline"], "2026年中期报告")
 
+    def test_resume_does_not_restore_copy_after_input_changes(self):
+        issue = {"news_briefs": [{"brief_id": "same", "headline": "New report", "dek": "New facts"}]}
+        cached = {"news_briefs": [{"brief_id": "same", "headline": "旧译文", "dek": "旧事实。",
+            "original_headline": "Old report", "original_dek": "Old facts",
+            "localization_status": "machine_localized_validated", "localized_fields": ["headline", "dek"]}]}
+        self.assertEqual(restore_reviewed_localizations(issue, cached, None)["restored"], 0)
+        self.assertEqual(issue["news_briefs"][0]["headline"], "New report")
+
 
 if __name__ == "__main__":
     unittest.main()

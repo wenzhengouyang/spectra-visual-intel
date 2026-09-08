@@ -53,7 +53,7 @@ def command(arguments: list[str], cwd: Path, capture: bool = False) -> str:
     return result.stdout.strip() if capture else ""
 
 
-def validate_run(run_dir: Path, config: dict) -> dict:
+def validate_run(run_dir: Path, config: dict, config_path: Path = DEFAULT_CONFIG) -> dict:
     state = read_json(run_dir / "run.json")
     if state.get("status") != "completed":
         raise WorkflowError(f"run is not completed: {state.get('status')}")
@@ -68,12 +68,15 @@ def validate_run(run_dir: Path, config: dict) -> dict:
         "scripts/validate-editorial-issue.py",
         "--editorial", str(run_dir / "editorial-issue.json"),
         "--verified", str(run_dir / "verified-events.json"),
-        "--config", str(DEFAULT_CONFIG),
+        "--config", str(config_path),
     ], ROOT)
     if (config.get("publishing") or {}).get("require_publication_checks", True):
         if not (run_dir / "eval-report.json").exists():
             raise WorkflowError("run evaluation report is missing")
         evaluation = read_json(run_dir / "eval-report.json")
+        from spectra_agent.execution import publication_version
+        if evaluation.get("content_version") != publication_version(run_dir):
+            raise WorkflowError("evaluation is missing a current content version; resume --retry before publishing")
         failures = [
             item["name"] for item in evaluation.get("publication_checks", [])
             if item.get("severity") == "error" and not item.get("passed")
@@ -101,9 +104,11 @@ def prepare_checkout(config: dict) -> Path:
         valid_checkout = probe.returncode == 0 and probe.stdout.strip() == "true"
     if not valid_checkout:
         if checkout.exists():
-            # A network interruption can leave only a partial .git directory.
-            # It is a disposable publish cache, never a source checkout.
-            shutil.rmtree(checkout)
+            # Preserve a broken cache for diagnosis instead of recursively
+            # deleting a path that originated in configuration.
+            suffix = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+            quarantine = checkout.with_name(f"{checkout.name}.invalid-{suffix}")
+            checkout.replace(quarantine)
         checkout.parent.mkdir(parents=True, exist_ok=True)
         command([
             "git", "clone", "--depth", "1", "--branch", branch, "--single-branch",
@@ -139,10 +144,10 @@ def main() -> int:
     parser.add_argument("--confirm", action="store_true", help="required explicit publication confirmation")
     args = parser.parse_args()
 
-    _, config = resolve_config(args.config)
+    config_path, config = resolve_config(args.config)
     run_dir = runs_dir(config) / args.run_id
     try:
-        validate_run(run_dir, config)
+        validate_run(run_dir, config, config_path)
         if not args.push:
             print(json.dumps({"run_id": args.run_id, "status": "validated", "published": False}, ensure_ascii=False))
             return 0

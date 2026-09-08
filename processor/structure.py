@@ -427,6 +427,15 @@ def aggregate(scored: list[dict[str, Any]]) -> list[dict[str, Any]]:
         is_github_cluster = records[0]["source_name"] == "Wan-Animate-2 GitHub Commits"
         event_rule = same_event_rule(" ".join(record["raw_title"] for record in records), CONFIG)
         title = "Wan-Animate-2 repository opened and documented" if is_github_cluster else best["record"]["raw_title"]
+        if (best['record'].get('source_type') == 'financial_report'
+                and title.strip().lower() in {'interim report', 'annual report', 'quarterly report',
+                                               '2026 interim report', '2026 annual report'}
+                and best['record'].get('publisher')):
+            publisher = CONFIG.get('publisher_display_names', {}).get(
+                best['record']['publisher'], best['record']['publisher'])
+            match = re.match(r'(?:(\d{4})\s+)?(Interim|Annual|Quarterly) Report$', title, re.I)
+            report_type = {'interim': '中期报告', 'annual': '年度报告', 'quarterly': '季度报告'}[match.group(2).lower()]
+            title = f"{publisher} — {match.group(1) + '年' if match.group(1) else ''}{report_type}"
         cid = "cand_" + hashlib.sha256((title + (records[0]["published_at"] or "")).encode()).hexdigest()[:16]
         # Only source-authored title/excerpt content may determine editorial
         # type and tags. Discovery metadata is deliberately excluded.

@@ -45,12 +45,12 @@ class DailyRuntimeTest(unittest.TestCase):
             {"candidate_id": "a", "suggested_evidence": [{"claim": "a"}]},
             {"candidate_id": "b", "suggested_evidence": [{"claim": "b"}]},
         ]}
-        result = decisions_for(review, {1}, {2}, set(), "reviewer")
+        result = decisions_for(review, {1}, {2}, set(), "reviewer", {1}, {2})
         self.assertEqual(result["records"]["a"]["decision"], "include")
         self.assertEqual(result["records"]["b"]["decision"], "watch")
         self.assertEqual(result["records"]["a"]["fact_decisions"], ["keep"])
         with self.assertRaises(ValueError):
-            decisions_for(review, {1}, set(), set(), "reviewer")
+            decisions_for(review, {1}, set(), set(), "reviewer", {1})
 
     def test_selection_accepts_all_and_chinese_commas(self):
         self.assertEqual(parse_selection("all", 3), {1, 2, 3})
@@ -61,7 +61,7 @@ class DailyRuntimeTest(unittest.TestCase):
             "candidate_id": "a", "title": "候选A", "url": "https://example.com/a",
             "suggested_evidence": [{"claim": "事实A", "evidence_text": "source A"}],
         }]}
-        answers = iter(["i", "y"])
+        answers = iter(["i", "p", "y"])
         result = interactive_decisions(review, "reviewer", input_fn=lambda _prompt: next(answers))
         self.assertEqual(result["records"]["a"]["decision"], "include")
         self.assertEqual(result["records"]["a"]["fact_decisions"], ["keep"])

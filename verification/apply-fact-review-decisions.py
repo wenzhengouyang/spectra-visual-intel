@@ -15,6 +15,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from spectra_agent.compat import rolling_thesis
+from spectra_agent.execution import atomic_json
 
 
 def read(path: str) -> dict[str, Any]:
@@ -59,11 +60,17 @@ def apply_decisions(review: dict[str, Any], decisions: dict[str, Any]) -> dict[s
         record["decision"] = decision
         record["decision_reason"] = selected["decision_reason"]
         record["limitation"] = selected["limitation"]
+        record["reviewed_by"] = decisions["verified_by"]
+        record["review_method"] = "human_primary_source" if status == "verified_primary" else (
+            "human_secondary_source" if status == "verified_secondary" else "human_selection_only"
+        )
         record["claims"] = []
         record["event"] = None
     review["review_status"] = "approved"
     review["verified_by"] = decisions["verified_by"]
     review["verified_at"] = decisions.get("verified_at") or datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    for record in review["records"]:
+        record["reviewed_at"] = review["verified_at"]
     thesis = rolling_thesis(decisions)
     if thesis:
         review["editorial_selection"] = {"rolling_thesis": thesis}
@@ -78,7 +85,7 @@ def main() -> int:
     args = parser.parse_args()
     result = apply_decisions(read(args.review), read(args.decisions))
     output = Path(args.output)
-    output.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    atomic_json(output, result)
     print(json.dumps({
         "output": str(output),
         "include": sum(item["decision"] == "include" for item in result["records"]),

@@ -14,7 +14,8 @@
     "incremental_weekdays": [1, 2, 3, 4, 5, 6],
     "overlap_hours": 6,
     "reuse_llm_checkpoint": true,
-    "full_window_retry_on_missing_or_failed_baseline_source": true
+    "full_window_retry_on_missing_or_failed_baseline_source": true,
+    "rate_limit_cooldown_hours": 24
   },
   "collector_python": ".venv-collector/bin/python",
   "llm_python": ".venv-llm/bin/python",
@@ -122,6 +123,16 @@
       "minimum_distinct_windows": 3,
       "require_unchanged_strategy": true
     }
+  },
+  "semantic_review": {
+    "enabled": true,
+    "mode": "shadow",
+    "provider": "ollama",
+    "model": "qwen3:8b",
+    "max_source_chars": 24000,
+    "max_reworks": 1,
+    "block_on_non_pass": true,
+    "automatic_approval_enabled": false
   },
   "publication_quality": {
     "minimum_core_events": 1,

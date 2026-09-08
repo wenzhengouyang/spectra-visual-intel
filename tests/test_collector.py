@@ -4,9 +4,11 @@ import os
 import sys
 import tempfile
 import unittest
+from io import BytesIO
 from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import patch
+from urllib.error import HTTPError
 
 
 SPEC = importlib.util.spec_from_file_location("spectra_collect", Path(__file__).parents[1] / "collector" / "collect.py")
@@ -28,6 +30,29 @@ class CollectorContractTest(unittest.TestCase):
             "url": "https://example.com/article?utm_source=test",
             "language": "en"
         }
+
+    def test_fetch_bytes_honors_retry_after_on_429(self):
+        limited = HTTPError(
+            "https://example.com/feed", 429, "Too Many Requests",
+            {"Retry-After": "7"}, BytesIO(),
+        )
+        response = unittest.mock.MagicMock()
+        response.__enter__.return_value.read.return_value = b"ok"
+        with patch.object(MODULE, "urlopen", side_effect=[limited, response]), \
+             patch.object(MODULE.time, "sleep") as sleep:
+            self.assertEqual(MODULE.fetch_bytes("https://example.com/feed", attempts=2), b"ok")
+        sleep.assert_called_once_with(7.0)
+
+    def test_fetch_bytes_bounds_large_retry_after(self):
+        limited = HTTPError(
+            "https://example.com/feed", 429, "Too Many Requests",
+            {"Retry-After": "3600"}, BytesIO(),
+        )
+        with patch.object(MODULE, "urlopen", side_effect=limited), \
+             patch.object(MODULE.time, "sleep") as sleep:
+            with self.assertRaises(HTTPError):
+                MODULE.fetch_bytes("https://example.com/feed", attempts=2, max_retry_delay=30)
+        sleep.assert_called_once_with(30)
 
     def test_newscrawler_normalizes_to_source_record(self):
         payload = {"title": "A visual AI release", "url": self.source["url"], "author": "A", "content": "Body", "published_at": "2026-08-10T10:00:00Z"}

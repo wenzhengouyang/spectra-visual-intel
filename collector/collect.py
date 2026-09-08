@@ -28,6 +28,7 @@ from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any, Iterable, Optional
 from urllib.parse import parse_qsl, urlencode, urljoin, urlsplit, urlunsplit
+from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 import arxiv
@@ -244,8 +245,27 @@ def feed_entry_media(entry: Any) -> dict[str, Any]:
     }
 
 
+def retry_after_seconds(error: HTTPError, default: float, maximum: float) -> float:
+    """Return a bounded Retry-After delay for a rate-limited request."""
+    raw = error.headers.get("Retry-After") if error.headers else None
+    delay = default
+    if raw:
+        try:
+            delay = float(raw)
+        except ValueError:
+            try:
+                retry_at = parsedate_to_datetime(raw)
+                if retry_at.tzinfo is None:
+                    retry_at = retry_at.replace(tzinfo=timezone.utc)
+                delay = max(0.0, (retry_at - datetime.now(timezone.utc)).total_seconds())
+            except (TypeError, ValueError, OverflowError):
+                pass
+    return min(maximum, max(0.0, delay))
+
+
 def fetch_bytes(url: str, attempts: int = 3, timeout: int = 45,
-                headers: Optional[dict[str, str]] = None) -> bytes:
+                headers: Optional[dict[str, str]] = None,
+                max_retry_delay: float = 60.0) -> bytes:
     last_error: Optional[Exception] = None
     for attempt in range(attempts):
         try:
@@ -257,7 +277,10 @@ def fetch_bytes(url: str, attempts: int = 3, timeout: int = 45,
         except Exception as exc:
             last_error = exc
             if attempt + 1 < attempts:
-                time.sleep(1.5 * (attempt + 1))
+                backoff = min(max_retry_delay, 2.0 ** attempt)
+                if isinstance(exc, HTTPError) and exc.code == 429:
+                    backoff = retry_after_seconds(exc, backoff, max_retry_delay)
+                time.sleep(backoff)
     assert last_error is not None
     raise last_error
 
@@ -1847,6 +1870,11 @@ def main() -> int:
         action="append",
         help="Run only the selected registry_id; repeat to select multiple sources",
     )
+    parser.add_argument(
+        "--exclude-source",
+        action="append",
+        help="Skip a registry_id that is still in source-level cooldown; repeat as needed",
+    )
     parser.add_argument("--newscrawler-command", help="Command template returning JSON on stdout; use {url} placeholder")
     args = parser.parse_args()
     load_local_env()
@@ -1859,6 +1887,9 @@ def main() -> int:
         missing = selected_ids - {item["registry_id"] for item in config["sources"]}
         if missing:
             parser.error(f"unknown source registry_id: {', '.join(sorted(missing))}")
+    if args.exclude_source:
+        excluded_ids = set(args.exclude_source)
+        config["sources"] = [item for item in config["sources"] if item["registry_id"] not in excluded_ids]
     end = datetime.fromisoformat(args.end.replace("Z", "+00:00")) if args.end else datetime.now(timezone.utc)
     if end.tzinfo is None:
         end = end.replace(tzinfo=timezone.utc)

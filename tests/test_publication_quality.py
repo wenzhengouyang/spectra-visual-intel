@@ -1,4 +1,5 @@
 import json
+import hashlib
 import tempfile
 import unittest
 from pathlib import Path
@@ -17,6 +18,7 @@ def sample_issue() -> dict:
             "cover_image": {
                 "url": "assets/cover.svg", "kind": "editorial_diagram",
                 "semantic_motif": "signal", "semantic_match": "passed", "review_status": "approved",
+                "asset_fingerprint": hashlib.sha256(b"unique").hexdigest(),
             },
         }],
         "news_briefs": [],
@@ -40,6 +42,14 @@ class PublicationQualityTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             errors = publication_quality_errors(issue, self.config, asset_root=Path(temp))
         self.assertTrue(any("needs_human_preview" in error for error in errors))
+
+    def test_replaced_generated_cover_invalidates_approval(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / "assets").mkdir()
+            (root / "assets/cover.svg").write_text("replacement")
+            errors = publication_quality_errors(sample_issue(), self.config, asset_root=root)
+        self.assertTrue(any("review_is_stale" in error for error in errors))
 
     def test_english_core_event_blocks_without_length_minimum(self):
         issue = sample_issue()

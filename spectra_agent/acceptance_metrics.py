@@ -62,7 +62,14 @@ def metrics_for_run(run_dir: Path, require_completed: bool = True) -> dict[str, 
 
     collection_summary = collection.get("summary", {})
     jobs = list((checkpoint.get("jobs") or {}).values())
-    completed_jobs = sum(job.get("status") == "completed" for job in jobs)
+    completed_jobs = sum(
+        job.get("status") == "completed" and job.get('phase') != 'reviewed_editorial_override'
+        for job in jobs
+    )
+    reviewed_overrides = sum(
+        job.get("status") == "completed" and job.get('phase') == 'reviewed_editorial_override'
+        for job in jobs
+    )
     sparse_demotions = sum(job.get("status") == "demoted" for job in jobs)
     failed_demotions = sum(job.get("status") == "demoted_after_failed_long_story" for job in jobs)
     manual_queue = sum(job.get("status") == "manual_review" for job in jobs)
@@ -99,6 +106,7 @@ def metrics_for_run(run_dir: Path, require_completed: bool = True) -> dict[str, 
             "demoted_after_failed_writer": failed_demotions,
             "writer_demotion_rate": ratio(failed_demotions, eligible_jobs),
             "manual_queue": manual_queue,
+            "reviewed_editorial_overrides": reviewed_overrides,
         },
         "human_intervention": {
             "fact_decisions": fact_counts,

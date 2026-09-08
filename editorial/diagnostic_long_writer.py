@@ -146,6 +146,7 @@ CONDITIONAL_INFERENCE_MARKERS = (
     "有助于", "加速", "显著", "重要进展", "体现", "表明", "显示出",
     "反映", "证明", "确保", "凸显", "提升", "改善", "推动", "促进",
     "帮助", "意味着", "使得", "导致", "令", "让", "成为",
+    "从而", "因此", "因而", "进而", "带来",
 )
 
 
@@ -521,7 +522,7 @@ def audit_article(result: dict, facts: list[dict], allowed_judgment: str = "",
         allowed_judgment_tokens = meaningful_tokens(allowed_judgment)
         if (
             not judgment_tokens
-            or len(judgment_tokens & allowed_judgment_tokens) / max(1, len(judgment_tokens)) < 0.18
+            or len(judgment_tokens & allowed_judgment_tokens) / max(1, len(judgment_tokens)) < 0.45
         ):
             errors.append("judgment exceeds allowed_judgment")
         extra = normalized_numbers(judgment_value) - normalized_numbers(allowed_judgment)

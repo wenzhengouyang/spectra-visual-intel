@@ -92,7 +92,6 @@
         <div class="panel-heading editorial-heading"><div><span class="section-kicker">ROLLING EDITORIAL</span><h2>近7日情报文章</h2></div><span class="digest-chip" id="storyMix">文章加载中</span></div>
         <div class="editorial-browse">
           <section class="story-group core-event-group"><div class="story-group-head"><div><span>CORE EVENT</span><h3>核心事件</h3></div><p id="coreEventCount">—</p></div><div class="story-card-grid" id="coreEventIndex"></div></section>
-          <section class="story-group verified-brief-group"><div class="story-group-head"><div><span>QUICK READ</span><h3>快速解读</h3></div><p id="verifiedBriefCount">—</p></div><div class="story-card-grid verified-brief-grid" id="verifiedBriefIndex"></div></section>
           <section class="story-group brief-group"><div class="story-group-head"><div><span>ROLLING BRIEFING</span><h3>近7日短讯</h3></div><p id="briefCount">—</p></div><div class="brief-list" id="briefIndex"></div></section>
         </div>
         <div class="article-reader" id="articleReader" hidden><div class="reader-heading"><span>ARTICLE READER</span><button id="backToArticles">← 返回文章列表</button></div><article class="editorial-feature" id="editorialArticle"></article></div>
@@ -371,7 +370,7 @@
       const numberCards = story.key_numbers.length ? `<div class="key-number-row">${story.key_numbers.map(number => `<div><strong>${escapeHtml(number.value)}</strong><span>${escapeHtml(number.label)}</span></div>`).join('')}</div>` : '';
       const numbers = renderMiniChart(story) || numberCards;
       const vote = feedback[story.story_id] || '';
-      document.getElementById('editorialArticle').innerHTML = `<div class="article-meta"><span class="primary-intel-tag">${escapeHtml(intelligenceLabel(story))}</span><span>${story.article_type === 'core_event' ? '核心事件' : '快速解读'}</span><em>${escapeHtml(story.category)}</em><i>${formatPublished(story.published_at)} · ${story.reading_time_minutes} 分钟阅读</i></div>${storyImageFigure(story, 'article-hero-image')}<h2>${escapeHtml(story.headline)}</h2><p class="article-dek">${escapeHtml(story.dek)}</p>${numbers}<div class="complete-story">${renderCompleteArticle(story)}</div><div class="article-actions"><a href="${safeUrl(story.source_links[0].url)}" target="_blank" rel="noopener noreferrer">核验原文 · ${escapeHtml(story.source_links[0].label)} ↗</a><div class="feedback-box"><span>这条情报对你有用吗？</span><button class="${vote === 'useful' ? 'active' : ''}" data-feedback="useful" data-feedback-story="${story.story_id}">有用</button><button class="${vote === 'not_relevant' ? 'active' : ''}" data-feedback="not_relevant" data-feedback-story="${story.story_id}">不相关</button><em>${vote ? '已记录' : '反馈将优化后续筛选'}</em></div></div>`;
+      document.getElementById('editorialArticle').innerHTML = `<div class="article-meta"><span class="primary-intel-tag">${escapeHtml(intelligenceLabel(story))}</span><span>${story.article_type === 'core_event' ? '核心事件' : '短讯解读'}</span><em>${escapeHtml(story.category)}</em><i>${formatPublished(story.published_at)} · ${story.reading_time_minutes} 分钟阅读</i></div>${storyImageFigure(story, 'article-hero-image')}<h2>${escapeHtml(story.headline)}</h2><p class="article-dek">${escapeHtml(story.dek)}</p>${numbers}<div class="complete-story">${renderCompleteArticle(story)}</div><div class="article-actions"><a href="${safeUrl(story.source_links[0].url)}" target="_blank" rel="noopener noreferrer">核验原文 · ${escapeHtml(story.source_links[0].label)} ↗</a><div class="feedback-box"><span>这条情报对你有用吗？</span><button class="${vote === 'useful' ? 'active' : ''}" data-feedback="useful" data-feedback-story="${story.story_id}">有用</button><button class="${vote === 'not_relevant' ? 'active' : ''}" data-feedback="not_relevant" data-feedback-story="${story.story_id}">不相关</button><em>${vote ? '已记录' : '反馈将优化后续筛选'}</em></div></div>`;
       document.getElementById('articleReader').hidden = false;
       document.getElementById('editorial-reader').classList.add('reading');
       document.body.classList.add('is-reading');
@@ -421,24 +420,20 @@
       const briefs = bundle.news_briefs.filter(storyMatches);
       const hasAny = coreEvents.length > 0 || verifiedBriefs.length > 0 || briefs.length > 0;
       document.getElementById('coreEventCount').textContent = `${coreEvents.length} 个`;
-      document.getElementById('verifiedBriefCount').textContent = `${verifiedBriefs.length} 篇`;
-      document.getElementById('briefCount').textContent = `${briefs.length} 条`;
+      document.getElementById('briefCount').textContent = `${briefs.length + verifiedBriefs.length} 条`;
       const interestEmpty = mineOnly && interests.length === 0;
       const coreEventGroup = document.querySelector('.core-event-group');
-      const verifiedGroup = document.querySelector('.verified-brief-group');
       const briefGroup = document.querySelector('.brief-group');
       coreEventGroup.classList.toggle('interest-empty-state', interestEmpty);
       coreEventGroup.hidden = interestEmpty ? false : coreEvents.length === 0 && hasAny;
       coreEventGroup.querySelector('.story-group-head').hidden = interestEmpty;
-      verifiedGroup.hidden = interestEmpty || verifiedBriefs.length === 0;
-      briefGroup.hidden = interestEmpty || briefs.length === 0;
+      briefGroup.hidden = interestEmpty || (briefs.length + verifiedBriefs.length) === 0;
       document.getElementById('storyMix').textContent = interestEmpty
         ? '等待建立关注档案'
-        : `${bundle.issue.core_event_count}个核心事件 · ${bundle.editorial_stories.filter(story => story.article_type === 'brief').length}篇快读 · ${bundle.issue.brief_count}条短讯`;
+        : `${bundle.issue.core_event_count}个核心事件 · ${bundle.editorial_stories.filter(story => story.article_type === 'brief').length + bundle.issue.brief_count}条短讯`;
       const emptyCopy = interestEmpty ? '尚未建立关注档案。请在上方选择关注领域，完成后这里才会出现个性化情报。' : '当前筛选下暂无内容';
       document.getElementById('coreEventIndex').innerHTML = coreEvents.map(story => storyCard(story, bundle.editorial_stories.indexOf(story))).join('') || `<div class="empty-search interest-empty">${emptyCopy}</div>`;
-      document.getElementById('verifiedBriefIndex').innerHTML = verifiedBriefs.map(story => briefCard(story, bundle.editorial_stories.indexOf(story))).join('');
-      document.getElementById('briefIndex').innerHTML = briefs.map(newsBriefCard).join('') || (interestEmpty ? '' : '<div class="empty-search">当前筛选下暂无短讯</div>');
+      document.getElementById('briefIndex').innerHTML = verifiedBriefs.map(story => briefCard(story, bundle.editorial_stories.indexOf(story))).join('') + briefs.map(newsBriefCard).join('') || (interestEmpty ? '' : '<div class="empty-search">当前筛选下暂无短讯</div>');
       document.querySelectorAll('[data-story-card]').forEach(card => card.classList.toggle('active', card.dataset.storyCard === selectedStoryId));
     }
 

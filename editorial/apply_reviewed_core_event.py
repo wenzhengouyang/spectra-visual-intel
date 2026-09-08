@@ -43,6 +43,7 @@ class NoCallClient:
 def apply_reviewed_core_event(
     *, verified: dict[str, Any], review: dict[str, Any], collection: dict[str, Any],
     checkpoint: dict[str, Any], event_id: str, article: dict[str, Any], author: str,
+    judgment_reviewer: str,
 ) -> tuple[dict, dict, dict, dict, dict]:
     """Return updated review, fact selection, checkpoint, drafts and audit bundles."""
     updated_review = deepcopy(review)
@@ -62,11 +63,16 @@ def apply_reviewed_core_event(
     judgment = str(article.get("judgment") or "").strip()
     if not judgment:
         raise ValueError(f"{event_id}: reader judgment is required")
+    if not judgment_reviewer.strip():
+        raise ValueError(f"{event_id}: judgment requires an explicit human reviewer")
+    if judgment_reviewer.strip().lower() in {'codex', 'agent', 'automation', 'model'}:
+        raise ValueError(f"{event_id}: an automated author cannot approve its own judgment")
     applied_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     record["reader_judgment"] = judgment
     record["reader_judgment_provenance"] = {
         "generated_by": author,
         "based_on_verified_by": updated_review.get("verified_by"),
+        "approved_by": judgment_reviewer,
         "applied_at": applied_at,
     }
 
@@ -123,6 +129,7 @@ def main() -> int:
     parser.add_argument("--event-id", required=True)
     parser.add_argument("--draft", required=True)
     parser.add_argument("--author", default="Codex")
+    parser.add_argument("--judgment-reviewer", required=True)
     args = parser.parse_args()
     run_dir = Path(args.run_dir).resolve()
     paths = {
@@ -142,6 +149,7 @@ def main() -> int:
     updated_review, selection, updated_checkpoint = apply_reviewed_core_event(
         verified=verified, review=review, collection=collection, checkpoint=checkpoint,
         event_id=args.event_id, article=article, author=args.author,
+        judgment_reviewer=args.judgment_reviewer,
     )
     write_json(paths["review"], updated_review)
     write_json(paths["selection"], selection)
