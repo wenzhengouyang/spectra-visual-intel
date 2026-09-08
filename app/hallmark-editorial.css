@@ -1,5 +1,5 @@
 /* Hallmark · macrostructure: Dark Editorial Desk · theme: studied-DNA (source: deeplearning.ai/the-batch) · tone: serious newsroom · anchor hue: steel blue */
-/* Hallmark · pre-emit critique: P5 H5 E4 S5 R5 V4 */
+/* Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V4 · contrast: pass (40–41) · nav: N2 · footer: Ft1 · slop: pass (42–49) · mobile: pass (34, 49–57) */
 
 :root {
   --bg: var(--color-paper);
@@ -359,7 +359,7 @@ textarea {
 
 .legend,
 .text-button,
-.week-chip,
+.digest-chip,
 .story-group-head p {
   color: var(--color-muted);
   font-size: var(--text-xs);
@@ -1157,6 +1157,395 @@ footer {
 
   .editorial-judgment {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Hallmark · component refresh: evidence Q&A + personal profile + signal-derived ideas
+ * genre: editorial · motion: cut · false navigation: removed
+ */
+.qa-article > header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding-bottom: var(--space-sm);
+  border-bottom: var(--rule-hairline);
+}
+
+.qa-article > header > b {
+  color: var(--color-ink);
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 650;
+}
+
+.qa-article > header > small {
+  color: var(--color-muted);
+  font-family: var(--font-label);
+  font-size: var(--text-xs);
+}
+
+.qa-article dl {
+  margin: 0;
+}
+
+.qa-pair {
+  display: grid;
+  grid-template-columns: minmax(11rem, 0.62fr) minmax(0, 1.65fr);
+  gap: var(--space-lg);
+  padding: var(--space-lg) 0;
+  border-bottom: var(--rule-hairline);
+}
+
+.qa-pair dt {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-xs);
+  color: var(--color-ink);
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  font-weight: 650;
+  line-height: 1.55;
+}
+
+.qa-pair dt > span {
+  flex: 0 0 auto;
+  margin-top: 0.18rem;
+  color: var(--color-accent-ink);
+  font-family: var(--font-label);
+  font-size: var(--text-xs);
+}
+
+.qa-pair dd {
+  min-width: 0;
+  margin: 0;
+  color: var(--color-ink-2);
+  font-size: var(--text-md);
+  line-height: 1.85;
+}
+
+.qa-pair dd p {
+  margin: 0;
+}
+
+.answer-attribution {
+  margin: 0 0 var(--space-sm) !important;
+  color: var(--color-muted);
+  font-size: var(--text-sm);
+}
+
+.fact-answer-list,
+.qa-pair dd ul {
+  display: grid;
+  gap: var(--space-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fact-answer-list li,
+.qa-pair dd li {
+  position: relative;
+  padding-left: var(--space-md);
+}
+
+.fact-answer-list li::before,
+.qa-pair dd li::before {
+  position: absolute;
+  top: 0;
+  left: 0;
+  color: var(--color-accent-ink);
+  content: "—";
+}
+
+.blog-summary > header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding-bottom: var(--space-sm);
+  border-bottom: var(--rule-hairline);
+}
+
+.blog-summary > header > b {
+  color: var(--color-ink);
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 650;
+}
+
+.blog-summary > header > small {
+  color: var(--color-muted);
+  font-family: var(--font-label);
+  font-size: var(--text-xs);
+}
+
+.blog-summary {
+  display: block;
+}
+
+/*
+ * Reading copy is a document, not a field grid. This explicit reset prevents
+ * the legacy `.article-prose > div { display:flex }` rule from turning each
+ * paragraph into a narrow horizontal column.
+ */
+.article-prose.blog-summary > .summary-copy {
+  display: block;
+  width: 100%;
+  max-width: 68ch;
+  padding: var(--space-lg) 0 var(--space-md);
+  border: 0;
+}
+
+.summary-copy p {
+  margin: 0 0 var(--space-md);
+  color: var(--color-ink-2);
+  font-size: var(--text-md);
+  line-height: 1.9;
+}
+
+.summary-copy p:first-child {
+  color: var(--color-ink);
+  font-size: var(--text-lg);
+  font-weight: 500;
+  line-height: 1.78;
+}
+
+.summary-copy p:last-child {
+  margin-bottom: 0;
+}
+
+/* 核心事件列表样式 - 使用竖线引导和大间距设计 */
+.summary-copy .core-event-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.summary-copy .core-event-list li {
+  position: relative;
+  padding-left: 1.2em;
+  margin-bottom: 1.5rem;
+  color: var(--color-ink-2);
+  font-size: var(--text-md);
+  line-height: 1.9;
+}
+
+.summary-copy .core-event-list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--color-primary);
+  opacity: 0.3;
+}
+
+.summary-copy .core-event-list li:first-child {
+  color: var(--color-ink);
+  font-weight: 500;
+}
+
+.summary-copy .core-event-list li:first-child::before {
+  background: var(--color-primary);
+  opacity: 0.5;
+}
+
+.summary-copy .core-event-list li:last-child {
+  margin-bottom: 0;
+}
+
+.summary-judgment,
+.summary-watch {
+  display: grid;
+  grid-template-columns: minmax(8rem, .32fr) minmax(0, 1fr);
+  gap: var(--space-md);
+  max-width: 68ch;
+  padding: var(--space-md) 0;
+  border-top: var(--rule-hairline);
+}
+
+.summary-judgment > b,
+.summary-watch > b {
+  color: var(--color-ink);
+  font-family: var(--font-label);
+  font-size: var(--text-sm);
+}
+
+.summary-judgment > p,
+.summary-watch > p {
+  margin: 0;
+  color: var(--color-muted);
+  line-height: 1.75;
+}
+
+@media (max-width: 48rem) {
+  .blog-summary > header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .summary-judgment,
+  .summary-watch {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-xs);
+  }
+}
+
+#channelDescription {
+  max-width: 42rem;
+  margin: var(--space-2xs) 0 0;
+  color: var(--color-muted);
+  font-size: var(--text-sm);
+  line-height: 1.6;
+}
+
+body[data-current-view="interests"] .filter-toolbar,
+body[data-current-view="interests"] .taxonomy-note,
+body[data-current-view="interests"] .advanced-filter-panel,
+body[data-current-view="interests"] .interest-entry {
+  display: none !important;
+}
+
+body[data-current-view="interests"] .intel-controls-head {
+  align-items: flex-start;
+  margin-bottom: var(--space-md);
+}
+
+body[data-current-view="interests"] .interest-panel {
+  display: grid;
+  grid-template-columns: minmax(12rem, 0.65fr) minmax(0, 2fr) auto;
+  gap: var(--space-lg);
+  align-items: start;
+  margin: 0;
+  padding: var(--space-lg);
+  border: var(--rule-hairline);
+  border-radius: var(--radius-card);
+  background: var(--color-paper-2);
+}
+
+body[data-current-view="interests"] .interest-panel p {
+  max-width: 22rem;
+  line-height: 1.65;
+}
+
+.core-event-group.interest-empty-state .story-group-head {
+  display: none;
+}
+
+body[data-current-view="interests"] .interest-options {
+  gap: var(--space-2xs);
+}
+
+body[data-current-view="interests"] .interest-options button {
+  min-height: 2.25rem;
+  padding: 0 var(--space-sm);
+  white-space: nowrap;
+}
+
+.ideas-heading {
+  align-items: flex-end;
+}
+
+.ideas-heading p {
+  max-width: 40rem;
+  margin: var(--space-2xs) 0 0;
+  color: var(--color-muted);
+  font-size: var(--text-sm);
+  line-height: 1.6;
+}
+
+.ideas-status {
+  color: var(--color-muted);
+  font-family: var(--font-label);
+  font-size: var(--text-xs);
+}
+
+.idea-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.idea-card {
+  display: flex;
+  min-height: 22rem;
+  flex-direction: column;
+  padding: var(--space-lg);
+  cursor: default;
+}
+
+.idea-card > small {
+  width: fit-content;
+  margin-top: var(--space-xl);
+  padding: 0;
+  color: var(--color-accent-ink);
+  background: transparent;
+  font-size: var(--text-xs);
+}
+
+.idea-card > small::after {
+  content: none;
+}
+
+.idea-card h3 {
+  margin: var(--space-xs) 0 var(--space-sm);
+}
+
+.idea-card p {
+  font-size: var(--text-sm);
+  line-height: 1.7;
+}
+
+.idea-evidence {
+  display: grid;
+  gap: var(--space-2xs);
+  margin-top: var(--space-md);
+  padding-top: var(--space-sm);
+  border-top: var(--rule-hairline);
+}
+
+.idea-evidence b {
+  color: var(--color-muted);
+  font-family: var(--font-label);
+  font-size: var(--text-xs);
+}
+
+.idea-evidence span {
+  color: var(--color-ink-2);
+  font-size: var(--text-xs);
+  line-height: 1.6;
+}
+
+.idea-footer {
+  position: static;
+  margin-top: auto;
+  padding-top: var(--space-md);
+}
+
+@media (max-width: 900px) {
+  body[data-current-view="interests"] .interest-panel {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .idea-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .qa-article > header,
+  .ideas-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .qa-pair {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-sm);
+  }
+
+  .idea-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -2494,6 +2883,20 @@ body.is-reading .editorial-feature > .article-dek {
 body.is-reading .editorial-feature > .editorial-judgment {
   margin-top: var(--space-md);
   padding: var(--space-sm) var(--space-md);
+}
+
+/* Hallmark · pre-emit critique: P4 H4 E4 S5 R5 V4
+ * Brief headlines are primary information, never teaser copy. Keep the full
+ * title visible at every width instead of trading meaning for equal card rows.
+ */
+.news-brief-card h4 a {
+  display: block;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: initial;
+  -webkit-line-clamp: unset;
 }
 
 @media (max-width: 768px) {
