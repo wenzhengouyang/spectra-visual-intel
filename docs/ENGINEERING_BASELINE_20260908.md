@@ -27,7 +27,7 @@
 
 `core_event 0/1`、图片未人工确认、语言或证据质量未通过时，运行必须停在审核态并保持 `not_published`。测试通过、页面生成、调度器运行和线上发布是四个独立状态，不得互相替代。
 
-每日任务进入 `waiting_for_review` 或 `waiting_for_editorial_review` 时，会异步弹出 macOS 审核对话框；同一 Run 的同一审核阶段只弹一次。事实审核打开 `REVIEW.md`，内容、图片或本地化审核打开该 Run 的 `rolling-digest.html`。
+每日任务进入 `waiting_for_review` 或 `waiting_for_editorial_review` 时，会异步弹出 macOS 审核对话框；同一 Run 的同一审核阶段只弹一次。事实审核会拉起 Terminal，逐条展示候选、建议事实与原文证据，并在确认后自动续跑；不要求用户编辑 JSON 文件。
 
 ## 基线验证
 
@@ -50,4 +50,4 @@ git diff --check
   --config spectra_agent/config.v0.1.json
 ```
 
-本基线建立时，Python 回归测试为 211 项全部通过。`daily-20260907` 的事实人工审核已完成，但因 `core_event 0/1` 仍停在内容质量审核且未发布；这是质量闸门的正常阻断状态，不属于工程失败。
+本基线建立时，Python 回归测试为 212 项全部通过。`daily-20260907` 的事实人工审核已完成，但因 `core_event 0/1` 仍停在内容质量审核且未发布；这是质量闸门的正常阻断状态，不属于工程失败。

@@ -7,7 +7,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from spectra_agent.daily_runner import choose_action, daily_run_id
-from spectra_agent.review_cli import decisions_for, parse_selection
+from spectra_agent.review_cli import decisions_for, interactive_decisions, parse_selection
 
 
 class DailyRuntimeTest(unittest.TestCase):
@@ -55,6 +55,16 @@ class DailyRuntimeTest(unittest.TestCase):
     def test_selection_accepts_all_and_chinese_commas(self):
         self.assertEqual(parse_selection("all", 3), {1, 2, 3})
         self.assertEqual(parse_selection("1，3", 3), {1, 3})
+
+    def test_interactive_review_can_include_and_keep_all_visible_facts(self):
+        review = {"records": [{
+            "candidate_id": "a", "title": "候选A", "url": "https://example.com/a",
+            "suggested_evidence": [{"claim": "事实A", "evidence_text": "source A"}],
+        }]}
+        answers = iter(["i", "y"])
+        result = interactive_decisions(review, "reviewer", input_fn=lambda _prompt: next(answers))
+        self.assertEqual(result["records"]["a"]["decision"], "include")
+        self.assertEqual(result["records"]["a"]["fact_decisions"], ["keep"])
 
 
 if __name__ == "__main__":

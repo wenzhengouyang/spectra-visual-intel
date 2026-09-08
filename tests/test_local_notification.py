@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from spectra_agent.local_notification import notification_key, review_target, show_review_popup
+from spectra_agent.local_notification import notification_key, review_target, show_review_popup, terminal_review_command
 
 
 class LocalNotificationTest(unittest.TestCase):
@@ -25,8 +25,9 @@ class LocalNotificationTest(unittest.TestCase):
         self.assertEqual(first["status"], "shown")
         self.assertEqual(second["status"], "already_shown")
         self.assertEqual(len(calls), 1)
-        self.assertIn("2 条 P1 候选", calls[0][0][4])
-        self.assertTrue(calls[0][0][5].endswith("REVIEW.md"))
+        self.assertIn("review_cli.py", calls[0][0][3])
+        self.assertIn("--interactive", calls[0][0][3])
+        self.assertIn("--resume", calls[0][0][3])
 
     def test_editorial_gate_uses_digest_and_has_distinct_key(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -35,7 +36,8 @@ class LocalNotificationTest(unittest.TestCase):
             digest.write_text("ok", encoding="utf-8")
             state = {"status": "waiting_for_editorial_review", "current_stage": "image_review"}
             self.assertEqual(review_target(run_dir, state), digest)
-            self.assertEqual(notification_key(state), "waiting_for_editorial_review:image_review")
+            self.assertEqual(notification_key(state), "terminal_review_v1:waiting_for_editorial_review:image_review")
+            self.assertIn("run.py", terminal_review_command(run_dir, state))
 
 
 if __name__ == "__main__":

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import shlex
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
@@ -17,14 +18,11 @@ except ImportError:
 
 APPLESCRIPT = r'''
 on run argv
-  set dialogTitle to item 1 of argv
-  set dialogMessage to item 2 of argv
-  set reviewTarget to item 3 of argv
-  set timeoutSeconds to (item 4 of argv) as integer
-  set answer to display dialog dialogMessage with title dialogTitle buttons {"稍后处理", "打开审核"} default button "打开审核" with icon caution giving up after timeoutSeconds
-  if gave up of answer is false and button returned of answer is "打开审核" then
-    do shell script "/usr/bin/open " & quoted form of reviewTarget
-  end if
+  set terminalCommand to item 1 of argv
+  tell application "Terminal"
+    activate
+    do script terminalCommand
+  end tell
 end run
 '''.strip()
 
@@ -38,21 +36,25 @@ def review_target(run_dir: Path, state: dict[str, Any]) -> Path:
 
 
 def notification_key(state: dict[str, Any]) -> str:
-    return f"{state.get('status', 'unknown')}:{state.get('current_stage', 'unknown')}"
+    return f"terminal_review_v1:{state.get('status', 'unknown')}:{state.get('current_stage', 'unknown')}"
 
 
-def popup_message(run_dir: Path, state: dict[str, Any]) -> str:
+def terminal_review_command(run_dir: Path, state: dict[str, Any]) -> str:
+    root = Path(__file__).resolve().parents[1]
+    python = root / ".venv-llm/bin/python"
     if state.get("status") == "waiting_for_review":
-        try:
-            review = json.loads((run_dir / "p1-review.json").read_text(encoding="utf-8"))
-            count = len(review.get("records") or [])
-        except (OSError, ValueError, json.JSONDecodeError):
-            count = 0
-        detail = f"有 {count} 条 P1 候选等待一手来源与事实审核。" if count else "P1 候选正在等待人工审核。"
+        command = [
+            str(python), str(root / "spectra_agent/review_cli.py"),
+            "--config", "spectra_agent/config.v0.1.json",
+            "--run-id", run_dir.name, "--interactive", "--resume",
+        ]
     else:
-        detail = "稿件质量、图片或本地化结果正在等待人工确认。"
-    reason = str(state.get("paused_reason") or "人工审核闸门已触发")
-    return f"{run_dir.name}\n\n{detail}\n\n原因：{reason}\n\n点击“打开审核”查看对应文件。"
+        command = [
+            str(python), str(root / "spectra_agent/run.py"),
+            "--config", "spectra_agent/config.v0.1.json",
+            "status", "--run-id", run_dir.name,
+        ]
+    return f"cd {shlex.quote(str(root))}; {shlex.join(command)}; printf '\\n审核命令已结束，按回车关闭窗口。'; read"
 
 
 def show_review_popup(
@@ -75,10 +77,10 @@ def show_review_popup(
         return {"status": "already_shown", "key": key}
 
     target = review_target(run_dir, state)
-    timeout = max(60, int(settings.get("dialog_timeout_seconds", 86400)))
+    terminal_command = terminal_review_command(run_dir, state)
     command = [
         "/usr/bin/osascript", "-e", APPLESCRIPT,
-        "SPECTRA 需要人工审核", popup_message(run_dir, state), str(target), str(timeout),
+        terminal_command,
     ]
     try:
         launcher(

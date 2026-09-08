@@ -140,6 +140,12 @@ P1 人工事实审核通过后，`fact_selection` 只从 `verified_events` 生�
 .venv-llm/bin/python spectra_agent/review_cli.py --run-id daily-YYYYMMDD --list
 ```
 
+进入可直接操作的终端逐条审核，并在确认后自动续跑：
+
+```bash
+.venv-llm/bin/python spectra_agent/review_cli.py --run-id daily-YYYYMMDD --interactive --resume
+```
+
 确认所有事实，并在同一命令中续跑 Writer 与页面生成：
 
 ```bash

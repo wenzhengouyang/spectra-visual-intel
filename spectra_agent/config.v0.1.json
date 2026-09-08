@@ -133,8 +133,7 @@
     "daily_run_prefix": "daily"
   },
   "local_review_notification": {
-    "enabled": true,
-    "dialog_timeout_seconds": 86400
+    "enabled": true
   },
   "dingtalk_push": {
     "enabled": false,
