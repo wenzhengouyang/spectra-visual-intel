@@ -62,6 +62,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 from spectra_agent.execution import RunLease, atomic_json, digest, publication_version
+from spectra_agent.reliability import mark_recovered, record_failure
 DEFAULT_CONFIG = ROOT / "spectra_agent/config.v0.1.json"
 TERMINAL = {"completed", "failed"}
 STATIC_ASSETS = (
@@ -505,12 +506,18 @@ def prepare_retry_artifacts(
             if current_stage == "failed"
             else current_stage
         ) or "retry_prepare"
+        incident = record_failure(
+            run_dir, failed_stage, exc,
+            max_attempts=int((config.get("reliability") or {}).get("max_automatic_attempts", 2)),
+        )
         update_state(
             run_dir,
             status="failed",
             current_stage="failed",
             failed_stage=failed_stage,
             error=str(exc),
+            last_failure=incident,
+            next_action=incident["action"],
         )
         log(run_dir, "failed", "retry_preparation_failed", error=str(exc))
         raise
@@ -1250,6 +1257,15 @@ def _create_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
             except Exception as exc:
                 if radar_config.get("required", False):
                     raise
+                incident = record_failure(
+                    run_dir, "discussion_radar", exc,
+                    max_attempts=int((config.get("reliability") or {}).get("max_automatic_attempts", 2)),
+                    scope="optional_stage", blocking=False,
+                )
+                update_state(
+                    run_dir, reliability_status="degraded",
+                    last_warning=incident,
+                )
                 log(run_dir, "discussion_radar", "optional_stage_failed", error=str(exc))
         else:
             log(run_dir, "discussion_radar", "optional_stage_skipped")
@@ -1337,7 +1353,14 @@ def _create_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
         return 2
     except Exception as exc:
         failed_stage = read_json(run_dir / "run.json").get("current_stage")
-        update_state(run_dir, status="failed", current_stage="failed", failed_stage=failed_stage, error=str(exc))
+        incident = record_failure(
+            run_dir, failed_stage or "unknown", exc,
+            max_attempts=int((config.get("reliability") or {}).get("max_automatic_attempts", 2)),
+        )
+        update_state(
+            run_dir, status="failed", current_stage="failed", failed_stage=failed_stage,
+            error=str(exc), last_failure=incident, next_action=incident["action"],
+        )
         log(run_dir, "failed", "workflow_failed", error=str(exc), traceback=traceback.format_exc())
         raise
 
@@ -1823,6 +1846,7 @@ def _resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
                     "run evaluation failed and block_completion_on_failure is enabled: "
                     + ", ".join(evaluation["failed_checks"])
                 )
+        reliability_status = mark_recovered(run_dir, "complete")
         update_state(
             run_dir,
             status="completed",
@@ -1834,6 +1858,9 @@ def _resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
             evaluation_status=evaluation["status"] if evaluation else "disabled",
             evaluation_report="eval-report.json" if evaluation else None,
             automation_expansion_advice=(evaluation or {}).get("rolling_advice", {}).get("allow_expand"),
+            reliability_status=reliability_status,
+            last_failure=None,
+            next_action=None,
         )
         write_run_report(run_dir, read_json(run_dir / 'collection.json'), read_json(run_dir / 'candidates.json'), verified, issue)
         try:
@@ -1846,7 +1873,15 @@ def _resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
                               acceptance_runs_dir / "acceptance-summary.md")
             update_state(run_dir, metrics_status="completed")
         except Exception as metrics_error:
-            update_state(run_dir, metrics_status="failed", metrics_error=str(metrics_error))
+            incident = record_failure(
+                run_dir, "metrics", metrics_error,
+                max_attempts=int((config.get("reliability") or {}).get("max_automatic_attempts", 2)),
+                scope="optional_stage", blocking=False,
+            )
+            update_state(
+                run_dir, metrics_status="failed", metrics_error=str(metrics_error),
+                reliability_status="degraded", last_warning=incident,
+            )
             log(run_dir, "metrics", "auxiliary_metrics_failed", error=str(metrics_error))
         log(run_dir, "complete", "workflow_completed", events=count, stories=len(issue["editorial_stories"]))
         print(json.dumps({
@@ -1868,7 +1903,14 @@ def _resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
         return 0
     except Exception as exc:
         failed_stage = read_json(run_dir / "run.json").get("current_stage")
-        update_state(run_dir, status="failed", current_stage="failed", failed_stage=failed_stage, error=str(exc))
+        incident = record_failure(
+            run_dir, failed_stage or "unknown", exc,
+            max_attempts=int((config.get("reliability") or {}).get("max_automatic_attempts", 2)),
+        )
+        update_state(
+            run_dir, status="failed", current_stage="failed", failed_stage=failed_stage,
+            error=str(exc), last_failure=incident, next_action=incident["action"],
+        )
         log(run_dir, "failed", "resume_failed", error=str(exc), traceback=traceback.format_exc())
         raise
 
@@ -1910,11 +1952,18 @@ def show_status(args: argparse.Namespace, config: dict[str, Any]) -> int:
     if state.get('status') in {'running', 'waiting_for_editorial'} and not executor_active:
         age = (datetime.now(timezone.utc) - parse_timestamp(state.get('updated_at') or state.get('created_at'))).total_seconds()
         if age > 30:
+            interrupted_stage = state.get('current_stage') or 'unknown'
+            incident = record_failure(
+                run_dir, interrupted_stage,
+                'executor stopped without a live run lease or recent progress',
+                max_attempts=2,
+            )
             update_state(run_dir, status='interrupted', current_stage='interrupted',
                          error=('recorded executor holds no run lease; a PID alone is not progress'),
-                         failed_stage=state.get('current_stage'))
+                         failed_stage=interrupted_stage, last_failure=incident,
+                         next_action=incident['action'])
             state = read_json(run_dir / 'run.json')
-    result = {key: state.get(key) for key in ("run_id", "status", "current_stage", "publish_status", "paused_reason", "error", "created_at", "updated_at", "completed_at") if state.get(key) is not None}
+    result = {key: state.get(key) for key in ("run_id", "status", "current_stage", "publish_status", "reliability_status", "paused_reason", "error", "last_failure", "last_warning", "next_action", "created_at", "updated_at", "completed_at") if state.get(key) is not None}
     result['executor_active'] = executor_active
     result["run_dir"] = str(run_dir)
     if (run_dir / "eval-report.json").exists():
@@ -1940,7 +1989,7 @@ def show_status(args: argparse.Namespace, config: dict[str, Any]) -> int:
     elif state['status'] == 'waiting_for_editorial_review':
         result['next'] = f"review core-event-audit.json and Writer output in {run_dir}, then resume --retry"
     elif state['status'] == 'failed':
-        result['next'] = f"fix the reported error, then run resume --run-id {run_dir.name} --retry"
+        result['next'] = (state.get('last_failure') or {}).get('next') or f"fix the reported error, then run resume --run-id {run_dir.name} --retry"
     elif state['status'] == 'interrupted':
         result['next'] = f"run resume --run-id {run_dir.name} --retry; completed checkpoints will be reused"
     elif state['status'] == 'completed':

@@ -87,7 +87,10 @@ class ExecutionTests(unittest.TestCase):
             atomic_json(run_dir / 'run.json', {'run_id': 'r1', 'status': 'running', 'current_stage': 'writer',
                         'created_at': '2000-01-01T00:00:00Z', 'updated_at': '2000-01-01T00:00:00Z'})
             show_status(argparse.Namespace(run_id='r1'), {'data_dir': d, 'runs_dir': 'runs'})
-            self.assertEqual(json.loads((run_dir / 'run.json').read_text())['status'], 'interrupted')
+            state = json.loads((run_dir / 'run.json').read_text())
+            self.assertEqual(state['status'], 'interrupted')
+            self.assertEqual(state['last_failure']['action'], 'retry_from_checkpoint')
+            self.assertEqual(state['next_action'], 'retry_from_checkpoint')
 
     def test_changed_decision_replaces_existing_claims(self):
         data = {'records': [{'candidate_id': 'c', 'decision': 'include', 'claims': [{'text': 'old'}],

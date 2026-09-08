@@ -142,6 +142,9 @@ class SpectraAgentGateTest(unittest.TestCase):
             state = json.loads((run_dir / "run.json").read_text())
             self.assertEqual(state["status"], "failed")
             self.assertEqual(state["failed_stage"], "collect")
+            self.assertEqual(state["last_failure"]["category"], "configuration")
+            self.assertEqual(state["next_action"], "human_action_required")
+            self.assertTrue((run_dir / "reliability.json").exists())
 
     def test_editorial_worker_lock_rejects_duplicate_and_recovers_stale_lock(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
