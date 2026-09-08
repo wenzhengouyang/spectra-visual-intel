@@ -132,6 +132,10 @@
   "local_runtime": {
     "daily_run_prefix": "daily"
   },
+  "local_review_notification": {
+    "enabled": true,
+    "dialog_timeout_seconds": 86400
+  },
   "dingtalk_push": {
     "enabled": false,
     "local_time": "10:00",

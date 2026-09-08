@@ -26,6 +26,11 @@ try:
 except ImportError:
     from paths import logs_path
 
+try:
+    from spectra_agent.local_notification import show_review_popup
+except ImportError:
+    from local_notification import show_review_popup
+
 
 ACTIVE_STATUSES = {"initialized", "running", "waiting_for_editorial"}
 HUMAN_STATUSES = {"waiting_for_review", "waiting_for_editorial_review"}
@@ -96,11 +101,16 @@ def main() -> int:
         action = choose_action(run_dir)
         if action.startswith("noop_"):
             state = read_json(run_dir / "run.json")
+            notification = (
+                show_review_popup(run_dir, state, config.get("local_review_notification") or {})
+                if action == "noop_human_gate" else None
+            )
             print(json.dumps({
                 "status": state.get("status"),
                 "run_id": run_id,
                 "action": action,
                 "next": "run review_cli.py" if action == "noop_human_gate" else None,
+                "notification": notification,
             }, ensure_ascii=False, indent=2))
             return 0
 
@@ -118,6 +128,10 @@ def main() -> int:
         status = state.get("status")
         # run.py returns 2 when it intentionally stops at the human gate.
         successful_pause = status in HUMAN_STATUSES or status == "waiting_for_editorial"
+        notification = (
+            show_review_popup(run_dir, state, config.get("local_review_notification") or {})
+            if status in HUMAN_STATUSES else None
+        )
         result_code = 0 if successful_pause else return_code
         print(json.dumps({
             "status": status or "failed_to_initialize",
@@ -125,6 +139,7 @@ def main() -> int:
             "action": action,
             "command_exit": return_code,
             "log": str(log_dir / f"{run_id}.log"),
+            "notification": notification,
         }, ensure_ascii=False, indent=2))
         return result_code
 
