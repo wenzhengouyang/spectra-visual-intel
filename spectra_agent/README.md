@@ -134,7 +134,7 @@ P1 人工事实审核通过后，`fact_selection` 只从 `verified_events` 生�
 .venv-llm/bin/python spectra_agent/install_local_runtime.py
 ```
 
-安装器可重复执行，用于把后续工程修改同步到运行副本；它不复制数据目录，重新加载每天 08:00 的服务，并执行不采集的运行环境探针。正式日志位于 `~/Library/Application Support/SPECTRA/data/logs/`。
+安装器可重复执行，用于把后续工程修改同步到运行副本；它不复制数据目录，重新加载每天 08:00 的日更服务、发布后自动去重的钉钉推送检查和持续保活的 WeRSS 服务，并执行不采集的运行环境探针。正式日志位于 `~/Library/Application Support/SPECTRA/data/logs/`。
 
 查看 P1 队列：
 
@@ -169,7 +169,7 @@ P1 人工事实审核通过后，`fact_selection` 只从 `verified_events` 生�
 
 `launchd` 配置模板位于 `spectra_agent/launchd/com.spectra.visual-intel.daily.plist`，每天 08:00 启动本地 runner。
 
-钉钉推送目前在配置中关闭，不安装、不启动。预留模块使用独立的 `spectra_agent/launchd/com.spectra.visual-intel.dingtalk.plist`，未来启用时可在每天 10:00 检查当日 Run。只有 Run 已完成且 GitHub Pages 已发布时才会推送；仍在审核、Writer 生成或发布校验中时仅记录 `not_ready`，不会推送旧页面。机器人凭证只从被 Git 忽略的 `.env.local` 读取：
+钉钉推送已在配置中启用，安装器会加载独立的 `spectra_agent/launchd/com.spectra.visual-intel.dingtalk.plist`，登录后每 30 分钟轻量检查当日 Run。只有 Run 已完成且 GitHub Pages 已发布时才会推送；发送成功后用当日标记去重。仍在审核、Writer 生成或发布校验中时仅记录 `not_ready`，不会推送旧页面。机器人凭证只从被 Git 忽略且部署后权限为 `0600` 的 `.env.local` 读取：
 
 ```bash
 DINGTALK_WEBHOOK_URL=https://oapi.dingtalk.com/robot/send?access_token=...

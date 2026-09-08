@@ -147,12 +147,13 @@
     "enabled": true
   },
   "dingtalk_push": {
-    "enabled": false,
+    "enabled": true,
     "local_time": "10:00",
     "webhook_env": "DINGTALK_WEBHOOK_URL",
     "secret_env": "DINGTALK_SECRET",
     "require_published": true,
-    "public_url": "https://wenzhengouyang.github.io/spectra-visual-intel/"
+    "public_url": "https://wenzhengouyang.github.io/spectra-visual-intel/",
+    "header_image_url": "https://wenzhengouyang.github.io/spectra-visual-intel/assets/dingtalk/spectra-dingtalk-banner-responsive-20260908.png"
   },
   "publishing": {
     "remote": "origin",

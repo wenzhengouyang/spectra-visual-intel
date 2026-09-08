@@ -11,11 +11,17 @@ import shutil
 import subprocess
 from pathlib import Path
 
+try:
+    from spectra_agent.install_werss_service import install as install_werss_service
+except ImportError:
+    from install_werss_service import install as install_werss_service
+
 
 SOURCE_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_RUNTIME = Path.home() / "Library/Application Support/SPECTRA/runtime"
 DEFAULT_DATA_ROOT = Path.home() / "Library/Application Support/SPECTRA/data"
-LABEL = "com.spectra.visual-intel.daily"
+DAILY_LABEL = "com.spectra.visual-intel.daily"
+DINGTALK_LABEL = "com.spectra.visual-intel.dingtalk"
 
 
 def ignored(directory: str, names: list[str]) -> set[str]:
@@ -67,24 +73,32 @@ def deploy(runtime: Path) -> None:
     (DEFAULT_DATA_ROOT / "logs").mkdir(parents=True, exist_ok=True)
 
 
-def install_plist(runtime: Path) -> Path:
-    template = SOURCE_ROOT / "spectra_agent/launchd/com.spectra.visual-intel.daily.plist"
+def install_plist(
+    runtime: Path,
+    *,
+    label: str = DAILY_LABEL,
+    template_name: str = "com.spectra.visual-intel.daily.plist",
+    script_name: str = "daily_runner.py",
+    stdout_name: str = "launchd.out.log",
+    stderr_name: str = "launchd.err.log",
+) -> Path:
+    template = SOURCE_ROOT / "spectra_agent/launchd" / template_name
     with template.open("rb") as handle:
         payload = plistlib.load(handle)
     payload["ProgramArguments"][0] = str(runtime / ".venv-llm/bin/python")
-    payload["ProgramArguments"][1] = str(runtime / "spectra_agent/daily_runner.py")
+    payload["ProgramArguments"][1] = str(runtime / "spectra_agent" / script_name)
     payload["WorkingDirectory"] = str(runtime)
-    payload["StandardOutPath"] = str(DEFAULT_DATA_ROOT / "logs/launchd.out.log")
-    payload["StandardErrorPath"] = str(DEFAULT_DATA_ROOT / "logs/launchd.err.log")
+    payload["StandardOutPath"] = str(DEFAULT_DATA_ROOT / "logs" / stdout_name)
+    payload["StandardErrorPath"] = str(DEFAULT_DATA_ROOT / "logs" / stderr_name)
     launch_agents = Path.home() / "Library/LaunchAgents"
     launch_agents.mkdir(parents=True, exist_ok=True)
-    target = launch_agents / f"{LABEL}.plist"
+    target = launch_agents / f"{label}.plist"
     with target.open("wb") as handle:
         plistlib.dump(payload, handle, sort_keys=False)
     domain = f"gui/{os.getuid()}"
     subprocess.run(["launchctl", "bootout", domain, str(target)], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     subprocess.run(["launchctl", "bootstrap", domain, str(target)], check=True)
-    subprocess.run(["launchctl", "enable", f"{domain}/{LABEL}"], check=True)
+    subprocess.run(["launchctl", "enable", f"{domain}/{label}"], check=True)
     return target
 
 
@@ -95,7 +109,18 @@ def main() -> int:
     args = parser.parse_args()
     runtime = Path(args.runtime).expanduser().resolve()
     deploy(runtime)
-    plist = None if args.copy_only else install_plist(runtime)
+    plists = {}
+    if not args.copy_only:
+        plists["daily"] = str(install_plist(runtime))
+        plists["dingtalk"] = str(install_plist(
+            runtime,
+            label=DINGTALK_LABEL,
+            template_name="com.spectra.visual-intel.dingtalk.plist",
+            script_name="dingtalk_push.py",
+            stdout_name="dingtalk.out.log",
+            stderr_name="dingtalk.err.log",
+        ))
+        plists["werss"] = str(install_werss_service())
     probe = subprocess.run([
         str(runtime / ".venv-llm/bin/python"),
         str(runtime / "spectra_agent/daily_runner.py"),
@@ -104,8 +129,12 @@ def main() -> int:
     result = {
         "status": "installed" if probe.returncode == 0 else "invalid",
         "runtime": str(runtime),
-        "plist": str(plist) if plist else None,
-        "schedule": "08:00 Asia/Shanghai",
+        "plists": plists,
+        "schedules": {
+            "daily": "08:00 Asia/Shanghai",
+            "dingtalk": "every 30 minutes; sent marker prevents duplicates",
+            "werss": "run at login and keep alive",
+        },
         "probe": probe.stdout.strip() or probe.stderr.strip(),
     }
     print(json.dumps(result, ensure_ascii=False, indent=2))

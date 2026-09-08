@@ -13,6 +13,7 @@ import hashlib
 import hmac
 import json
 import os
+import re
 import time
 import urllib.error
 import urllib.parse
@@ -48,21 +49,62 @@ def signed_webhook(webhook: str, secret: str | None, now_ms: int | None = None) 
     return urllib.parse.urlunsplit((parsed.scheme, parsed.netloc, parsed.path, urllib.parse.urlencode(query), parsed.fragment))
 
 
-def notification_payload(issue: dict, public_url: str) -> dict:
+def _field_text(value: object) -> str:
+    if isinstance(value, dict):
+        value = value.get("text")
+    return str(value or "").strip()
+
+
+def _compact(value: object, limit: int = 140) -> str:
+    text = " ".join(_field_text(value).split())
+    for source in ("$\\mathcal{L}_{motion}$", "\\mathcal{L}_{motion}", "$L_{motion}$", "L_{motion}"):
+        text = text.replace(source, "L_motion")
+    if len(text) <= limit:
+        return text
+    return text[: limit - 1].rstrip("，。；、 ") + "…"
+
+
+def _top_stories(issue: dict, meta: dict, limit: int = 3) -> list[dict]:
+    stories = issue.get("editorial_stories") or []
+    by_id = {str(story.get("story_id")): story for story in stories}
+    ranked = [by_id[story_id] for story_id in meta.get("top_story_ids") or [] if story_id in by_id]
+    if len(ranked) < limit:
+        remaining = [story for story in stories if story not in ranked]
+        ranked.extend(sorted(remaining, key=lambda story: float(story.get("editorial_score") or 0), reverse=True))
+    return ranked[:limit]
+
+
+def _bold_data(text: str) -> str:
+    pattern = r"(\d+(?:\.\d+)?(?:%|倍|个|项|条|万|亿|GB|TB|fps|帧|秒|分钟|小时|天|年|D))"
+    return re.sub(pattern, r"**\1**", text)
+
+
+def notification_payload(issue: dict, public_url: str, header_image_url: str = "") -> dict:
     meta = issue.get("issue") or {}
-    story_count = int(meta.get("story_count") or len(issue.get("editorial_stories") or []))
-    brief_count = int(meta.get("brief_count") or len(issue.get("news_briefs") or []))
-    title = str(meta.get("title") or "SPECTRA 每日情报")
-    period = f"{meta.get('period_start', '—')} 至 {meta.get('period_end', '—')}"
-    thesis = str(rolling_thesis(meta, "今日情报已完成更新。"))
-    text = (
-        f"### {title}\n\n"
-        f"{thesis}\n\n"
-        f"- 时间窗口：{period}\n"
-        f"- 正式事件：{story_count} 条\n"
-        f"- 短讯：{brief_count} 条\n\n"
-        f"[打开 SPECTRA 情报页]({public_url})"
-    )
+    report_date = str(meta.get("report_date") or meta.get("period_end") or "")
+    date_label = f"{report_date[5:7]}月{report_date[8:10]}日" if len(report_date) >= 10 else "今日"
+    title = f"SPECTRA · {date_label}"
+    thesis = _bold_data(_compact(rolling_thesis(meta, "今日情报已完成更新。"), 100))
+    items = []
+    for index, story in enumerate(_top_stories(issue, meta), start=1):
+        headline = _compact(story.get("headline") or "今日重点情报", 72)
+        summary = _bold_data(_compact(story.get("one_line_takeaway") or story.get("dek"), 82))
+        items.append(
+            f"🔹 **{index}｜{headline}**\n\n"
+            f"{summary or '打开工作台查看详情'}"
+        )
+    top_three = "\n\n".join(items) or "今日暂无达到发布标准的焦点事件"
+    blocks = []
+    if header_image_url:
+        blocks.append(f"![SPECTRA 今日视觉情报]({header_image_url})")
+    blocks.extend((
+        "⚡ **30 秒结论**",
+        f"**{thesis}**",
+        "🔥 **今日 Top 3 焦点**",
+        top_three,
+        f"🔗 [打开 SPECTRA 网页工作台 →]({public_url})",
+    ))
+    text = "\n\n".join(blocks)
     return {"msgtype": "markdown", "markdown": {"title": title, "text": text}}
 
 
@@ -115,13 +157,20 @@ def main() -> int:
         return 0
 
     marker = run_dir / "dingtalk-push.json"
-    if marker.exists() and read_json(marker).get("status") == "sent":
-        print(json.dumps({"status": "already_sent", "run_id": run_id}, ensure_ascii=False))
-        return 0
+    if marker.exists():
+        marker_status = read_json(marker).get("status")
+        if marker_status in {"sent", "suppressed"}:
+            print(json.dumps({
+                "status": "already_sent" if marker_status == "sent" else "suppressed",
+                "run_id": run_id,
+            }, ensure_ascii=False))
+            return 0
 
     webhook = os.environ.get(str(settings.get("webhook_env") or "DINGTALK_WEBHOOK_URL"), "").strip()
     secret = os.environ.get(str(settings.get("secret_env") or "DINGTALK_SECRET"), "").strip() or None
-    payload = notification_payload(issue, str(settings.get("public_url") or "").strip())
+    public_url = str(settings.get("public_url") or "").strip()
+    header_image_url = str(settings.get("header_image_url") or "").strip()
+    payload = notification_payload(issue, public_url, header_image_url)
     if args.dry_run:
         print(json.dumps({"status": "dry_run", "run_id": run_id, "payload": payload}, ensure_ascii=False, indent=2))
         return 0

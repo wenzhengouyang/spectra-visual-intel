@@ -13,13 +13,10 @@
   </array>
   <key>WorkingDirectory</key>
   <string>/Users/wenzheng/Library/Application Support/SPECTRA/runtime</string>
-  <key>StartCalendarInterval</key>
-  <dict>
-    <key>Hour</key>
-    <integer>10</integer>
-    <key>Minute</key>
-    <integer>0</integer>
-  </dict>
+  <key>StartInterval</key>
+  <integer>1800</integer>
+  <key>RunAtLoad</key>
+  <true/>
   <key>ProcessType</key>
   <string>Background</string>
   <key>EnvironmentVariables</key>

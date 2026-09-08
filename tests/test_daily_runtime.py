@@ -20,7 +20,16 @@ class DailyRuntimeTest(unittest.TestCase):
         self.assertEqual(collection["StartCalendarInterval"], {"Hour": 8, "Minute": 0})
         self.assertNotIn("/Documents/", collection["WorkingDirectory"])
         self.assertIn("Application Support/SPECTRA/runtime", collection["WorkingDirectory"])
-        self.assertEqual(dingtalk["StartCalendarInterval"], {"Hour": 10, "Minute": 0})
+        self.assertEqual(dingtalk["StartInterval"], 1800)
+        self.assertTrue(dingtalk["RunAtLoad"])
+
+    def test_dingtalk_push_is_enabled_and_uses_environment_secrets(self):
+        root = Path(__file__).resolve().parents[1]
+        config = json.loads((root / "spectra_agent/config.v0.1.json").read_text())
+        settings = config["dingtalk_push"]
+        self.assertTrue(settings["enabled"])
+        self.assertEqual(settings["webhook_env"], "DINGTALK_WEBHOOK_URL")
+        self.assertEqual(settings["secret_env"], "DINGTALK_SECRET")
 
     def test_daily_run_id_uses_configured_local_date(self):
         now = datetime(2026, 9, 3, 23, 30, tzinfo=ZoneInfo("UTC"))
