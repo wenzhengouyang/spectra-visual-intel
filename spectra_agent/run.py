@@ -1791,6 +1791,7 @@ def _resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
             }, ensure_ascii=False, indent=2))
             return 2
         update_state(run_dir, pending_image_story_ids=[])
+        issue = read_json(issue_path)
         command(run_dir, "validate_issue", [sys.executable, "scripts/validate-editorial-issue.py", "--editorial", str(issue_path), "--verified", str(verified_path), "--config", str(resolve_config(args.config)[0])])
         validate_static_package(run_dir, static_draft, issue)
         reader_quality_errors = publication_quality_errors(issue, config, asset_root=run_dir)

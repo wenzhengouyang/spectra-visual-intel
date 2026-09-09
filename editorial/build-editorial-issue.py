@@ -1058,12 +1058,8 @@ def publication_core_event_ids(
     writer_drafts: dict[str, dict],
     draft_bundle: dict | None,
 ) -> list[str]:
-    """Only model drafts that crossed readiness and validation may ship as core events."""
-    selected = selected_event_ids[:5]
-    if draft_bundle is None:
-        # Preserve deterministic legacy fixtures that predate the Writer.
-        return selected
-    return [event_id for event_id in selected if event_id in writer_drafts]
+    """Content priority owns core-event membership; Writer only owns its format."""
+    return selected_event_ids[:5]
 
 
 def brief_source_status(source: dict) -> tuple[str, str]:
@@ -1447,12 +1443,17 @@ def main() -> None:
     ][:5]
     top_event_ids = publication_core_event_ids(selected_top_event_ids, writer_drafts, draft_bundle)
     top_story_ids = [story_by_event[event_id]["story_id"] for event_id in top_event_ids]
-    # Readiness and Writer validation own the deep/quick split. Sparse events
-    # remain useful, but must not be padded into artificial core events.
+    # Editorial selection owns importance. Writer readiness changes how much
+    # copy is available, but must never demote a selected core event into the
+    # P2 rolling-news stream.
     for story in stories:
         is_core_event = story["primary_event_id"] in top_event_ids
         story["article_type"] = "core_event" if is_core_event else "brief"
-        story["reading_time_minutes"] = max(story["reading_time_minutes"], 5) if is_core_event else 2
+        story["content_format"] = (
+            "full_analysis" if story["primary_event_id"] in writer_drafts else "compact_analysis"
+        )
+        if not is_core_event:
+            story["reading_time_minutes"] = 2
     exact_issue_one = set(events) == set(STORY_COPY)
     fallback_window_end = max(item["event_at"] for item in events.values())
     window_end_value = verified.get("display_window_end") or verified.get("window_end") or fallback_window_end

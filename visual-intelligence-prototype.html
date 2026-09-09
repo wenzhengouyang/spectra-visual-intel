@@ -345,17 +345,16 @@
     function renderStoryGroups() {
       const filtered = bundle.editorial_stories.filter(storyMatches);
       const coreEvents = filtered.filter(story => story.article_type === 'core_event');
-      const verifiedBriefs = filtered.filter(story => story.article_type === 'brief');
       const briefs = bundle.news_briefs.filter(storyMatches);
-      const hasAny = coreEvents.length > 0 || verifiedBriefs.length > 0 || briefs.length > 0;
+      const hasAny = coreEvents.length > 0 || briefs.length > 0;
       document.getElementById('coreEventCount').textContent = `${coreEvents.length} 个`;
-      document.getElementById('briefCount').textContent = `${briefs.length + verifiedBriefs.length} 条`;
+      document.getElementById('briefCount').textContent = `${briefs.length} 条`;
       document.querySelector('.core-event-group').hidden = coreEvents.length === 0 && hasAny;
-      document.querySelector('.brief-group').hidden = (briefs.length + verifiedBriefs.length) === 0;
+      document.querySelector('.brief-group').hidden = briefs.length === 0;
       const interestEmpty = mineOnly && interests.length === 0;
       const emptyCopy = interestEmpty ? '尚未建立关注档案。请在上方选择关注领域，完成后这里才会出现个性化情报。' : '当前筛选下暂无内容';
       document.getElementById('coreEventIndex').innerHTML = coreEvents.map(story => storyCard(story, bundle.editorial_stories.indexOf(story))).join('') || `<div class="empty-search interest-empty">${emptyCopy}</div>`;
-      document.getElementById('briefIndex').innerHTML = verifiedBriefs.map(story => briefCard(story, bundle.editorial_stories.indexOf(story))).join('') + briefs.map(newsBriefCard).join('') || (interestEmpty ? '' : '<div class="empty-search">当前筛选下暂无短讯</div>');
+      document.getElementById('briefIndex').innerHTML = briefs.map(newsBriefCard).join('') || (interestEmpty ? '' : '<div class="empty-search">当前筛选下暂无短讯</div>');
       document.querySelectorAll('[data-story-card]').forEach(card => card.classList.toggle('active', card.dataset.storyCard === selectedStoryId));
     }
 
@@ -418,8 +417,7 @@
       document.getElementById('updatedAt').textContent = `更新于 ${updated.toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false})}`;
       document.getElementById('trendCount').textContent = `${bundle.presentation.trend_radar.length}条趋势 · ${bundle.issue.story_count}个事件支撑`;
       document.getElementById('timelineCount').textContent = `共 ${String(bundle.issue.total_intelligence_count || bundle.issue.story_count).padStart(2,'0')} 条 ↗`;
-      const quickReadCount = bundle.editorial_stories.filter(story => story.article_type === 'brief').length;
-      document.getElementById('storyMix').textContent = `${bundle.issue.core_event_count}个核心事件 · ${quickReadCount + bundle.issue.brief_count}条短讯`;
+      document.getElementById('storyMix').textContent = `${bundle.issue.core_event_count}个核心事件 · ${bundle.issue.brief_count}条短讯`;
       document.getElementById('footerSummary').textContent = `${bundle.issue.story_count}条正式事件 · ${bundle.issue.core_event_count}个核心事件 · ${bundle.issue.brief_count}条短讯 · P2短讯保留待核验标识`;
       document.getElementById('navStoryCount').textContent = bundle.issue.total_intelligence_count || bundle.issue.story_count;
       const thesisText = bundle.issue.rolling_thesis || '';

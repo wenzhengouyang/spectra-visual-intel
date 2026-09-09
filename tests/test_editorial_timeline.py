@@ -28,11 +28,11 @@ class EditorialTimelineTest(unittest.TestCase):
     def test_future_issues_do_not_use_event_specific_manual_story_overrides(self):
         self.assertFalse(hasattr(MODULE, "BLOG_SUMMARY_OVERRIDES"))
 
-    def test_only_readiness_qualified_writer_drafts_ship_as_core_events(self):
+    def test_editorial_priority_not_writer_success_owns_core_events(self):
         selected = ["evt_ready", "evt_sparse", "evt_failed"]
         writer_drafts = {"evt_ready": {"event_id": "evt_ready"}}
         actual = MODULE.publication_core_event_ids(selected, writer_drafts, {"drafts": list(writer_drafts.values())})
-        self.assertEqual(actual, ["evt_ready"])
+        self.assertEqual(actual, selected)
 
     def test_english_event_title_falls_back_to_a_chinese_verified_claim(self):
         event = {"event_id": "evt_new", "canonical_title": "English only title"}
