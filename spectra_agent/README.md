@@ -16,6 +16,10 @@ python3 spectra_agent/run.py run
 python3 spectra_agent/run.py status
 ```
 
+不需要盯终端：本地运行安装完成后，打开 `http://127.0.0.1:8010` 即可查看“今日进展”。
+页面每 5 秒只读刷新当前阶段、核心事件处理数量、最后更新时间和需要人工操作的事项；
+它不会修改审核、检查点或发布状态，并随电脑登录自动启动。
+
 根据运行目录中的 `REVIEW.md` 完成 `p1-review.json`，批准后恢复：
 
 ```bash

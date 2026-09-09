@@ -22,6 +22,7 @@ DEFAULT_RUNTIME = Path.home() / "Library/Application Support/SPECTRA/runtime"
 DEFAULT_DATA_ROOT = Path.home() / "Library/Application Support/SPECTRA/data"
 DAILY_LABEL = "com.spectra.visual-intel.daily"
 DINGTALK_LABEL = "com.spectra.visual-intel.dingtalk"
+PROGRESS_LABEL = "com.spectra.visual-intel.progress"
 
 
 def ignored(directory: str, names: list[str]) -> set[str]:
@@ -121,6 +122,14 @@ def main() -> int:
             stderr_name="dingtalk.err.log",
         ))
         plists["werss"] = str(install_werss_service())
+        plists["progress"] = str(install_plist(
+            runtime,
+            label=PROGRESS_LABEL,
+            template_name="com.spectra.visual-intel.progress.plist",
+            script_name="progress_server.py",
+            stdout_name="progress.out.log",
+            stderr_name="progress.err.log",
+        ))
     probe = subprocess.run([
         str(runtime / ".venv-llm/bin/python"),
         str(runtime / "spectra_agent/daily_runner.py"),
@@ -134,6 +143,7 @@ def main() -> int:
             "daily": "08:00 Asia/Shanghai",
             "dingtalk": "every 30 minutes; sent marker prevents duplicates",
             "werss": "run at login and keep alive",
+            "progress": "http://127.0.0.1:8010; run at login and keep alive",
         },
         "probe": probe.stdout.strip() or probe.stderr.strip(),
     }

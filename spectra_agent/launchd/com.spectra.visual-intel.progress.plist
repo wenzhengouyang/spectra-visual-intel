@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.spectra.visual-intel.progress</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/wenzheng/Library/Application Support/SPECTRA/runtime/.venv-llm/bin/python</string>
+    <string>/Users/wenzheng/Library/Application Support/SPECTRA/runtime/spectra_agent/progress_server.py</string>
+    <string>--config</string>
+    <string>spectra_agent/config.v0.1.json</string>
+    <string>--host</string>
+    <string>127.0.0.1</string>
+    <string>--port</string>
+    <string>8010</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>/Users/wenzheng/Library/Application Support/SPECTRA/runtime</string>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>ProcessType</key><string>Background</string>
+  <key>StandardOutPath</key><string>/Users/wenzheng/Library/Application Support/SPECTRA/data/logs/progress.out.log</string>
+  <key>StandardErrorPath</key><string>/Users/wenzheng/Library/Application Support/SPECTRA/data/logs/progress.err.log</string>
+</dict>
+</plist>
