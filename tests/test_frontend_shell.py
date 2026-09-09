@@ -22,7 +22,7 @@ class FrontendShellTest(unittest.TestCase):
         self.assertIn("grid-template-columns: minmax(8.5rem, 0.34fr) minmax(0, 1fr);", self.editorial_css)
 
     def test_ideas_are_a_separate_utility_destination(self):
-        self.assertIn('data-view-target="ideas">灵感库', self.html)
+        self.assertIn('data-view-target="ideas">视觉灵感库', self.html)
         self.assertIn('data-platform-view="ideas"', self.html)
 
     def test_interest_view_has_dedicated_copy(self):
@@ -34,22 +34,30 @@ class FrontendShellTest(unittest.TestCase):
         self.assertIn('bundle.issue.core_event_count', self.html)
         self.assertIn('id="coreEventIndex"', self.html)
 
-    def test_editorial_channels_replace_generic_intelligence_navigation(self):
-        for label in ("总览", "本期精选", "能力与指标", "模型与前沿", "产品与商业", "内容与文化", "团队与人才"):
-            self.assertIn(label, self.html)
-        self.assertNotIn('>情报文章 ', self.html)
+    def test_primary_navigation_is_limited_to_four_product_destinations(self):
+        expected = {
+            'overview': '情报总览',
+            'selection': '情报文章',
+            'interests': '我的关注',
+            'ideas': '视觉灵感库',
+        }
+        for target, label in expected.items():
+            self.assertIn(f'data-view-target="{target}">{label}', self.html)
+        self.assertEqual(self.html.count('class="nav-item'), 4)
+        self.assertNotIn('class="utility-nav"', self.html)
 
     def test_overview_remains_the_default_and_keeps_dashboard_sections(self):
-        self.assertIn('data-view-target="overview">总览', self.html)
+        self.assertIn('data-view-target="overview">情报总览', self.html)
         self.assertIn('data-platform-view="overview"', self.html)
         self.assertIn("showView('overview', false);", self.html)
 
-    def test_visual_models_are_a_first_class_channel(self):
-        self.assertIn('class="nav-item visual-model-nav" data-view-target="model_frontier">模型与前沿', self.html)
-        self.assertIn("model_frontier: ['模型与前沿', '模型与前沿', ''", self.html)
+    def test_visual_topics_remain_available_as_article_filters(self):
+        for label in ("视频生成", "世界模型", "具身智能", "评测与标准", "空间与4D"):
+            self.assertIn(label, self.html)
+        self.assertNotIn('data-view-target="model_frontier"', self.html)
 
-    def test_each_editorial_channel_exposes_direct_topic_buttons(self):
-        for label in ("核心事件", "编辑判断", "生成质量", "时空一致性", "Prompt 遵从", "图像生成", "3D/4D", "竞品发布", "客户案例", "创作者生态", "影视广告", "人才流动", "研究者动态"):
+    def test_article_view_exposes_only_high_value_direct_buttons(self):
+        for label in ("全部文章", "核心事件", "P0", "编辑判断"):
             self.assertIn(label, self.html)
         self.assertIn('id="channelFieldBar"', self.html)
         self.assertIn('data-channel-field=', self.html)

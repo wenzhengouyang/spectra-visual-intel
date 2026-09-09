@@ -1169,8 +1169,7 @@ footer {
   margin-right: var(--space-sm);
 }
 
-.topbar .primary-nav,
-.topbar .utility-nav {
+.topbar .primary-nav {
   display: flex;
   align-self: stretch;
   align-items: stretch;
@@ -1187,33 +1186,10 @@ footer {
   display: none;
 }
 
-.topbar .utility-nav {
-  flex: 0 0 auto;
-  margin-left: var(--space-xs);
-  padding-left: var(--space-xs);
-  border-left: var(--rule-hairline);
-}
-
 .topbar .nav-item {
   flex: 0 0 auto;
   min-width: 0;
   padding-inline: var(--space-xs);
-}
-
-.topbar .visual-model-nav {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2xs);
-  color: var(--color-ink-2);
-}
-
-.topbar .visual-model-nav::before {
-  width: var(--space-3xs);
-  height: var(--space-3xs);
-  flex: 0 0 auto;
-  border-radius: var(--radius-pill);
-  background: var(--color-accent);
-  content: "";
 }
 
 .channel-description {
@@ -1399,12 +1375,7 @@ footer {
 
   .topbar .primary-nav {
     order: 2;
-    width: calc(100% - 10rem);
-  }
-
-  .topbar .utility-nav {
-    order: 3;
-    margin-left: auto;
+    width: 100%;
   }
 }
 
@@ -1415,9 +1386,7 @@ footer {
     gap: var(--space-2xs);
   }
 
-  .topbar {
-    min-height: 6.75rem;
-  }
+  .topbar { min-height: 3.75rem; }
 
   .topbar .brand-block {
     display: none;
@@ -1425,18 +1394,8 @@ footer {
 
   .topbar .primary-nav {
     width: 100%;
-    min-height: 3.5rem;
+    min-height: 3.75rem;
     order: 1;
-  }
-
-  .topbar .utility-nav {
-    width: 100%;
-    min-height: 2.75rem;
-    order: 2;
-    margin: 0;
-    padding: 0;
-    border-top: var(--rule-hairline);
-    border-left: 0;
   }
 
   .topbar .nav-item {

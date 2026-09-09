@@ -14,17 +14,10 @@
     <header class="topbar">
       <div class="brand-block"><div class="brand-symbol"><span></span><span></span><span></span></div><div><strong>SPECTRA</strong><small>VISUAL INTELLIGENCE</small></div></div>
       <nav class="primary-nav" aria-label="主要导航">
-        <button class="nav-item active" data-view-target="overview">总览</button>
-        <button class="nav-item" data-view-target="selection">本期精选</button>
-        <button class="nav-item visual-model-nav" data-view-target="model_frontier">模型与前沿</button>
-        <button class="nav-item" data-view-target="capability_metrics">能力与指标</button>
-        <button class="nav-item" data-view-target="product_business">产品与商业</button>
-        <button class="nav-item" data-view-target="content_culture">内容与文化</button>
-        <button class="nav-item" data-view-target="team_talent">团队与人才</button>
-      </nav>
-      <nav class="utility-nav" aria-label="个人工具">
+        <button class="nav-item active" data-view-target="overview">情报总览</button>
+        <button class="nav-item" data-view-target="selection">情报文章</button>
         <button class="nav-item" data-view-target="interests">我的关注</button>
-        <button class="nav-item" data-view-target="ideas">灵感库</button>
+        <button class="nav-item" data-view-target="ideas">视觉灵感库</button>
       </nav>
       <div class="topbar-status"><span class="live-dot"></span><b id="reviewCount">—</b><span>原文核验</span><i id="publishCount">正式事件加载中</i></div>
       <button class="topbar-profile" id="openInterestProfile" aria-label="打开我的兴趣档案">WY<span id="profileSummary">3 个关注方向</span></button>
@@ -32,7 +25,7 @@
 
     <section class="workspace" id="overview">
       <header class="workspace-header">
-        <div><div class="breadcrumb">SPECTRA / <span id="viewBreadcrumb">总览</span></div><h1 id="viewTitle">视觉智能总览</h1><p class="channel-description" id="channelDescription">先看近7日主判断、趋势分布和关键事件，再进入具体频道阅读。</p></div>
+        <div><div class="breadcrumb">SPECTRA / <span id="viewBreadcrumb">情报总览</span></div><h1 id="viewTitle">视觉智能总览</h1><p class="channel-description" id="channelDescription">先看近7日主判断、趋势分布和关键事件，再进入情报文章阅读。</p></div>
         <div class="header-tools">
           <label class="search-box"><span>⌕</span><input id="search" placeholder="搜索事件、模型或场景" /></label>
           <select id="focus" aria-label="领域筛选"><option>全部领域</option><option>视频生成</option><option>世界模型</option><option>具身智能</option><option>评测与标准</option><option>空间与4D</option></select>
@@ -135,19 +128,13 @@
     let scopeFilter = 'all';
     let secondaryFilter = 'all';
     let channelFieldFilter = 'all';
-    let activeChannelTarget = 'selection';
     let mineOnly = false;
     const PROFILE_KEY = 'spectra_interest_profile_v2';
     const FEEDBACK_KEY = 'spectra_story_feedback_v1';
     const DEFAULT_INTERESTS = [];
     const KNOWN_TAGS = ['视频生成', '世界模型', '具身智能', '评测与标准', '空间与4D', '基础模型与多模态', 'AI Agent与工具', '算力与数据', '开源生态', '商业化', '大厂动态'];
     const CHANNEL_FIELDS = {
-      selection: [['all','全部精选'], ['core_event','核心事件'], ['p0','P0'], ['editorial_judgment','编辑判断']],
-      capability_metrics: [['all','全部'], ['generation_quality','生成质量'], ['temporal_consistency','时空一致性'], ['prompt_adherence','Prompt 遵从'], ['artifact_risk','伪影'], ['ranking','榜单'], ['evaluation_data','评测数据']],
-      model_frontier: [['all','全部'], ['video_generation','视频生成'], ['image_generation','图像生成'], ['world_model','世界模型'], ['spatial_4d','3D/4D'], ['embodied_vision','具身视觉']],
-      product_business: [['all','全部'], ['competitor_release','竞品发布'], ['commercialization','商业化'], ['customer_case','客户案例'], ['company_strategy','公司策略'], ['market_change','市场变化']],
-      content_culture: [['all','全部'], ['aigc_trend','AIGC 内容趋势'], ['creator_ecosystem','创作者生态'], ['film_advertising','影视广告'], ['aesthetics','审美'], ['cultural_impact','文化影响']],
-      team_talent: [['all','全部'], ['core_team','核心团队'], ['talent_move','人才流动'], ['org_change','组织调整'], ['hiring','招聘'], ['researcher_update','研究者动态']]
+      selection: [['all','全部文章'], ['core_event','核心事件'], ['p0','P0'], ['editorial_judgment','编辑判断']]
     };
     const readLocal = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch { return fallback; } };
     const writeLocal = (key, value) => { try { localStorage.setItem(key, JSON.stringify(value)); } catch {} };
@@ -196,36 +183,7 @@
       if (channelFieldFilter === 'core_event') return story.article_type === 'core_event';
       if (channelFieldFilter === 'p0') return displayPriority(story) === 'P0';
       if (channelFieldFilter === 'editorial_judgment') return Boolean(story.editorial_judgment || story.why_it_matters || story.article_body?.judgment);
-      const text = `${story.headline || ''} ${story.dek || ''} ${story.category || ''} ${(story.primary_tags || []).join(' ')} ${JSON.stringify(story.capability_scores || story.capability_metrics || {})}`.toLowerCase();
-      const patterns = {
-        generation_quality: /生成质量|视觉质量|画质|清晰度|quality|fidelity/,
-        temporal_consistency: /时空一致|时序一致|动作流畅|角色一致|空间一致|temporal|consisten|motion smooth/,
-        prompt_adherence: /prompt|提示词|遵从|adherence/,
-        artifact_risk: /伪影|崩坏|artifact|flicker|闪烁/,
-        ranking: /榜单|排名|排行|leaderboard|ranking/,
-        evaluation_data: /评测|测评|benchmark|evaluation|score|指标/,
-        video_generation: /视频生成|video generat|文生视频|图生视频|kling|可灵/,
-        image_generation: /图像生成|image generat|文生图|gpt-image|midjourney|flux/,
-        world_model: /世界模型|world model|world modeling/,
-        spatial_4d: /3d|4d|空间智能|spatial|gaussian|三维|四维/,
-        embodied_vision: /具身|机器人|robot|embodied|自动驾驶|driving/,
-        competitor_release: /竞品|发布|上线|release|launch|推出|更新/,
-        commercialization: /商业化|收入|营收|付费|revenue|monetiz|pricing/,
-        customer_case: /客户|案例|采用|部署|customer|case study|adoption/,
-        company_strategy: /公司策略|战略|收购|合作|strategy|acqui|partnership/,
-        market_change: /市场|份额|增长|行业|market|growth|forecast/,
-        aigc_trend: /aigc|内容趋势|爆款|短剧|生成内容/,
-        creator_ecosystem: /创作者|creator|工作室|studio|生态/,
-        film_advertising: /影视|电影|广告|短片|film|cinema|advertis/,
-        aesthetics: /审美|美学|风格|aesthetic|visual style/,
-        cultural_impact: /文化|版权|伦理|信任|culture|copyright|ethic/,
-        core_team: /核心团队|团队负责人|创始人|team|founder|leadership/,
-        talent_move: /人才流动|加入|离职|任命|joins|leaves|appoint/,
-        org_change: /组织调整|重组|裁员|部门|reorg|layoff|organization/,
-        hiring: /招聘|岗位|职位|hiring|recruit|job opening/,
-        researcher_update: /研究者|科学家|教授|researcher|scientist|professor/
-      };
-      return patterns[channelFieldFilter]?.test(text) ?? true;
+      return true;
     };
     const storyMatches = story => {
       const query = document.getElementById('search').value.trim().toLowerCase();
@@ -246,15 +204,10 @@
       'type.technology_breakthrough': '技术突破'
     })[intelligenceGroup(story)];
     const VIEW_COPY = {
-      overview: ['总览', '视觉智能总览', '先看近7日主判断、趋势分布和关键事件，再进入具体频道阅读。'],
-      selection: ['本期精选', '本期精选', ''],
-      capability_metrics: ['能力与指标', '能力与指标', ''],
-      model_frontier: ['模型与前沿', '模型与前沿', ''],
-      product_business: ['产品与商业', '产品与商业', ''],
-      content_culture: ['内容与文化', '内容与文化', ''],
-      team_talent: ['团队与人才', '团队与人才', ''],
+      overview: ['情报总览', '视觉智能总览', '先看近7日主判断、趋势分布和关键事件，再进入情报文章阅读。'],
+      selection: ['情报文章', '近7日情报文章', '按核心事件、行业信号与短讯浏览已核验内容。'],
       interests: ['我的关注', '关注方向与匹配内容', '你的关注仅保存在当前设备，并用于过滤本期内容。'],
-      ideas: ['灵感库', '视觉机会与可借鉴方向', '把前沿信号转成产品、模型、内容与商业上的可执行想法。']
+      ideas: ['视觉灵感库', '视觉机会与可借鉴方向', '把前沿信号转成产品、模型、内容与商业上的可执行想法。']
     };
 
     function renderChannelFields(target) {
@@ -266,10 +219,9 @@
     }
 
     function showView(target, scrollTop = true) {
-      const channelTargets = ['selection','capability_metrics','model_frontier','product_business','content_culture','team_talent'];
+      const channelTargets = ['selection'];
       const view = target === 'overview' ? 'overview' : target === 'ideas' ? 'ideas' : 'articles';
-      if (channelTargets.includes(target) && activeChannelTarget !== target) channelFieldFilter = 'all';
-      if (channelTargets.includes(target)) activeChannelTarget = target;
+      if (channelTargets.includes(target)) channelFieldFilter = 'all';
       editorialChannel = channelTargets.includes(target) ? target.replace('selection', 'weekly_selection') : editorialChannel;
       document.body.dataset.currentView = view;
       document.querySelectorAll('[data-platform-view]').forEach(section => {
@@ -555,7 +507,7 @@
       document.getElementById('advancedFilterToggle').addEventListener('click', event => { const panel = document.getElementById('advancedFilterPanel'); const willOpen = panel.hidden; panel.hidden = !willOpen; event.currentTarget.setAttribute('aria-expanded', String(willOpen)); });
       document.getElementById('scopeFilters').addEventListener('click', event => { const trigger = event.target.closest('[data-scope-filter]'); if (!trigger) return; scopeFilter = trigger.dataset.scopeFilter; secondaryFilter = 'all'; refreshBrowse(); });
       document.getElementById('secondaryFilters').addEventListener('click', event => { const trigger = event.target.closest('[data-secondary-filter]'); if (!trigger) return; secondaryFilter = trigger.dataset.secondaryFilter; refreshBrowse(); });
-      document.getElementById('channelFields').addEventListener('click', event => { const trigger = event.target.closest('[data-channel-field]'); if (!trigger) return; channelFieldFilter = trigger.dataset.channelField; renderChannelFields(activeChannelTarget); renderStoryGroups(); });
+      document.getElementById('channelFields').addEventListener('click', event => { const trigger = event.target.closest('[data-channel-field]'); if (!trigger) return; channelFieldFilter = trigger.dataset.channelField; renderChannelFields('selection'); renderStoryGroups(); });
       document.getElementById('mineFilter').addEventListener('click', () => { mineOnly = !mineOnly; refreshBrowse(); });
       document.getElementById('interestEntry').addEventListener('click', () => toggleInterestPanel());
       document.getElementById('openInterestProfile').addEventListener('click', () => showView('interests'));
