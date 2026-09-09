@@ -72,6 +72,7 @@ STATIC_ASSETS = (
     Path("app/accepted-ui.css"),
     Path("app/visual-library.js"),
     Path("app/accepted-ux.js"),
+    Path("app/share.js"),
 )
 
 

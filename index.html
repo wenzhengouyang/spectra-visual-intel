@@ -8,9 +8,10 @@
   <link rel="stylesheet" href="tokens.css?v=4" />
   <link rel="stylesheet" href="app/globals.css?v=19" />
   <link rel="stylesheet" href="app/hallmark-editorial.css?v=14" />
-  <link rel="stylesheet" href="app/accepted-ui.css?v=20260910-desktop4" />
+  <link rel="stylesheet" href="app/accepted-ui.css?v=20260910-share1" />
   <script src="app/visual-library.js?v=20260910" defer></script>
   <script src="app/accepted-ux.js?v=20260910" defer></script>
+  <script src="app/share.js?v=20260910" defer></script>
 </head>
 <body>
   <main class="intel-app">
@@ -402,7 +403,7 @@
 
     function newsBriefCard(brief) {
       const source = brief.source_links[0];
-      return `<article class="news-brief-card" data-intel="${escapeHtml(intelligenceGroup(brief))}">
+      return `<article class="news-brief-card" data-intel="${escapeHtml(intelligenceGroup(brief))}" data-share-brief="${escapeHtml(brief.brief_id)}">
         <div class="news-brief-meta"><b class="primary-type-badge">短讯</b><span>${displayPriority(brief)}</span><em>${escapeHtml(brief.category)}</em></div>
         <h4><a href="${safeUrl(source.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(brief.headline)}</a></h4>
         <p>${escapeHtml(brief.dek)}</p>

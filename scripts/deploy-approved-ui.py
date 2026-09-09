@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 BASE = Path.home() / 'Library/Application Support/SPECTRA'
 RUNTIME = BASE / 'runtime'
 FILES = ['visual-intelligence-prototype.html', 'app/accepted-ui.css',
-         'app/accepted-ux.js', 'app/visual-library.js', 'spectra_agent/run.py',
+         'app/accepted-ux.js', 'app/share.js', 'app/visual-library.js', 'spectra_agent/run.py',
          'spectra_agent/dingtalk_push.py', 'scripts/refresh-ui.py']
 
 if __name__ == '__main__':

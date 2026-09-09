@@ -78,6 +78,13 @@ body[data-current-view=overview] .timeline-event-card .event-title-button{color:
 body[data-current-view=overview] .timeline-detail-head{justify-content:flex-start}
 
 /* Reader: stable navigation and a continuous blue-grey reading surface. */
+.share-button{flex-shrink:0;padding:7px 11px;margin-left:8px;border:1px solid #405970;border-radius:7px;background:#1a2e40;color:#bbd9f5;font:inherit;font-size:12px;cursor:pointer;white-space:nowrap}
+.share-button:hover{border-color:#8bbce5;background:#243d54}.share-button:active{transform:translateY(1px)}
+body .story-card-footer,body .news-brief-card footer{flex-wrap:wrap;gap:8px}.story-card-footer>span{flex:1}.news-brief-card footer .share-button{margin-left:0}
+.share-dialog{width:min(500px,calc(100vw - 40px));padding:28px;border:1px solid #3a536b;border-radius:16px;background:#142536;color:#edf3fa;box-shadow:0 20px 80px #0006}
+.share-dialog::backdrop{background:#030c18aa}.share-dialog h2{font-size:22px;margin:0 0 16px}.share-dialog p,.share-dialog label{color:#b4c5d8;font-size:13px;line-height:1.7}.share-dialog label{display:block;margin-bottom:8px}
+.share-dialog textarea{width:100%;box-sizing:border-box;resize:vertical;padding:14px;border:1px solid #3b5369;border-radius:8px;background:#1a2e40;color:#dbe7f3;font-family:inherit;font-size:14px;line-height:1.7;min-height:180px}
+.share-close{float:right;border:0;background:none;color:#b4c5d8;font-size:24px;cursor:pointer}.share-controls{margin-top:18px}.share-copy{padding:10px 18px;background:linear-gradient(#2b5279,#152b3f);color:#e2edfa;border:1px solid #5888ad;border-radius:8px;cursor:pointer}.share-status{min-height:22px;margin-bottom:0}
 /* Desktop alignment: a shared content edge and one separator below the tabs. */
 body[data-current-view=articles] .workspace-header .header-tools{margin-left:0}
 body .story-card-footer{width:100%;margin-left:0;align-items:center}
