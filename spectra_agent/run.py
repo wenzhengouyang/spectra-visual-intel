@@ -69,6 +69,9 @@ STATIC_ASSETS = (
     Path("tokens.css"),
     Path("app/globals.css"),
     Path("app/hallmark-editorial.css"),
+    Path("app/accepted-ui.css"),
+    Path("app/visual-library.js"),
+    Path("app/accepted-ux.js"),
 )
 
 

@@ -84,13 +84,13 @@ def notification_payload(issue: dict, public_url: str, header_image_url: str = "
     report_date = str(meta.get("report_date") or meta.get("period_end") or "")
     date_label = f"{report_date[5:7]}月{report_date[8:10]}日" if len(report_date) >= 10 else "今日"
     title = f"SPECTRA · {date_label}"
-    thesis = _bold_data(_compact(rolling_thesis(meta, "今日情报已完成更新。"), 100))
+    thesis = _compact(rolling_thesis(meta, "今日情报已完成更新。"), 100)
     items = []
     for index, story in enumerate(_top_stories(issue, meta), start=1):
         headline = _compact(story.get("headline") or "今日重点情报", 72)
         summary = _bold_data(_compact(story.get("one_line_takeaway") or story.get("dek"), 82))
         items.append(
-            f"🔹 **{index}｜{headline}**\n\n"
+            f"**{index:02d} · {headline}**\n\n"
             f"{summary or '打开工作台查看详情'}"
         )
     top_three = "\n\n".join(items) or "今日暂无达到发布标准的焦点事件"
@@ -98,11 +98,14 @@ def notification_payload(issue: dict, public_url: str, header_image_url: str = "
     if header_image_url:
         blocks.append(f"![SPECTRA 今日视觉情报]({header_image_url})")
     blocks.extend((
-        "⚡ **30 秒结论**",
-        f"**{thesis}**",
-        "🔥 **今日 Top 3 焦点**",
+        f"### {title}\n\n视频 · 图像 · 世界模型",
+        "**30 秒结论**",
+        f"> {thesis}",
+        "---",
+        "### 今日 Top 3 焦点",
         top_three,
-        f"🔗 [打开 SPECTRA 网页工作台 →]({public_url})",
+        "---",
+        f"[打开 SPECTRA 网页工作台 →]({public_url})",
     ))
     text = "\n\n".join(blocks)
     return {"msgtype": "markdown", "markdown": {"title": title, "text": text}}

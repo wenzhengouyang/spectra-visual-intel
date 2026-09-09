@@ -8,6 +8,9 @@
   <link rel="stylesheet" href="tokens.css?v=4" />
   <link rel="stylesheet" href="app/globals.css?v=19" />
   <link rel="stylesheet" href="app/hallmark-editorial.css?v=14" />
+  <link rel="stylesheet" href="app/accepted-ui.css?v=20260910" />
+  <script src="app/visual-library.js?v=20260910" defer></script>
+  <script src="app/accepted-ux.js?v=20260910" defer></script>
 </head>
 <body>
   <main class="intel-app">
@@ -97,7 +100,7 @@
         <div class="p0-status" id="p0Status" role="status"><b>P0</b><span>正在判断本期是否存在必须立即关注的信号</span></div>
         <div class="editorial-browse">
           <section class="story-group core-event-group"><div class="story-group-head"><div><span>CORE EVENT</span><h3>核心事件</h3></div><p id="coreEventCount">—</p></div><div class="story-card-grid" id="coreEventIndex"></div></section>
-          <section class="story-group brief-group"><div class="story-group-head"><div><span>ROLLING BRIEFING</span><h3>近7日短讯</h3></div><p id="briefCount">—</p></div><div class="brief-list" id="briefIndex"></div></section>
+          <section class="story-group brief-group"><div class="story-group-head"><div><span>ROLLING BRIEFING</span><h3>近期短讯</h3></div><p id="briefCount">—</p></div><div class="brief-list" id="briefIndex"></div></section>
         </div>
         <div class="article-reader" id="articleReader" hidden><div class="reader-heading"><span>ARTICLE READER</span><button id="backToArticles">← 返回文章列表</button></div><article class="editorial-feature" id="editorialArticle"></article></div>
       </section>
@@ -203,10 +206,10 @@
       'type.technology_breakthrough': '技术突破'
     })[intelligenceGroup(story)];
     const VIEW_COPY = {
-      overview: ['情报总览', '视觉智能总览', '先看近7日主判断、趋势分布和关键事件，再进入情报文章阅读。'],
-      selection: ['情报文章', '近7日情报文章', '按核心事件与短讯浏览已核验内容。'],
+      overview: ['情报总览', '情报总览', '视频与图像模型 · 产品策略情报'],
+      selection: ['情报文章', '情报文章', '模型进展与产品策略参考'],
       interests: ['我的关注', '关注方向与匹配内容', '你的关注仅保存在当前设备，并用于过滤本期内容。'],
-      ideas: ['视觉灵感库', '视觉机会与可借鉴方向', '把前沿信号转成产品、模型、内容与商业上的可执行想法。']
+      ideas: ['视觉灵感库', '视觉灵感库', '从真实资讯中，留意方法、边界与后续进展。']
     };
 
     function renderChannelFields(target) {
