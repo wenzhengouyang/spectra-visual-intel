@@ -181,6 +181,39 @@ TALENT_ORGANIZATION_MARKERS = (
     "人才", "实习生", "招聘", "薪酬", "期权", "员工激励", "组织管理", "团队结构",
     "talent", "hiring", "recruiting", "employee stock", "organization design",
 )
+EMBODIED_PRODUCT_MARKERS = (
+    "宇树", "机器狗", "机器人", "人形机器人", "unitree", "robot", "robotic", "robotics",
+    "humanoid", "embodied", "具身智能",
+)
+
+
+def reconcile_llm_route(
+    candidate: dict[str, Any],
+    analysis: dict[str, Any],
+    source_map: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    """Prevent a secondary mixed-article topic from replacing the title's subject."""
+    title_text = " ".join(filter(None, [
+        candidate.get("canonical_title"),
+        *(str((source_map.get(source_id) or {}).get("raw_title") or "") for source_id in candidate.get("source_ids", [])),
+    ])).lower()
+    has_embodied_subject = any(marker in title_text for marker in EMBODIED_PRODUCT_MARKERS)
+    has_talent_subject = any(marker in title_text for marker in TALENT_ORGANIZATION_MARKERS)
+    if (
+        analysis.get("primary_route") == "extended.talent_organization"
+        and has_embodied_subject
+        and not has_talent_subject
+    ):
+        analysis["primary_route"] = "frontier.embodied_ai"
+        analysis["secondary_routes"] = [
+            route for route in analysis.get("secondary_routes", [])
+            if route not in {"frontier.embodied_ai", "extended.talent_organization"}
+        ][:3]
+        analysis["intelligence_type_reason"] = (
+            "标题主事件明确指向机器人产品或具身智能；混合文章中的人才、融资或组织信息"
+            "不得覆盖标题主体，具体主题纠偏为具身智能。"
+        )
+    return analysis
 
 
 def requires_attribution(text: str) -> bool:
@@ -977,6 +1010,7 @@ def enrich_with_llm(
                 "该信息主要涉及人才招聘、激励或组织机制，属于公司战略；"
                 "二级主题按人才与组织归类，而非AI Agent产品。"
             )
+        analysis = reconcile_llm_route(candidate, analysis, source_map)
         candidate["deterministic_intelligence_type"] = candidate["intelligence_type"]
         candidate["intelligence_type"] = analysis["intelligence_type"]
         candidate["intelligence_type_reason"] = analysis["intelligence_type_reason"]

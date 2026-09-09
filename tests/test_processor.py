@@ -159,6 +159,42 @@ class ProcessorTest(unittest.TestCase):
                 self.assertEqual(scored["primary_route"], expected_route)
                 self.assertGreaterEqual(scored["score"], CONFIG["minimum_score"])
 
+    def test_embodied_title_overrides_spurious_talent_route_from_mixed_article(self):
+        candidate = {
+            "canonical_title": "宇树机器狗被曝篡改电池标签以规避航空规定",
+            "source_ids": ["src_unitree"],
+        }
+        source_map = {
+            "src_unitree": {
+                "raw_title": "宇树机器狗电池贴假标签；月之暗面启动IPO",
+            }
+        }
+        analysis = {
+            "primary_route": "extended.talent_organization",
+            "secondary_routes": ["frontier.embodied_ai", "extended.compute_data"],
+            "intelligence_type_reason": "混合文章还包含公司动态。",
+        }
+        corrected = MODULE.reconcile_llm_route(candidate, analysis, source_map)
+        self.assertEqual(corrected["primary_route"], "frontier.embodied_ai")
+        self.assertNotIn("extended.talent_organization", corrected["secondary_routes"])
+        self.assertIn("标题主事件", corrected["intelligence_type_reason"])
+
+    def test_embodied_company_hiring_remains_talent_route(self):
+        candidate = {
+            "canonical_title": "宇树机器人团队发布招聘计划",
+            "source_ids": ["src_unitree_hiring"],
+        }
+        source_map = {
+            "src_unitree_hiring": {"raw_title": "Unitree robotics hiring and talent plan"}
+        }
+        analysis = {
+            "primary_route": "extended.talent_organization",
+            "secondary_routes": [],
+            "intelligence_type_reason": "来源讨论招聘与人才计划。",
+        }
+        unchanged = MODULE.reconcile_llm_route(candidate, analysis, source_map)
+        self.assertEqual(unchanged["primary_route"], "extended.talent_organization")
+
     def test_wechat_source_cannot_become_p1_before_original_verification(self):
         candidate = {
             "score": 30,
