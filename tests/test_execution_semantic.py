@@ -7,6 +7,7 @@ import subprocess
 from unittest import mock
 from pathlib import Path
 from spectra_agent.execution import RunLease, atomic_json, publication_version
+from spectra_agent.reliability import record_failure
 from spectra_agent.semantic_review import review, bounded_review
 from spectra_agent.run import (materialize_fact_decisions, select_review_candidates, WorkflowError,
     reserve_editorial_worker, command, launch_editorial_worker, worker_lock_path, resume_run, show_status)
@@ -40,6 +41,26 @@ class ExecutionTests(unittest.TestCase):
             atomic_json(p, {'fact': 20})
             self.assertNotEqual(version, publication_version(d))
             self.assertEqual(json.loads(p.read_text()), {'fact': 20})
+
+    def test_localization_timestamp_does_not_invalidate_content_version(self):
+        with tempfile.TemporaryDirectory() as d:
+            issue = Path(d) / 'editorial-issue.json'
+            atomic_json(issue, {
+                'editorial_stories': [{'headline': 'same'}],
+                'localization': {'status': 'completed', 'completed_at': '2026-09-09T01:00:00Z'},
+                'workflow': {'status': 'running'},
+            })
+            version = publication_version(d)
+            atomic_json(issue, {
+                'editorial_stories': [{'headline': 'same'}],
+                'localization': {'status': 'completed', 'completed_at': '2026-09-09T02:00:00Z'},
+                'workflow': {'status': 'completed'},
+            })
+            self.assertEqual(version, publication_version(d))
+            changed = json.loads(issue.read_text())
+            changed['editorial_stories'][0]['headline'] = 'changed'
+            atomic_json(issue, changed)
+            self.assertNotEqual(version, publication_version(d))
 
     def test_stale_reserved_worker_reclaimed(self):
         with tempfile.TemporaryDirectory() as d:
@@ -89,6 +110,7 @@ class ExecutionTests(unittest.TestCase):
             show_status(argparse.Namespace(run_id='r1'), {'data_dir': d, 'runs_dir': 'runs'})
             state = json.loads((run_dir / 'run.json').read_text())
             self.assertEqual(state['status'], 'interrupted')
+            self.assertEqual(state['reliability_status'], 'blocked')
             self.assertEqual(state['last_failure']['action'], 'retry_from_checkpoint')
             self.assertEqual(state['next_action'], 'retry_from_checkpoint')
 
@@ -105,6 +127,21 @@ class ExecutionTests(unittest.TestCase):
             finally:
                 creation.release()
             self.assertEqual(json.loads((run_dir / 'run.json').read_text())['status'], 'running')
+
+    def test_exhausted_interruption_does_not_suggest_another_automatic_retry(self):
+        with tempfile.TemporaryDirectory() as d:
+            run_dir = Path(d) / 'runs' / 'r1'
+            run_dir.mkdir(parents=True)
+            record_failure(run_dir, 'writer', 'model timeout', max_attempts=2)
+            atomic_json(run_dir / 'run.json', {
+                'run_id': 'r1', 'status': 'running', 'current_stage': 'writer',
+                'created_at': '2000-01-01T00:00:00Z', 'updated_at': '2000-01-01T00:00:00Z',
+            })
+            with mock.patch('builtins.print') as output:
+                show_status(argparse.Namespace(run_id='r1'), {'data_dir': d, 'runs_dir': 'runs'})
+            result = json.loads(output.call_args.args[0])
+            self.assertEqual(result['next_action'], 'stop_or_degrade')
+            self.assertNotIn('resume --run-id', result['next'])
 
     def test_changed_decision_replaces_existing_claims(self):
         data = {'records': [{'candidate_id': 'c', 'decision': 'include', 'claims': [{'text': 'old'}],

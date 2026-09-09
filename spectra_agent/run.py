@@ -1968,7 +1968,7 @@ def show_status(args: argparse.Namespace, config: dict[str, Any]) -> int:
             update_state(run_dir, status='interrupted', current_stage='interrupted',
                          error=('recorded executor holds no run lease; a PID alone is not progress'),
                          failed_stage=interrupted_stage, last_failure=incident,
-                         next_action=incident['action'])
+                         next_action=incident['action'], reliability_status='blocked')
             state = read_json(run_dir / 'run.json')
     result = {key: state.get(key) for key in ("run_id", "status", "current_stage", "publish_status", "reliability_status", "paused_reason", "error", "last_failure", "last_warning", "next_action", "created_at", "updated_at", "completed_at") if state.get(key) is not None}
     result['executor_active'] = executor_active
@@ -1998,7 +1998,11 @@ def show_status(args: argparse.Namespace, config: dict[str, Any]) -> int:
     elif state['status'] == 'failed':
         result['next'] = (state.get('last_failure') or {}).get('next') or f"fix the reported error, then run resume --run-id {run_dir.name} --retry"
     elif state['status'] == 'interrupted':
-        result['next'] = f"run resume --run-id {run_dir.name} --retry; completed checkpoints will be reused"
+        failure = state.get('last_failure') or {}
+        if failure.get('exhausted'):
+            result['next'] = failure.get('next') or 'automatic recovery is exhausted; inspect the failure before retrying'
+        else:
+            result['next'] = f"run resume --run-id {run_dir.name} --retry; completed checkpoints will be reused"
     elif state['status'] == 'completed':
         result['next'] = 'publication remains a separate explicit action' if state.get('publish_status') != 'published' else 'published'
     progress_path = run_dir / 'command-progress.json'

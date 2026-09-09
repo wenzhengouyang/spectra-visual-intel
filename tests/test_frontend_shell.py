@@ -35,9 +35,34 @@ class FrontendShellTest(unittest.TestCase):
         self.assertIn('id="coreEventIndex"', self.html)
 
     def test_editorial_channels_replace_generic_intelligence_navigation(self):
-        for label in ("本期精选", "能力与指标", "模型与前沿", "产品与商业", "内容与文化", "团队与人才"):
+        for label in ("总览", "本期精选", "能力与指标", "模型与前沿", "产品与商业", "内容与文化", "团队与人才"):
             self.assertIn(label, self.html)
         self.assertNotIn('>情报文章 ', self.html)
+
+    def test_overview_remains_the_default_and_keeps_dashboard_sections(self):
+        self.assertIn('data-view-target="overview">总览', self.html)
+        self.assertIn('data-platform-view="overview"', self.html)
+        self.assertIn("showView('overview', false);", self.html)
+
+    def test_visual_models_are_a_first_class_channel(self):
+        self.assertIn('class="nav-item visual-model-nav" data-view-target="model_frontier">模型与前沿', self.html)
+        self.assertIn("model_frontier: ['模型与前沿', '模型与前沿', ''", self.html)
+
+    def test_each_editorial_channel_exposes_direct_topic_buttons(self):
+        for label in ("核心事件", "编辑判断", "生成质量", "时空一致性", "Prompt 遵从", "图像生成", "3D/4D", "竞品发布", "客户案例", "创作者生态", "影视广告", "人才流动", "研究者动态"):
+            self.assertIn(label, self.html)
+        self.assertIn('id="channelFieldBar"', self.html)
+        self.assertIn('data-channel-field=', self.html)
+        self.assertIn('aria-pressed="${channelFieldFilter === value}"', self.html)
+
+    def test_active_navigation_exposes_current_page_semantics(self):
+        self.assertIn("item.setAttribute('aria-current', 'page')", self.html)
+        self.assertIn("item.removeAttribute('aria-current')", self.html)
+
+    def test_legacy_taxonomy_is_collapsed_into_one_filter_entry(self):
+        self.assertIn('>筛选 <b id="advancedFilterCount"', self.html)
+        self.assertNotIn('class="taxonomy-note"', self.html)
+        self.assertLess(self.html.index('id="advancedFilterPanel"'), self.html.index('id="primaryFilters"'))
 
     def test_core_is_image_led_but_signals_and_briefs_are_not(self):
         self.assertIn("if (story.article_type !== 'core_event') return '';", self.html)

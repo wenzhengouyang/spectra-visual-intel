@@ -73,5 +73,11 @@ def publication_version(run_dir):
         value = json.loads(path.read_text())
         if name == 'editorial-issue.json':
             value.pop('workflow', None)
+            # Recovery refreshes operational timestamps even when the reader
+            # content is byte-for-byte unchanged.  Those timestamps must not
+            # invalidate a content-bound semantic evaluation.
+            localization = value.get('localization')
+            if isinstance(localization, dict):
+                localization.pop('completed_at', None)
         payload[name] = value
     return digest(payload)
