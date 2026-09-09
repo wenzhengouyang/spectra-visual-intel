@@ -71,7 +71,7 @@ body[data-current-view=articles] .workspace-header{display:flex;flex-direction:c
 @media(max-width:650px){.topbar{padding:18px 16px}.workspace-header h1{font-size:30px}.period-row{margin-bottom:24px}.status-row{flex-wrap:wrap}.nav-item{padding:10px 8px;font-size:12px}body[data-current-view=overview] .dashboard-grid,body[data-current-view=overview] .timeline-panel{padding:18px}.timeline-event-list{max-height:none}.day-node .day-name{font-size:12px}.day-node b{font-size:9px}.trend-scatter-shell{padding-left:20px!important}.article-reader{padding:18px}}
 @media(max-width:650px){body .topbar .primary-nav .nav-item{padding:10px 8px;font-size:12px}body[data-current-view=overview] .workspace-header h1{font-size:30px}body[data-current-view=overview] .thesis-content h2{font-size:21px}}
 @media(max-width:650px){body .topbar .primary-nav{gap:5px}body[data-current-view=overview] .timeline-event-list{max-height:430px!important}}
-@media(max-width:1000px){body[data-current-view=articles] .story-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(min-width:651px){body[data-current-view=articles] .story-card-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:650px){body[data-current-view=articles] .story-card-grid{grid-template-columns:minmax(0,1fr)}}
 body .topbar .brand-block{display:flex}
 body[data-current-view=overview] .timeline-event-card .event-title-button{color:var(--sp-text)}
