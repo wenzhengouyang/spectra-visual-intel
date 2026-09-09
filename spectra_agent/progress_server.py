@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
+from urllib.parse import unquote
 
 try:
     from spectra_agent.run import DEFAULT_CONFIG, ROOT, resolve_config, runs_dir
@@ -18,6 +19,42 @@ except ImportError:
 
 
 TERMINAL_WRITER_STATES = {"completed", "demoted", "demoted_after_failed_long_story", "manual_review"}
+RUN_ARTIFACT_FILES = {
+    "REVIEW.md": "text/plain; charset=utf-8",
+    "rolling-digest.html": "text/html; charset=utf-8",
+    "semantic-review.json": "application/json; charset=utf-8",
+    "command-progress.json": "application/json; charset=utf-8",
+    "tokens.css": "text/css; charset=utf-8",
+    "app/globals.css": "text/css; charset=utf-8",
+    "app/hallmark-editorial.css": "text/css; charset=utf-8",
+}
+IMAGE_MIMES = {
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".png": "image/png",
+    ".webp": "image/webp",
+    ".svg": "image/svg+xml",
+}
+
+
+def safe_run_artifact(run_dir: Path, name: str) -> tuple[Path, str] | None:
+    """Resolve only the report, its styles, and report-local image assets."""
+    decoded = unquote(name).lstrip("/")
+    relative = Path(decoded)
+    if relative.is_absolute() or ".." in relative.parts:
+        return None
+    mime = RUN_ARTIFACT_FILES.get(relative.as_posix())
+    if mime is None and relative.parts[:1] == ("assets",):
+        mime = IMAGE_MIMES.get(relative.suffix.lower())
+    if mime is None:
+        return None
+    root = run_dir.resolve()
+    target = (root / relative).resolve()
+    try:
+        safe = target.is_file() and target.is_relative_to(root)
+    except (OSError, ValueError):
+        safe = False
+    return (target, mime) if safe else None
 
 
 def read_json_safe(path: Path) -> dict[str, Any]:
@@ -224,16 +261,11 @@ article{border-bottom:1px solid var(--rule);padding-bottom:2rem}img{display:bloc
             return
         if self.path.startswith("/run-artifact/"):
             name = self.path.split("/run-artifact/", 1)[1].split("?", 1)[0]
-            allowed = {
-                "REVIEW.md": "text/plain; charset=utf-8",
-                "rolling-digest.html": "text/html; charset=utf-8",
-                "semantic-review.json": "application/json; charset=utf-8",
-                "command-progress.json": "application/json; charset=utf-8",
-            }
             run_dir = latest_run_path(self.config)
-            target = run_dir / name if run_dir and name in allowed else None
-            if target and target.is_file():
-                self._send(200, target.read_bytes(), allowed[name])
+            artifact = safe_run_artifact(run_dir, name) if run_dir else None
+            if artifact:
+                target, mime = artifact
+                self._send(200, target.read_bytes(), mime)
             else:
                 self._send(404, b"Artifact not available", "text/plain; charset=utf-8")
             return

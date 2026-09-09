@@ -75,6 +75,11 @@ def publication_quality_errors(
                 if minimum_characters > 0 and count < minimum_characters:
                     errors.append(f"{item_id}.core_event_too_short: {count}<{minimum_characters}")
 
+            # Only core events are image-led. Industry signals and briefs may
+            # retain a cover reference for provenance/reuse, but it must not
+            # enter the publication or human image-review gate.
+            if item.get("article_type") != "core_event":
+                continue
             cover = item.get("cover_image") or {}
             url = str(cover.get("url") or "")
             if not url:

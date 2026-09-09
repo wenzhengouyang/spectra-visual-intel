@@ -72,6 +72,16 @@ class PublicationQualityTest(unittest.TestCase):
             errors = publication_quality_errors(issue, self.config, asset_root=root)
         self.assertFalse(any("core_event_too_short" in error for error in errors))
 
+    def test_non_core_story_does_not_require_or_review_a_cover(self):
+        issue = sample_issue()
+        story = issue["editorial_stories"][0]
+        story["article_type"] = "brief"
+        story.pop("cover_image")
+        self.config["publication_quality"]["minimum_core_events"] = 0
+        with tempfile.TemporaryDirectory() as temp:
+            errors = publication_quality_errors(issue, self.config, asset_root=Path(temp))
+        self.assertFalse(any("cover_" in error for error in errors))
+
     def test_legacy_quality_config_names_remain_readable(self):
         legacy_config = {"publication_quality": {
             "minimum_deep_stories": 1,

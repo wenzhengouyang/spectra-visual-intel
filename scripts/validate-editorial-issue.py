@@ -59,6 +59,16 @@ def main() -> None:
 
     for story in stories:
         require(story["editorial_status"] == "fact_checked", f"{story['story_id']} must be fact_checked")
+        require(story.get("editorial_tier") in {"core_event", "industry_signal", "brief"}, f"{story['story_id']} has invalid editorial tier")
+        require(story.get("editorial_channel") in {"weekly_selection", "capability_metrics", "model_frontier", "product_business", "content_culture", "team_talent"}, f"{story['story_id']} has invalid editorial channel")
+        require(story.get("visual_relevance") in {"direct", "adjacent", "weak", "none"}, f"{story['story_id']} has invalid visual relevance")
+        require(story.get("strategic_impact") in {"high", "medium", "low"}, f"{story['story_id']} has invalid strategic impact")
+        require(story.get("editorial_priority") in {"priority.p0", "priority.p1", "priority.p2", "priority.p3"}, f"{story['story_id']} has invalid editorial priority")
+        require((story["article_type"] == "core_event") == (story["editorial_tier"] == "core_event"), f"{story['story_id']} core type and tier disagree")
+        if story.get("editorial_priority") == "priority.p0":
+            require(story.get("editorial_tier") == "core_event", f"{story['story_id']} P0 must be a core event")
+            require(story.get("visual_relevance") == "direct" and story.get("strategic_impact") == "high", f"{story['story_id']} P0 must be directly visual and high impact")
+            require(story.get("evidence_strength") == "primary_reported" and story.get("actionable"), f"{story['story_id']} P0 must be evidenced and actionable")
         require(
             has_readable_chinese(story.get("headline"), "headline"),
             f"{story['story_id']} headline must be readable Chinese",
@@ -69,14 +79,15 @@ def main() -> None:
         )
         cover = story.get("cover_image") or {}
         cover_url = cover.get("url") or ""
-        require(cover_url.startswith("https://") or cover_url.startswith("assets/"), f"{story['story_id']} needs a safe cover image")
-        require(
-            cover.get("kind") in {"official", "editorial", "editorial_fallback", "editorial_diagram", "generated"},
-            f"{story['story_id']} has invalid cover kind",
-        )
-        require(bool(cover.get("label")), f"{story['story_id']} needs a cover label")
-        if cover_url.startswith("assets/"):
-            require((asset_root / cover_url).exists(), f"{story['story_id']} local cover asset is missing")
+        if story.get("article_type") == "core_event":
+            require(cover_url.startswith("https://") or cover_url.startswith("assets/"), f"{story['story_id']} needs a safe cover image")
+            require(
+                cover.get("kind") in {"official", "editorial", "editorial_fallback", "editorial_diagram", "generated"},
+                f"{story['story_id']} has invalid cover kind",
+            )
+            require(bool(cover.get("label")), f"{story['story_id']} needs a cover label")
+            if cover_url.startswith("assets/"):
+                require((asset_root / cover_url).exists(), f"{story['story_id']} local cover asset is missing")
         require(story["what_happened"]["statement_type"] == "fact", f"{story['story_id']} WHAT must be fact")
         require(story["why_it_matters"]["statement_type"] == "judgment", f"{story['story_id']} WHY must be judgment")
         require(story["source_links"] and all(link["url"].startswith("https://") for link in story["source_links"]), f"{story['story_id']} needs source links")
@@ -111,6 +122,9 @@ def main() -> None:
     )
     require(set(issue["news_brief_ids"]) == news_brief_ids, "P2 news brief selection has wrong IDs")
     require(issue["brief_count"] == len(news_briefs), "P2 brief count is wrong")
+    require(issue.get("industry_signal_count") == sum(story.get("editorial_tier") == "industry_signal" for story in stories), "industry signal count is wrong")
+    require(issue.get("formal_brief_count") == sum(story.get("editorial_tier") == "brief" for story in stories), "formal brief count is wrong")
+    require(issue.get("p0_count") == sum(story.get("editorial_priority") == "priority.p0" for story in stories), "P0 count is wrong")
     require(issue["total_intelligence_count"] == len(stories) + len(news_briefs), "total intelligence count is wrong")
 
     for brief in news_briefs:

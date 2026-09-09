@@ -23,6 +23,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from spectra_agent.compat import rolling_thesis as compatible_rolling_thesis
+from spectra_agent.editorial_policy import classify_brief, classify_story
 from spectra_agent.publication_quality import expected_cover_motif
 
 
@@ -1092,8 +1093,10 @@ def build_news_briefs(
     reviewed_ids: set[str],
     window_end: str | None = None,
     window_start: str | None = None,
+    excluded_source_ids: set[str] | None = None,
 ) -> list[dict]:
     source_map = {item["source_id"]: item for item in collection.get("source_records", [])}
+    excluded_source_ids = excluded_source_ids or set()
     briefs = []
     end_date = report_date(window_end) if window_end else None
     start_value = window_start or candidate_run.get("window_start")
@@ -1111,6 +1114,8 @@ def build_news_briefs(
         if (gates.get("fact_wording_fidelity") or {}).get("status") == "fail":
             continue
         if candidate["candidate_id"] in reviewed_ids:
+            continue
+        if excluded_source_ids.intersection(candidate.get("source_ids") or [candidate.get("primary_source_id")]):
             continue
         # The collector uses a rolling 7x24-hour window, which can touch eight
         # local calendar dates. The publication timeline intentionally shows
@@ -1166,6 +1171,7 @@ def build_news_briefs(
                 "role": "primary" if source_badge in {"论文摘要", "官方来源"} else "secondary",
             }],
             "source_count": len(candidate.get("source_ids", [])),
+            **classify_brief(candidate, source.get("source_type"), headline, summary),
         })
     return sorted(briefs, key=lambda item: (item.get("published_at") or "", item["score"] or 0), reverse=True)
 
@@ -1324,16 +1330,16 @@ def main() -> None:
         if writer_draft:
             paragraphs = writer_draft["factual_paragraphs"]
             copy.update({
-                "headline": writer_draft["headline"],
-                "dek": writer_draft["dek"],
-                "one_line_takeaway": writer_draft["one_line_takeaway"],
+                "headline": writer_draft.get("headline") or copy["headline"],
+                "dek": writer_draft.get("dek") or copy["dek"],
+                "one_line_takeaway": writer_draft.get("one_line_takeaway") or copy["one_line_takeaway"],
                 "what": paragraphs[0]["text"],
                 "fact_points": [item["text"] for item in paragraphs],
                 "summary_paragraphs": [item["text"] for item in paragraphs],
                 "how": "\n\n".join(item["text"] for item in paragraphs[1:]),
-                "why": writer_draft["judgment"],
+                "why": writer_draft.get("judgment") or copy["why"],
                 "take": None,
-                "watch": writer_draft["watch_next"],
+                "watch": writer_draft.get("watch_next") or copy["watch"],
             })
         claim_ids = copy.get("claim_ids") or event["claim_ids"]
         source = {
@@ -1428,6 +1434,12 @@ def main() -> None:
 
     story_by_event = {story["primary_event_id"]: story for story in stories}
     reviewed_candidate_ids = {item["candidate_id"] for item in review.get("records", [])}
+    story_source_ids = {
+        source_id
+        for event in events.values()
+        for source_id in [event.get("primary_source_id"), *(event.get("source_ids") or [])]
+        if source_id
+    }
     news_briefs = (
         build_news_briefs(
             candidate_run,
@@ -1435,25 +1447,34 @@ def main() -> None:
             reviewed_candidate_ids,
             verified.get("display_window_end") or verified.get("window_end"),
             verified.get("display_window_start"),
+            story_source_ids,
         )
         if candidate_run and collection else []
     )
     selected_top_event_ids = [
         item for item in verified["editorial_selection"]["top_event_ids"] if item in story_by_event
     ][:5]
-    top_event_ids = publication_core_event_ids(selected_top_event_ids, writer_drafts, draft_bundle)
-    top_story_ids = [story_by_event[event_id]["story_id"] for event_id in top_event_ids]
-    # Editorial selection owns importance. Writer readiness changes how much
-    # copy is available, but must never demote a selected core event into the
-    # P2 rolling-news stream.
+    candidate_core_event_ids = publication_core_event_ids(selected_top_event_ids, writer_drafts, draft_bundle)
+    selected_set = set(candidate_core_event_ids)
     for story in stories:
-        is_core_event = story["primary_event_id"] in top_event_ids
-        story["article_type"] = "core_event" if is_core_event else "brief"
-        story["content_format"] = (
-            "full_analysis" if story["primary_event_id"] in writer_drafts else "compact_analysis"
-        )
-        if not is_core_event:
-            story["reading_time_minutes"] = 2
+        event_id = story["primary_event_id"]
+        event = dict(events[event_id])
+        event["intelligence_type"] = story["intelligence_type"]
+        source_type = (source_records.get(event["primary_source_id"]) or {}).get("source_type")
+        story.update(classify_story(
+            story,
+            event,
+            source_type=source_type,
+            selected=event_id in selected_set,
+            writer_draft=event_id in writer_drafts,
+        ))
+        if story["article_type"] != "core_event":
+            story["reading_time_minutes"] = min(3, story["reading_time_minutes"])
+    top_event_ids = [
+        event_id for event_id in candidate_core_event_ids
+        if story_by_event[event_id]["article_type"] == "core_event"
+    ]
+    top_story_ids = [story_by_event[event_id]["story_id"] for event_id in top_event_ids]
     exact_issue_one = set(events) == set(STORY_COPY)
     fallback_window_end = max(item["event_at"] for item in events.values())
     window_end_value = verified.get("display_window_end") or verified.get("window_end") or fallback_window_end
@@ -1520,7 +1541,7 @@ def main() -> None:
         },
         "issue": {
             "issue_id": f"digest_{period_end.strftime('%Y%m%d')}" if is_rolling_digest else f"issue_{issue_year}_w{issue_week:02d}",
-            "title": f"近7日视觉行业情报 · 截至{report_date_value}",
+            "title": f"近7日视觉智能前沿 · 截至{report_date_value}",
             "report_date": report_date_value,
             "window_days": (period_end - period_start).days + 1,
             "data_cutoff_at": window_end_value,
@@ -1543,6 +1564,9 @@ def main() -> None:
             "today_new_count": today_new_count,
             "rolling_window_count": rolling_window_count,
             "core_event_count": sum(story["article_type"] == "core_event" for story in stories),
+            "industry_signal_count": sum(story.get("editorial_tier") == "industry_signal" for story in stories),
+            "formal_brief_count": sum(story.get("editorial_tier") == "brief" for story in stories),
+            "p0_count": sum(story.get("editorial_priority") == "priority.p0" for story in stories),
             "brief_count": len(news_briefs),
             "reviewed_count": verified["summary"]["p1_reviewed"],
             "watchlist_count": verified["summary"]["watchlist_events"],

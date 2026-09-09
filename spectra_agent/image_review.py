@@ -39,6 +39,8 @@ def embed_issue(path: Path, issue: dict) -> None:
 def pending_covers(issue: dict) -> list[dict]:
     pending = []
     for story in issue.get("editorial_stories") or []:
+        if story.get("article_type", "core_event") != "core_event":
+            continue
         cover = story.get("cover_image") or {}
         if cover.get("kind") not in {"editorial_diagram", "generated"}:
             continue

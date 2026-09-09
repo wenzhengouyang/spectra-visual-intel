@@ -352,6 +352,36 @@ class EditorialTimelineTest(unittest.TestCase):
 
         self.assertEqual([item["candidate_id"] for item in briefs], ["cand_this_week"])
 
+    def test_formal_story_source_is_not_repeated_as_a_news_brief(self):
+        candidates = {"feed_candidates": [{
+            "candidate_id": "cand_promoted",
+            "canonical_title": "Promoted story",
+            "primary_source_id": "src_promoted",
+            "source_ids": ["src_promoted"],
+            "published_at": "2026-09-03T08:00:00Z",
+            "primary_route": "frontier.world_model",
+            "intelligence_type": "type.technology_breakthrough",
+            "tags": {},
+            "score": 20,
+        }]}
+        collection = {"source_records": [{
+            "source_id": "src_promoted",
+            "source_type": "paper_report",
+            "canonical_url": "https://example.com/promoted",
+            "raw_excerpt": "Abstract",
+        }]}
+
+        briefs = MODULE.build_news_briefs(
+            candidates,
+            collection,
+            set(),
+            "2026-09-03T09:00:00Z",
+            "2026-08-28T00:00:00Z",
+            {"src_promoted"},
+        )
+
+        self.assertEqual(briefs, [])
+
 
 if __name__ == "__main__":
     unittest.main()

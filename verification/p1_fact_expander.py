@@ -24,8 +24,8 @@ if str(ROOT) not in sys.path:
 from spectra_agent.llm_client import create_llm_client  # noqa: E402
 from editorial.expand_facts import locate_quote, normalize, numeric_atoms  # noqa: E402
 
-CHECKPOINT_SCHEMA_VERSION = "0.2"
-PROMPT_VERSION = "p1_fact_expander.v0.2"
+CHECKPOINT_SCHEMA_VERSION = "0.3"
+PROMPT_VERSION = "p1_fact_expander.v0.3"
 
 
 SCHEMA = {
@@ -51,6 +51,7 @@ SCHEMA = {
 
 INSTRUCTIONS = """你是P1事实扩展器，不负责写文章或作判断。
 从完整来源正文中提取8—12条互不重复的原子事实，覆盖事件、组成、机制、数据、适用范围、限制与发布状态。
+先围绕route_focus提取与视觉生成能力、模型、产品、商业化或评测直接相关的事实，再用公司整体数据补充背景。对于财报，不得只抽总收入和利润而遗漏正文中明确披露的视觉AI产品收入、模型能力、用户采用、工作流或组织动作。
 text使用准确中文；来源是公司、论文或媒体时必须保留“公司称／论文作者报告／据报道”等归因。
 evidence_quote必须逐字复制来源正文中能够完整支持该事实的最短连续片段，不能翻译、改写或拼接不连续句子。
 不得新增数字、因果、效果、行业趋势或来源没有表达的结论。每条只表达一个主要事实。
@@ -227,6 +228,11 @@ def expand_bundle(evidence: dict[str, Any], collection: dict[str, Any], client,
                     ),
                     input_text=json.dumps({
                         "title": record.get("title"),
+                        "route_focus": {
+                            "primary_route": (record.get("agent_analysis") or {}).get("primary_route"),
+                            "secondary_routes": (record.get("agent_analysis") or {}).get("secondary_routes") or [],
+                            "what": (record.get("agent_analysis") or {}).get("what"),
+                        },
                         "existing_claims": [item.get("claim") for item in merged],
                         "source_text": source_text,
                     }, ensure_ascii=False),

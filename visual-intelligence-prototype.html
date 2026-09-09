@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Spectra — 视觉行业情报工作台</title>
-  <meta name="description" content="面向AI产品策略从业者的视觉行业研究、趋势洞察与情报文章工作台。" />
+  <title>Spectra — 视觉智能前沿</title>
+  <meta name="description" content="面向AI产品策略从业者的视觉生成能力、模型前沿与产业信号。" />
   <link rel="stylesheet" href="tokens.css?v=4" />
   <link rel="stylesheet" href="app/globals.css?v=19" />
   <link rel="stylesheet" href="app/hallmark-editorial.css?v=14" />
@@ -14,10 +14,16 @@
     <header class="topbar">
       <div class="brand-block"><div class="brand-symbol"><span></span><span></span><span></span></div><div><strong>SPECTRA</strong><small>VISUAL INTELLIGENCE</small></div></div>
       <nav class="primary-nav" aria-label="主要导航">
-        <button class="nav-item active" data-view-target="overview">情报总览</button>
-        <button class="nav-item" data-view-target="articles">情报文章 <em id="navStoryCount">—</em></button>
+        <button class="nav-item active" data-view-target="selection">本期精选</button>
+        <button class="nav-item" data-view-target="capability_metrics">能力与指标</button>
+        <button class="nav-item" data-view-target="model_frontier">模型与前沿</button>
+        <button class="nav-item" data-view-target="product_business">产品与商业</button>
+        <button class="nav-item" data-view-target="content_culture">内容与文化</button>
+        <button class="nav-item" data-view-target="team_talent">团队与人才</button>
+      </nav>
+      <nav class="utility-nav" aria-label="个人工具">
         <button class="nav-item" data-view-target="interests">我的关注</button>
-        <button class="nav-item" data-view-target="ideas">视觉灵感库</button>
+        <button class="nav-item" data-view-target="ideas">灵感库</button>
       </nav>
       <div class="topbar-status"><span class="live-dot"></span><b id="reviewCount">—</b><span>原文核验</span><i id="publishCount">正式事件加载中</i></div>
       <button class="topbar-profile" id="openInterestProfile" aria-label="打开我的兴趣档案">WY<span id="profileSummary">3 个关注方向</span></button>
@@ -25,7 +31,7 @@
 
     <section class="workspace" id="overview">
       <header class="workspace-header">
-        <div><div class="breadcrumb">INTELLIGENCE / <span id="viewBreadcrumb">情报总览</span></div><h1 id="viewTitle">近7日视觉行业情报</h1></div>
+        <div><div class="breadcrumb">SPECTRA / <span id="viewBreadcrumb">本期精选</span></div><h1 id="viewTitle">近7日视觉智能前沿</h1><p class="channel-description" id="channelDescription">从广泛采集中筛出与视觉生成能力、产品和产业决策最相关的内容。</p></div>
         <div class="header-tools">
           <label class="search-box"><span>⌕</span><input id="search" placeholder="搜索事件、模型或场景" /></label>
           <select id="focus" aria-label="领域筛选"><option>全部领域</option><option>视频生成</option><option>世界模型</option><option>具身智能</option><option>评测与标准</option><option>空间与4D</option></select>
@@ -62,9 +68,9 @@
       </section>
       </div>
 
-      <section class="intel-controls" id="intel-filters" aria-label="情报筛选" data-platform-view="articles">
+      <section class="intel-controls" id="intel-filters" aria-label="内容筛选" data-platform-view="articles">
         <div class="intel-controls-head">
-          <div><span class="section-kicker">INTELLIGENCE CHANNELS</span><h2>选择阅读频道</h2></div>
+          <div><span class="section-kicker">REFINE THIS ISSUE</span><h2>筛选本期内容</h2></div>
           <button class="interest-entry" id="interestEntry"><span>◎</span> 我的兴趣档案 <em id="interestCount">3</em></button>
         </div>
         <div class="filter-toolbar">
@@ -89,9 +95,11 @@
       </section>
 
       <section class="editorial-section panel-card" id="editorial-reader" data-platform-view="articles">
-        <div class="panel-heading editorial-heading"><div><span class="section-kicker">ROLLING EDITORIAL</span><h2>近7日情报文章</h2></div><span class="digest-chip" id="storyMix">文章加载中</span></div>
+        <div class="panel-heading editorial-heading"><div><span class="section-kicker">ROLLING EDITORIAL</span><h2>近7日前沿精选</h2></div><span class="digest-chip" id="storyMix">内容加载中</span></div>
+        <div class="p0-status" id="p0Status" role="status"><b>P0</b><span>正在判断本期是否存在必须立即关注的信号</span></div>
         <div class="editorial-browse">
           <section class="story-group core-event-group"><div class="story-group-head"><div><span>CORE EVENT</span><h3>核心事件</h3></div><p id="coreEventCount">—</p></div><div class="story-card-grid" id="coreEventIndex"></div></section>
+          <section class="story-group industry-signal-group"><div class="story-group-head"><div><span>INDUSTRY SIGNAL</span><h3>行业信号</h3></div><p id="industrySignalCount">—</p></div><div class="signal-story-list" id="industrySignalIndex"></div></section>
           <section class="story-group brief-group"><div class="story-group-head"><div><span>ROLLING BRIEFING</span><h3>近7日短讯</h3></div><p id="briefCount">—</p></div><div class="brief-list" id="briefIndex"></div></section>
         </div>
         <div class="article-reader" id="articleReader" hidden><div class="reader-heading"><span>ARTICLE READER</span><button id="backToArticles">← 返回文章列表</button></div><article class="editorial-feature" id="editorialArticle"></article></div>
@@ -106,7 +114,7 @@
           <button class="idea-card cyan"><div class="idea-top"><span>BUSINESS</span><b>04</b></div><small>商业应用</small><h3>视频到4D资产工作流</h3><p>验证视频潜变量能否缩短虚拟场景与空间资产的生产链路。</p><div class="idea-footer"><span>关联信号 2</span><i>↗</i></div></button>
         </div>
       </section>
-      <footer><span>SPECTRA / VISUAL INTELLIGENCE</span><p id="footerSummary">情报内容加载中</p><span>ISSUE 01 · V0.2</span></footer>
+      <footer><span>SPECTRA / VISUAL INTELLIGENCE</span><p id="footerSummary">内容加载中</p><span>ROLLING DIGEST</span></footer>
     </section>
   </main>
 
@@ -118,6 +126,7 @@
     let briefMap;
     let selectedStoryId;
     let primaryFilter = 'all';
+    let editorialChannel = 'weekly_selection';
     let scopeFilter = 'all';
     let secondaryFilter = 'all';
     let mineOnly = false;
@@ -138,7 +147,14 @@
       return safeUrl(value) === '#' ? '' : safeUrl(value);
     };
     const storyFor = id => storyMap.get(id);
-    const priorityLabel = value => value.replace('priority.', '').toUpperCase();
+    const priorityLabel = value => String(value || 'priority.p2').replace('priority.', '').toUpperCase();
+    const displayPriority = story => priorityLabel(story.editorial_priority || story.priority);
+    const TIER_LABELS = {core_event:'核心事件', industry_signal:'行业信号', brief:'短读'};
+    const CAPABILITY_LABELS = {
+      motion_smoothness:'动作流畅度', temporal_consistency:'时序一致性', prompt_adherence:'提示词遵循',
+      artifact_risk:'伪影风险', camera_control:'相机控制', character_consistency:'角色一致性',
+      physical_plausibility:'物理合理性', generation_efficiency:'速度与成本', visual_quality:'视觉质量'
+    };
     const stateClass = status => status === '升温' ? 'up' : status === '形成' ? 'steady' : 'watch';
     const stateIcon = status => status === '升温' ? '↑' : status === '形成' ? '→' : '?';
     const formatPublished = value => new Date(value).toLocaleDateString('zh-CN',{year:'numeric',month:'short',day:'numeric'});
@@ -170,7 +186,8 @@
       const matchesSecondary = secondaryFilter === 'all' || tags.includes(secondaryFilter);
       const matchesFocus = focus === '全部领域' || tags.includes(focus);
       const matchesMine = !mineOnly || tags.some(tag => interests.includes(tag));
-      return matchesQuery && matchesPrimary && matchesScope && matchesSecondary && matchesFocus && matchesMine;
+      const matchesChannel = editorialChannel === 'weekly_selection' || story.editorial_channel === editorialChannel;
+      return matchesQuery && matchesPrimary && matchesScope && matchesSecondary && matchesFocus && matchesMine && matchesChannel;
     };
     const intelligenceLabel = story => ({
       'type.industry_market': '行业与市场',
@@ -178,27 +195,36 @@
       'type.technology_breakthrough': '技术突破'
     })[intelligenceGroup(story)];
     const VIEW_COPY = {
-      overview: ['情报总览', '近7日视觉行业情报'],
-      articles: ['情报文章', '近7日核心事件与短讯'],
-      interests: ['我的关注', '个人兴趣情报'],
-      ideas: ['视觉灵感库', '视觉机会与可借鉴方向']
+      selection: ['本期精选', '近7日视觉智能前沿', '从广泛采集中筛出与视觉生成能力、产品和产业决策最相关的内容。'],
+      capability_metrics: ['能力与指标', '能力变化与评测指标', '关注动作流畅度、时序一致性、提示词遵循、伪影风险、相机控制与生成效率。'],
+      model_frontier: ['模型与前沿', '模型、架构与研究前沿', '追踪视频、图像、世界模型与空间智能的关键能力变化。'],
+      product_business: ['产品与商业', '产品发布与商业信号', '观察视觉 AI 如何进入工作流、收入结构、客户采用与公司战略。'],
+      content_culture: ['内容与文化', '内容生产与文化影响', '关注影视、广告、短剧、创作者生态与视觉文化的变化。'],
+      team_talent: ['团队与人才', '团队、组织与关键人才', '只保留会影响视觉 AI 产品与能力建设的组织信号。'],
+      interests: ['我的关注', '关注方向与匹配内容', '你的关注仅保存在当前设备，并用于过滤本期内容。'],
+      ideas: ['灵感库', '视觉机会与可借鉴方向', '把前沿信号转成产品、模型、内容与商业上的可执行想法。']
     };
 
     function showView(target, scrollTop = true) {
-      const view = target === 'interests' ? 'articles' : target;
-      document.body.dataset.currentView = target;
-      document.querySelectorAll('[data-platform-view]').forEach(section => { section.hidden = section.dataset.platformView !== view; });
+      const channelTargets = ['selection','capability_metrics','model_frontier','product_business','content_culture','team_talent'];
+      const view = target === 'ideas' ? 'ideas' : 'articles';
+      editorialChannel = channelTargets.includes(target) ? target.replace('selection', 'weekly_selection') : editorialChannel;
+      document.body.dataset.currentView = view;
+      document.querySelectorAll('[data-platform-view]').forEach(section => {
+        section.hidden = section.dataset.platformView !== view;
+      });
       document.querySelectorAll('[data-view-target]').forEach(item => item.classList.toggle('active', item.dataset.viewTarget === target));
       const copy = VIEW_COPY[target] || VIEW_COPY.overview;
       document.getElementById('viewBreadcrumb').textContent = copy[0];
       document.getElementById('viewTitle').textContent = copy[1];
-      if (target === 'articles' || target === 'interests') {
+      document.getElementById('channelDescription').textContent = copy[2];
+      if (view === 'articles') {
         document.getElementById('articleReader').hidden = true;
         document.getElementById('editorial-reader').classList.remove('reading');
         document.body.classList.remove('is-reading');
       }
-      if (target === 'interests') { mineOnly = true; toggleInterestPanel(true); refreshBrowse(); }
-      if (target === 'articles') { mineOnly = false; toggleInterestPanel(false); refreshBrowse(); }
+      if (target === 'interests') { editorialChannel = 'weekly_selection'; mineOnly = true; toggleInterestPanel(true); refreshBrowse(); }
+      if (channelTargets.includes(target)) { mineOnly = false; toggleInterestPanel(false); refreshBrowse(); }
       if (scrollTop) window.scrollTo({top: 0, behavior: 'smooth'});
     }
 
@@ -213,7 +239,7 @@
       const detail = document.getElementById('eventDetail');
       detail.className = `timeline-detail ${day.tone}`;
       const cards = timelineItems.map(({kind,item}, index) => kind === 'story' ? `<article class="timeline-event-card ${index === 0 ? 'active' : ''}" style="--stack-index:${index}" data-stack-card>
-          <div class="event-card-meta"><span class="primary-intel-tag">${escapeHtml(intelligenceLabel(item))}</span><span class="priority-tag">${priorityLabel(item.priority)}</span><em>${escapeHtml(item.category)}</em></div>
+          <div class="event-card-meta"><span class="primary-intel-tag">${escapeHtml(TIER_LABELS[item.editorial_tier] || '正式内容')}</span><span class="priority-tag">${displayPriority(item)}</span><em>${escapeHtml(item.category)}</em></div>
           <h3><button class="event-title-button" data-open-story="${escapeHtml(item.story_id)}">${escapeHtml(item.headline)}</button></h3>
           <p class="event-fact">${escapeHtml(item.dek)}</p>
           <div class="event-links"><span>${formatPublished(item.published_at)} · ${item.reading_time_minutes} 分钟阅读</span><button data-open-story="${escapeHtml(item.story_id)}">深度解读 →</button><a class="source-link" href="${safeUrl(item.source_links[0].url)}" target="_blank" rel="noopener noreferrer">原文 ↗</a></div>
@@ -249,7 +275,7 @@
       selectTrend(0);
     }
 
-    function section(label, text, tone = '', statement = '') { return `<section class="article-section ${tone}"><div><b>${label}</b>${statement ? `<small>${statement}</small>` : ''}</div><p>${escapeHtml(text)}</p></section>`; }
+    function section(label, text, tone = '', statement = '') { return text ? `<section class="article-section ${tone}"><div><b>${label}</b>${statement ? `<small>${statement}</small>` : ''}</div><p>${escapeHtml(text)}</p></section>` : ''; }
     function renderCompleteArticle(story) {
       const body = story.article_body || {
         lead: story.what_happened,
@@ -259,11 +285,13 @@
         evidence_boundary: story.limitations,
         watch_next: story.watch_next || []
       };
-      const fullText = body.full_text?.text || [body.lead?.text, body.key_details?.text].filter(Boolean).join('\n\n');
+      const lead = body.lead?.text || body.full_text?.text || '';
+      const details = body.key_details?.text && body.key_details.text !== lead ? body.key_details.text : '';
+      const judgment = body.judgment?.text || story.why_it_matters?.text || '';
       const watch = (body.watch_next || []).length
         ? `<div class="audit-watch"><b>后续观察</b><ul>${body.watch_next.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul></div>` : '';
       const sources = story.source_links.map(source => `<a href="${safeUrl(source.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(source.label)} ↗</a>`).join('');
-      return `<article class="article-prose"><div><b>情报正文</b><small>基于已核验材料重新整理</small></div><p>${escapeHtml(fullText)}</p></article><details class="source-audit"><summary>来源与核验 <span>＋</span></summary><div class="source-audit-body"><div><b>核验说明</b><p>${escapeHtml(body.evidence_boundary.text)}</p></div>${watch}<div class="audit-sources"><b>原始来源</b>${sources}</div></div></details>`;
+      return `<article class="article-prose structured-analysis">${section('最新进展', lead, 'whats-new', 'WHAT’S NEW')}${section('关键证据与架构', details, 'architecture', 'EVIDENCE / ARCHITECTURE')}${section('为什么重要', judgment, 'why-matters', 'WHY IT MATTERS')}</article><details class="source-audit"><summary>证据边界与来源 <span>＋</span></summary><div class="source-audit-body"><div><b>证据边界</b><p>${escapeHtml(body.evidence_boundary.text)}</p></div>${watch}<div class="audit-sources"><b>原始来源</b>${sources}</div></div></details>`;
     }
     function renderMiniChart(story) {
       const chart = story.visual_data;
@@ -297,6 +325,7 @@
       };
     }
     function storyImageFigure(story, className) {
+      if (story.article_type !== 'core_event') return '';
       const cover = storyCover(story);
       if (!cover) return '';
       const caption = [cover.label, cover.credit].filter(Boolean).join(' · ');
@@ -304,13 +333,13 @@
     }
     function renderArticle(storyId, scroll = false) {
       const story = storyFor(storyId); if (!story) return;
-      showView('articles', false);
+      showView(story.editorial_channel || 'selection', false);
       selectedStoryId = storyId;
       document.querySelectorAll('[data-story-card]').forEach(card => card.classList.toggle('active', card.dataset.storyCard === storyId));
       const numberCards = story.key_numbers.length ? `<div class="key-number-row">${story.key_numbers.map(number => `<div><strong>${escapeHtml(number.value)}</strong><span>${escapeHtml(number.label)}</span></div>`).join('')}</div>` : '';
       const numbers = renderMiniChart(story) || numberCards;
       const vote = feedback[story.story_id] || '';
-      document.getElementById('editorialArticle').innerHTML = `<div class="article-meta"><span class="primary-intel-tag">${escapeHtml(intelligenceLabel(story))}</span><span>${story.article_type === 'core_event' ? '核心事件' : '快速短讯'}</span><em>${escapeHtml(story.category)}</em><i>${formatPublished(story.published_at)} · ${story.reading_time_minutes} 分钟阅读</i></div>${storyImageFigure(story, 'article-hero-image')}<h2>${escapeHtml(story.headline)}</h2><p class="article-dek">${escapeHtml(story.dek)}</p><div class="editorial-judgment"><b>情报判断</b><p>${escapeHtml(story.one_line_takeaway)}</p></div>${numbers}<div class="complete-story">${renderCompleteArticle(story)}</div><div class="article-actions"><a href="${safeUrl(story.source_links[0].url)}" target="_blank" rel="noopener noreferrer">核验原文 · ${escapeHtml(story.source_links[0].label)} ↗</a><div class="feedback-box"><span>这条情报对你有用吗？</span><button class="${vote === 'useful' ? 'active' : ''}" data-feedback="useful" data-feedback-story="${story.story_id}">有用</button><button class="${vote === 'not_relevant' ? 'active' : ''}" data-feedback="not_relevant" data-feedback-story="${story.story_id}">不相关</button><em>${vote ? '已记录' : '反馈将优化后续筛选'}</em></div></div>`;
+      document.getElementById('editorialArticle').innerHTML = `<div class="article-meta"><span class="primary-intel-tag">${escapeHtml(TIER_LABELS[story.editorial_tier] || '正式内容')}</span><span>${displayPriority(story)}</span><em>${escapeHtml(story.category)}</em><i>${formatPublished(story.published_at)} · ${story.reading_time_minutes} 分钟阅读</i></div>${storyImageFigure(story, 'article-hero-image')}<h2>${escapeHtml(story.headline)}</h2><p class="article-dek">${escapeHtml(story.dek)}</p><div class="editorial-judgment"><b>策略启示</b><p>${escapeHtml(story.one_line_takeaway)}</p></div>${numbers}<div class="complete-story">${renderCompleteArticle(story)}</div><div class="article-actions"><a href="${safeUrl(story.source_links[0].url)}" target="_blank" rel="noopener noreferrer">核验原文 · ${escapeHtml(story.source_links[0].label)} ↗</a><div class="feedback-box"><span>这条内容对你有用吗？</span><button class="${vote === 'useful' ? 'active' : ''}" data-feedback="useful" data-feedback-story="${story.story_id}">有用</button><button class="${vote === 'not_relevant' ? 'active' : ''}" data-feedback="not_relevant" data-feedback-story="${story.story_id}">不相关</button><em>${vote ? '已记录' : '反馈将优化后续筛选'}</em></div></div>`;
       document.getElementById('articleReader').hidden = false;
       document.getElementById('editorial-reader').classList.add('reading');
       document.body.classList.add('is-reading');
@@ -324,7 +353,8 @@
     function storyCard(story, index) {
       const source = story.source_links[0];
       const coverMarkup = storyImageFigure(story, 'story-card-image');
-      return `<article class="story-browse-card ${selectedStoryId === story.story_id ? 'active' : ''}" data-intel="${escapeHtml(intelligenceGroup(story))}" data-story-card="${escapeHtml(story.story_id)}">${coverMarkup}<div class="story-card-content"><div class="story-card-meta"><span class="priority-badge">${priorityLabel(story.priority)}</span><b class="primary-type-badge">${escapeHtml(intelligenceLabel(story))}</b><em>${escapeHtml(story.category)}</em></div><button class="story-card-copy" data-open-story="${escapeHtml(story.story_id)}"><strong>${escapeHtml(story.headline)}</strong><p>${escapeHtml(story.dek)}</p></button><div class="story-card-footer"><span>${formatPublished(story.published_at)} · ${story.reading_time_minutes} 分钟阅读</span><a href="${safeUrl(source.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(source.label)} ↗</a></div></div></article>`;
+      const dimensions = (story.capability_dimensions || []).map(item => `<span>${escapeHtml(CAPABILITY_LABELS[item] || item)}</span>`).join('');
+      return `<article class="story-browse-card tier-${escapeHtml(story.editorial_tier || 'brief')} ${selectedStoryId === story.story_id ? 'active' : ''}" data-intel="${escapeHtml(intelligenceGroup(story))}" data-story-card="${escapeHtml(story.story_id)}">${coverMarkup}<div class="story-card-content"><div class="story-card-meta"><span class="priority-badge">${displayPriority(story)}</span><b class="primary-type-badge">${escapeHtml(TIER_LABELS[story.editorial_tier] || intelligenceLabel(story))}</b><em>${escapeHtml(story.category)}</em></div><button class="story-card-copy" data-open-story="${escapeHtml(story.story_id)}"><strong>${escapeHtml(story.headline)}</strong><p>${escapeHtml(story.dek)}</p></button>${dimensions ? `<div class="capability-chips">${dimensions}</div>` : ''}<div class="story-card-footer"><span>${formatPublished(story.published_at)} · ${story.reading_time_minutes} 分钟阅读</span><a href="${safeUrl(source.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(source.label)} ↗</a></div></div></article>`;
     }
 
     function briefCard(story, index) {
@@ -334,7 +364,7 @@
     function newsBriefCard(brief) {
       const source = brief.source_links[0];
       return `<article class="news-brief-card" data-intel="${escapeHtml(intelligenceGroup(brief))}">
-        <div class="news-brief-meta"><b class="primary-type-badge">${escapeHtml(intelligenceLabel(brief))}</b><span>P2</span><em>${escapeHtml(brief.category)}</em></div>
+        <div class="news-brief-meta"><b class="primary-type-badge">短讯</b><span>${displayPriority(brief)}</span><em>${escapeHtml(brief.category)}</em></div>
         <h4><a href="${safeUrl(source.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(brief.headline)}</a></h4>
         <p>${escapeHtml(brief.dek)}</p>
         <div class="news-brief-status"><span>${escapeHtml(brief.source_badge)}</span><i>尚未完成深度核验</i></div>
@@ -345,16 +375,21 @@
     function renderStoryGroups() {
       const filtered = bundle.editorial_stories.filter(storyMatches);
       const coreEvents = filtered.filter(story => story.article_type === 'core_event');
+      const industrySignals = filtered.filter(story => story.editorial_tier === 'industry_signal');
+      const formalBriefs = filtered.filter(story => story.editorial_tier === 'brief');
       const briefs = bundle.news_briefs.filter(storyMatches);
-      const hasAny = coreEvents.length > 0 || briefs.length > 0;
+      const hasAny = coreEvents.length > 0 || industrySignals.length > 0 || formalBriefs.length > 0 || briefs.length > 0;
       document.getElementById('coreEventCount').textContent = `${coreEvents.length} 个`;
-      document.getElementById('briefCount').textContent = `${briefs.length} 条`;
+      document.getElementById('industrySignalCount').textContent = `${industrySignals.length} 个`;
+      document.getElementById('briefCount').textContent = `${formalBriefs.length + briefs.length} 条`;
       document.querySelector('.core-event-group').hidden = coreEvents.length === 0 && hasAny;
-      document.querySelector('.brief-group').hidden = briefs.length === 0;
+      document.querySelector('.industry-signal-group').hidden = industrySignals.length === 0;
+      document.querySelector('.brief-group').hidden = formalBriefs.length + briefs.length === 0;
       const interestEmpty = mineOnly && interests.length === 0;
       const emptyCopy = interestEmpty ? '尚未建立关注档案。请在上方选择关注领域，完成后这里才会出现个性化情报。' : '当前筛选下暂无内容';
       document.getElementById('coreEventIndex').innerHTML = coreEvents.map(story => storyCard(story, bundle.editorial_stories.indexOf(story))).join('') || `<div class="empty-search interest-empty">${emptyCopy}</div>`;
-      document.getElementById('briefIndex').innerHTML = briefs.map(newsBriefCard).join('') || (interestEmpty ? '' : '<div class="empty-search">当前筛选下暂无短讯</div>');
+      document.getElementById('industrySignalIndex').innerHTML = industrySignals.map(story => storyCard(story, bundle.editorial_stories.indexOf(story))).join('');
+      document.getElementById('briefIndex').innerHTML = formalBriefs.map(briefCard).join('') + briefs.map(newsBriefCard).join('') || (interestEmpty ? '' : '<div class="empty-search">当前页签暂无短讯</div>');
       document.querySelectorAll('[data-story-card]').forEach(card => card.classList.toggle('active', card.dataset.storyCard === selectedStoryId));
     }
 
@@ -417,9 +452,12 @@
       document.getElementById('updatedAt').textContent = `更新于 ${updated.toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false})}`;
       document.getElementById('trendCount').textContent = `${bundle.presentation.trend_radar.length}条趋势 · ${bundle.issue.story_count}个事件支撑`;
       document.getElementById('timelineCount').textContent = `共 ${String(bundle.issue.total_intelligence_count || bundle.issue.story_count).padStart(2,'0')} 条 ↗`;
-      document.getElementById('storyMix').textContent = `${bundle.issue.core_event_count}个核心事件 · ${bundle.issue.brief_count}条短讯`;
-      document.getElementById('footerSummary').textContent = `${bundle.issue.story_count}条正式事件 · ${bundle.issue.core_event_count}个核心事件 · ${bundle.issue.brief_count}条短讯 · P2短讯保留待核验标识`;
-      document.getElementById('navStoryCount').textContent = bundle.issue.total_intelligence_count || bundle.issue.story_count;
+      document.getElementById('storyMix').textContent = `${bundle.issue.core_event_count}个核心事件 · ${bundle.issue.industry_signal_count || 0}个行业信号 · ${(bundle.issue.formal_brief_count || 0) + bundle.issue.brief_count}条短讯`;
+      document.getElementById('footerSummary').textContent = `${bundle.issue.core_event_count}个核心事件 · ${bundle.issue.industry_signal_count || 0}个行业信号 · 近7日共${bundle.issue.total_intelligence_count}条内容`;
+      const p0Count = bundle.issue.p0_count || 0;
+      document.getElementById('p0Status').innerHTML = p0Count
+        ? `<b>P0 · ${p0Count}</b><span>存在需要立即关注并可采取行动的高优先级信号</span>`
+        : '<b>P0</b><span>本期无 P0：没有内容同时满足直接视觉相关、高战略影响、紧迫、证据可靠且可行动。</span>';
       const thesisText = bundle.issue.rolling_thesis || '';
       const thesisBreak = thesisText.search(/[；。]/);
       const thesisLead = thesisBreak >= 0 ? thesisText.slice(0, thesisBreak) : thesisText;
@@ -427,7 +465,7 @@
       document.getElementById('rollingThesis').textContent = thesisLead;
       document.getElementById('thesisDek').textContent = [thesisDetail, bundle.issue.thesis_dek].filter(Boolean).join(' ');
       renderTimeline(); renderRadar(); renderFilters(); renderEditorial();
-      document.getElementById('search').addEventListener('input', event => { if (event.target.value.trim()) showView('articles', false); renderStoryGroups(); }); document.getElementById('focus').addEventListener('change', renderStoryGroups);
+      document.getElementById('search').addEventListener('input', event => { if (event.target.value.trim() && document.body.dataset.currentView === 'ideas') showView('selection', false); renderStoryGroups(); }); document.getElementById('focus').addEventListener('change', renderStoryGroups);
       document.getElementById('primaryFilters').addEventListener('click', event => { const trigger = event.target.closest('[data-primary-filter]'); if (!trigger) return; primaryFilter = trigger.dataset.primaryFilter; secondaryFilter = 'all'; refreshBrowse(); });
       document.getElementById('advancedFilterToggle').addEventListener('click', event => { const panel = document.getElementById('advancedFilterPanel'); const willOpen = panel.hidden; panel.hidden = !willOpen; event.currentTarget.setAttribute('aria-expanded', String(willOpen)); });
       document.getElementById('scopeFilters').addEventListener('click', event => { const trigger = event.target.closest('[data-scope-filter]'); if (!trigger) return; scopeFilter = trigger.dataset.scopeFilter; secondaryFilter = 'all'; refreshBrowse(); });
@@ -445,7 +483,7 @@
       });
       document.getElementById('backToArticles').addEventListener('click', () => { const returnId = selectedStoryId; document.getElementById('articleReader').hidden = true; document.getElementById('editorial-reader').classList.remove('reading'); document.body.classList.remove('is-reading'); renderStoryGroups(); const card = document.querySelector(`[data-story-card="${CSS.escape(returnId)}"]`); (card || document.getElementById('editorial-reader')).scrollIntoView({behavior:'smooth',block:'center'}); });
       document.querySelectorAll('.nav-item[data-view-target]').forEach(item => item.addEventListener('click', () => showView(item.dataset.viewTarget)));
-      showView('overview', false);
+      showView('selection', false);
     }
     start().catch(error => { document.getElementById('rollingThesis').textContent = '数据加载失败，请刷新页面重试。'; console.error(error); });
   </script>

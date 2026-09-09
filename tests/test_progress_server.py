@@ -4,10 +4,25 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from spectra_agent.progress_server import build_status, latest_run_path
+from spectra_agent.progress_server import build_status, latest_run_path, safe_run_artifact
 
 
 class ProgressServerTest(unittest.TestCase):
+    def test_report_styles_and_images_are_served_without_path_traversal(self):
+        with tempfile.TemporaryDirectory() as directory:
+            run_dir = Path(directory)
+            (run_dir / "app").mkdir()
+            (run_dir / "assets" / "editorial").mkdir(parents=True)
+            (run_dir / "app" / "hallmark-editorial.css").write_text("body{}")
+            (run_dir / "assets" / "editorial" / "cover.jpg").write_bytes(b"jpg")
+
+            css = safe_run_artifact(run_dir, "app/hallmark-editorial.css")
+            image = safe_run_artifact(run_dir, "assets/editorial/cover.jpg")
+
+            self.assertEqual(css[1], "text/css; charset=utf-8")
+            self.assertEqual(image[1], "image/jpeg")
+            self.assertIsNone(safe_run_artifact(run_dir, "../run.json"))
+            self.assertIsNone(safe_run_artifact(run_dir, "run.json"))
     def test_latest_run_prefers_pointer(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

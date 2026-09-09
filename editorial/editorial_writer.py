@@ -23,6 +23,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from spectra_agent.llm_client import create_llm_client  # noqa: E402
+from spectra_agent.editorial_policy import should_attempt_core_writer  # noqa: E402
 
 
 EDITORIAL_WRITER_INSTRUCTIONS = """你是 SPECTRA 的中文情报编辑，读者是 AI 产品策略、模型与内容行业从业者。
@@ -481,6 +482,14 @@ def write_drafts(verified: dict[str, Any], fact_selection: dict[str, Any],
         article_type = "core_event"
         if event["event_id"] not in plans:
             raise ValueError(f"{event['event_id']}: missing locked fact selection")
+        source_type = (source_map.get(event["primary_source_id"]) or {}).get("source_type")
+        if not should_attempt_core_writer(event, plans[event["event_id"]], source_type):
+            demoted.append({
+                "event_id": event["event_id"],
+                "target_article_type": "industry_signal",
+                "reason": "editorial_policy_not_core_candidate",
+            })
+            continue
         readiness = core_event_readiness(plans[event["event_id"]])
         readiness_records.append({"event_id": event["event_id"], **readiness})
         if not readiness["ready"]:

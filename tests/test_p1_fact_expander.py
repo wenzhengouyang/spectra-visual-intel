@@ -4,7 +4,13 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from verification.p1_fact_expander import atomic_review, expand_bundle, has_attribution
+from verification.p1_fact_expander import (
+    CHECKPOINT_SCHEMA_VERSION,
+    PROMPT_VERSION,
+    atomic_review,
+    expand_bundle,
+    has_attribution,
+)
 from spectra_agent.run import WorkflowError, materialize_fact_decisions
 
 
@@ -81,9 +87,9 @@ class P1FactExpanderTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             checkpoint = Path(temp) / "checkpoint.json"
             checkpoint.write_text(json.dumps({
-                "schema_version": "0.2",
+                "schema_version": CHECKPOINT_SCHEMA_VERSION,
                 "record_type": "p1_fact_expansion_checkpoint",
-                "prompt_version": "p1_fact_expander.v0.2",
+                "prompt_version": PROMPT_VERSION,
                 "model": "qwen3:8b", "source_window": {"start": None, "end": None},
                 "records": {"cand_1": {
                 "status": "completed", "claim_reviews": cached_review,
