@@ -33,6 +33,8 @@ class FrontendShellTest(unittest.TestCase):
         self.assertIn('article_type === \'core_event\'', self.html)
         self.assertIn('bundle.issue.core_event_count', self.html)
         self.assertIn('id="coreEventIndex"', self.html)
+        self.assertIn("industry_signal:'核心事件'", self.html)
+        self.assertNotIn('id="industrySignalIndex"', self.html)
 
     def test_primary_navigation_is_limited_to_four_product_destinations(self):
         expected = {
@@ -72,9 +74,10 @@ class FrontendShellTest(unittest.TestCase):
         self.assertNotIn('class="taxonomy-note"', self.html)
         self.assertLess(self.html.index('id="advancedFilterPanel"'), self.html.index('id="primaryFilters"'))
 
-    def test_core_is_image_led_but_signals_and_briefs_are_not(self):
-        self.assertIn("if (story.article_type !== 'core_event') return '';", self.html)
-        self.assertIn('id="industrySignalIndex"', self.html)
+    def test_core_is_image_led_and_internal_signals_share_the_same_section(self):
+        self.assertIn("if (story.editorial_tier === 'brief') return '';", self.html)
+        self.assertIn("story.article_type === 'core_event' || story.editorial_tier === 'industry_signal'", self.html)
+        self.assertNotIn('<h3>行业信号</h3>', self.html)
         self.assertIn("if (story.editorial_tier === 'brief') return;", self.html)
         self.assertIn("story.editorial_tier === 'brief' ? '来源短读'", self.html)
         self.assertIn("const deepRead = sourceBrief ? ''", self.html)
