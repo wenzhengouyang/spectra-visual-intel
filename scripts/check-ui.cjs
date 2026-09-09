@@ -25,6 +25,17 @@ const assert = require('node:assert/strict');
     await page.locator('[data-library-tab=limits]').click();
     assert.equal(await page.locator('[data-library-tab=limits]').getAttribute('aria-pressed'),'true');
     await page.locator('[data-library-read]').click();
+    for (const width of [1440,390]) {
+      await page.setViewportSize({width,height:900});
+      await page.locator('.article-section').first().scrollIntoViewIfNeeded();
+      await page.waitForTimeout(300);
+      const heading = await page.locator('.reader-heading').boundingBox();
+      assert.ok(Math.abs(heading.y) < 2, 'Reader navigation must stay at viewport top');
+      assert.equal(await page.locator('.article-section>div>small:visible').count(),0);
+      assert.equal(await page.locator('.article-section').first().evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(26, 46, 64)');
+      await page.screenshot({path:`/tmp/spectra-reader-${width}.png`});
+    }
+    await page.setViewportSize({width:1440,height:1040});
     await page.locator('#backToArticles').click();
     assert.equal(await page.locator('body').getAttribute('data-current-view'),'ideas');
     await page.screenshot({path:'/tmp/spectra-library-deployed.png',fullPage:true});
