@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import html
 import json
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -76,6 +77,20 @@ def _action(state: dict[str, Any]) -> dict[str, str] | None:
     return None
 
 
+def _target_for(state: dict[str, Any]) -> dict[str, str]:
+    status = state.get("status")
+    stage = state.get("current_stage")
+    if status == "waiting_for_review":
+        return {"label": "打开事实审核", "url": "/run-artifact/REVIEW.md"}
+    if status == "waiting_for_editorial_review" and stage == "image_preview":
+        return {"label": "打开图片审核", "url": "/image-review"}
+    if status == "waiting_for_editorial_review" and stage == "semantic_review":
+        return {"label": "打开语义审核", "url": "/run-artifact/semantic-review.json"}
+    if status == "completed":
+        return {"label": "打开今日报告", "url": "/run-artifact/rolling-digest.html"}
+    return {"label": "查看阶段详情", "url": "/run-artifact/command-progress.json"}
+
+
 def build_status(config: dict[str, Any]) -> dict[str, Any]:
     run_dir = latest_run_path(config)
     if run_dir is None:
@@ -83,6 +98,8 @@ def build_status(config: dict[str, Any]) -> dict[str, Any]:
     state = read_json_safe(run_dir / "run.json")
     review = read_json_safe(run_dir / "p1-review.json")
     checkpoint = read_json_safe(run_dir / "core-event-checkpoint.json")
+    image_review = read_json_safe(run_dir / "image-review.json")
+    rejected_covers = image_review.get("rejected_story_ids") or []
     jobs = list((checkpoint.get("jobs") or {}).values())
     writer_done = sum(job.get("status") in TERMINAL_WRITER_STATES for job in jobs)
     writer_passed = sum(job.get("status") == "completed" for job in jobs)
@@ -101,6 +118,16 @@ def build_status(config: dict[str, Any]) -> dict[str, Any]:
     quality_started = stage in {"p2_localization", "p2_localizer", "localization", "image_preview", "semantic_review", "evaluation"} or (run_dir / "eval-report.json").exists()
     quality_done = status == "completed" or (run_dir / "eval-report.json").exists()
     published = state.get("publish_status") == "published"
+    overall = 0.0
+    overall += 15 if collection_done else 0
+    overall += 15 if review_approved or status == "waiting_for_review" else 0
+    overall += 15 if review_approved else 0
+    overall += 25 * (writer_done / len(jobs)) if jobs else 0
+    if localization_total:
+        overall += 10 * min(localized / localization_total, 1)
+    if quality_done:
+        overall += 10
+    overall += 10 if published else 0
 
     def step(name: str, detail: str, done: bool, current: bool) -> dict[str, Any]:
         return {"name": name, "detail": detail, "state": "done" if done else "current" if current else "pending"}
@@ -110,7 +137,7 @@ def build_status(config: dict[str, Any]) -> dict[str, Any]:
         step("筛选与核验", "形成候选与证据", review_approved or status == "waiting_for_review", collection_done and not review_approved and status != "waiting_for_review"),
         step("人工事实审核", f"{len(review.get('records') or [])} 条候选", review_approved, status == "waiting_for_review"),
         step("核心事件写作", f"已处理 {writer_done}/{len(jobs)}" if jobs else "等待开始", writing_done, writing_started and not writing_done),
-        step("质量与图片", f"中文化 {localized}/{localization_total}" if localization_total else "中文化、评测与封面", quality_done, quality_started and not quality_done),
+        step("质量与图片", f"{len(rejected_covers)} 张封面待返工" if rejected_covers else f"中文化 {localized}/{localization_total}" if localization_total else "中文化、评测与封面", quality_done, quality_started and not quality_done),
         step("发布与推送", "网页与钉钉状态独立", published, status == "completed" and not published),
     ]
     updated = state.get("updated_at")
@@ -120,12 +147,15 @@ def build_status(config: dict[str, Any]) -> dict[str, Any]:
     return {
         "available": True,
         "run_id": state.get("run_id") or run_dir.name,
-        "label": _status_label(state),
+        "label": "图片需要返工" if rejected_covers else _status_label(state),
         "status": status,
         "reliability": state.get("reliability_status") or "unknown",
         "updated_at": updated,
         "published": published,
-        "action": _action(state),
+        "action": ({"title": f"{len(rejected_covers)} 张图片已驳回", "detail": str(image_review.get("rejection_reason") or "需要重新设计主题映射。")}
+                   if rejected_covers else _action(state)),
+        "target": _target_for(state),
+        "overall_percent": min(round(overall), 100),
         "stages": stages,
         "writer": {"processed": writer_done, "total": len(jobs), "passed": writer_passed, "demoted": writer_demoted, "manual": writer_manual},
         "current_progress": (
@@ -152,6 +182,60 @@ class ProgressHandler(BaseHTTPRequestHandler):
         if self.path.rstrip("/") == "/api/status":
             body = json.dumps(build_status(self.config), ensure_ascii=False).encode("utf-8")
             self._send(200, body, "application/json; charset=utf-8")
+            return
+        if self.path.rstrip("/") == "/image-review":
+            run_dir = latest_run_path(self.config)
+            issue = read_json_safe(run_dir / "editorial-issue.json") if run_dir else {}
+            stories = []
+            for story in issue.get("editorial_stories") or []:
+                cover = story.get("cover_image") or {}
+                if cover.get("kind") not in {"editorial_diagram", "generated"} or cover.get("review_status") == "approved":
+                    continue
+                url = str(cover.get("url") or "")
+                stories.append(
+                    '<article><img src="/run-asset/' + html.escape(url, quote=True) + '" alt="">'
+                    '<h2>' + html.escape(str(story.get("headline") or "未命名")) + '</h2>'
+                    '<p>' + html.escape(str(story.get("story_id") or "")) + '</p></article>'
+                )
+            body = ("""<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>今天的图片审核 · SPECTRA</title><style>
+:root{--paper:#0d141d;--raised:#17212c;--ink:#edf2f7;--muted:#8e9bab;--rule:#344150;--accent:#61b1d1}
+*{box-sizing:border-box}html,body{margin:0;overflow-x:clip;background:var(--paper);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif}
+main{width:min(72rem,100%);margin:auto;padding:clamp(1.25rem,5vw,4rem)}header{display:flex;justify-content:space-between;align-items:end;gap:1rem;padding-bottom:1.5rem;border-bottom:1px solid var(--rule)}
+h1{margin:0;font-size:clamp(1.8rem,5vw,3.5rem);overflow-wrap:anywhere;min-width:0}header p,article p{color:var(--muted)}.grid{display:grid;gap:2rem;padding-top:2rem}
+article{border-bottom:1px solid var(--rule);padding-bottom:2rem}img{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;background:var(--raised)}h2{font-size:1.05rem;line-height:1.45;margin:1rem 0 .35rem}article p{font: .72rem/1.4 ui-monospace,monospace;margin:0}
+@media(min-width:48rem){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}a{color:var(--accent);white-space:nowrap}
+</style><main><header><div><h1>今天的图片审核</h1><p>逐张确认语义是否匹配；本页只读，不会自动批准。</p></div><a href="/">返回进展</a></header><section class="grid">""" + "".join(stories) + "</section></main></html>").encode("utf-8")
+            self._send(200, body, "text/html; charset=utf-8")
+            return
+        if self.path.startswith("/run-asset/"):
+            relative = self.path.split("/run-asset/", 1)[1].split("?", 1)[0]
+            run_dir = latest_run_path(self.config)
+            target = (run_dir / relative).resolve() if run_dir and relative.startswith("assets/") else None
+            try:
+                safe = bool(target and target.is_file() and target.is_relative_to((run_dir / "assets").resolve()))
+            except (OSError, ValueError):
+                safe = False
+            if safe:
+                mime = "image/svg+xml" if target.suffix.lower() == ".svg" else "image/jpeg"
+                self._send(200, target.read_bytes(), mime)
+            else:
+                self._send(404, b"Asset not available", "text/plain; charset=utf-8")
+            return
+        if self.path.startswith("/run-artifact/"):
+            name = self.path.split("/run-artifact/", 1)[1].split("?", 1)[0]
+            allowed = {
+                "REVIEW.md": "text/plain; charset=utf-8",
+                "rolling-digest.html": "text/html; charset=utf-8",
+                "semantic-review.json": "application/json; charset=utf-8",
+                "command-progress.json": "application/json; charset=utf-8",
+            }
+            run_dir = latest_run_path(self.config)
+            target = run_dir / name if run_dir and name in allowed else None
+            if target and target.is_file():
+                self._send(200, target.read_bytes(), allowed[name])
+            else:
+                self._send(404, b"Artifact not available", "text/plain; charset=utf-8")
             return
         if self.path in {"/", "/index.html"}:
             try:

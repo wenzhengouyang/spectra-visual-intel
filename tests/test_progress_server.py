@@ -36,6 +36,7 @@ class ProgressServerTest(unittest.TestCase):
             self.assertEqual(result["label"], "正在写核心事件")
             self.assertEqual(result["writer"], {"processed": 2, "total": 3, "passed": 1, "demoted": 1, "manual": 0})
             self.assertEqual(result["current_progress"]["label"], "核心事件已处理")
+            self.assertEqual(result["overall_percent"], 62)
             self.assertEqual(result["stages"][2]["state"], "done")
             self.assertEqual(result["stages"][3]["state"], "current")
 
@@ -49,7 +50,19 @@ class ProgressServerTest(unittest.TestCase):
                 result = build_status({})
             self.assertEqual(result["label"], "等待事实审核")
             self.assertEqual(result["action"]["title"], "需要你审核事实")
+            self.assertEqual(result["target"]["url"], "/run-artifact/REVIEW.md")
             self.assertEqual(result["stages"][2]["state"], "current")
+
+    def test_rejected_images_are_shown_as_rework(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            run_dir = Path(temporary) / "daily-20260909"
+            run_dir.mkdir()
+            (run_dir / "run.json").write_text(json.dumps({"run_id": run_dir.name, "status": "waiting_for_editorial_review", "current_stage": "image_preview"}))
+            (run_dir / "image-review.json").write_text(json.dumps({"rejected_story_ids": ["a", "b"], "rejection_reason": "主题不匹配"}))
+            with patch("spectra_agent.progress_server.latest_run_path", return_value=run_dir):
+                result = build_status({})
+            self.assertEqual(result["label"], "图片需要返工")
+            self.assertEqual(result["action"]["title"], "2 张图片已驳回")
 
 
 if __name__ == "__main__":
