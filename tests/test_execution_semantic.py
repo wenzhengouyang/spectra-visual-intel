@@ -92,6 +92,20 @@ class ExecutionTests(unittest.TestCase):
             self.assertEqual(state['last_failure']['action'], 'retry_from_checkpoint')
             self.assertEqual(state['next_action'], 'retry_from_checkpoint')
 
+    def test_creation_executor_is_not_misreported_as_interrupted(self):
+        with tempfile.TemporaryDirectory() as d:
+            run_dir = Path(d) / 'runs' / 'r1'
+            run_dir.mkdir(parents=True)
+            atomic_json(run_dir / 'run.json', {'run_id': 'r1', 'status': 'running', 'current_stage': 'collect',
+                        'created_at': '2000-01-01T00:00:00Z', 'updated_at': '2000-01-01T00:00:00Z'})
+            creation = RunLease(run_dir.parent / '.creation-locks' / run_dir.name)
+            self.assertTrue(creation.acquire())
+            try:
+                show_status(argparse.Namespace(run_id='r1'), {'data_dir': d, 'runs_dir': 'runs'})
+            finally:
+                creation.release()
+            self.assertEqual(json.loads((run_dir / 'run.json').read_text())['status'], 'running')
+
     def test_changed_decision_replaces_existing_claims(self):
         data = {'records': [{'candidate_id': 'c', 'decision': 'include', 'claims': [{'text': 'old'}],
             'suggested_evidence': [{'human_fact_decision': 'modify', 'human_fact_text': 'new', 'human_fact_kind': 'reported_fact'}]}]}

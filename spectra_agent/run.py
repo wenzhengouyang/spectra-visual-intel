@@ -1946,9 +1946,14 @@ def show_status(args: argparse.Namespace, config: dict[str, Any]) -> int:
     run_dir = locate_run(config, args.run_id)
     state = read_json(run_dir / "run.json")
     lease = RunLease(run_dir)
-    executor_active = not lease.acquire(record=False)
-    if not executor_active:
+    run_executor_active = not lease.acquire(record=False)
+    if not run_executor_active:
         lease.release()
+    creation_lease = RunLease(run_dir.parent / '.creation-locks' / run_dir.name)
+    creation_executor_active = not creation_lease.acquire(record=False)
+    if not creation_executor_active:
+        creation_lease.release()
+    executor_active = run_executor_active or creation_executor_active
     if state.get('status') in {'running', 'waiting_for_editorial'} and not executor_active:
         age = (datetime.now(timezone.utc) - parse_timestamp(state.get('updated_at') or state.get('created_at'))).total_seconds()
         if age > 30:
