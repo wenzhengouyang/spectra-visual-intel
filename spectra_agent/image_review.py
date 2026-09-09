@@ -114,6 +114,10 @@ def main() -> int:
         "rejected_story_ids": sorted(selected) if args.reject else [],
         "rejection_reason": args.reason if args.reject else None,
         "approved_covers": [{"story_id": story["story_id"],
+            "url": story["cover_image"].get("url"),
+            "kind": story["cover_image"].get("kind"),
+            "semantic_motif": story["cover_image"].get("semantic_motif"),
+            "semantic_match": story["cover_image"].get("semantic_match"),
             "asset_fingerprint": asset_fingerprint(run_dir, story["cover_image"]["url"])}
             for story in issue.get("editorial_stories", []) if story.get("story_id") in selected and not args.reject],
         "pending": pending_covers(issue),

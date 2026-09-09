@@ -23,6 +23,16 @@ class ReplaceCoversTest(unittest.TestCase):
             self.assertEqual(report["status"], "replacement_pending_review")
             self.assertTrue((root / cover["url"]).is_file())
 
+    def test_pending_cover_can_be_replaced_during_recovery(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "new.png"
+            source.write_bytes(b"new image")
+            issue = {"editorial_stories": [{"story_id": "story-1", "headline": "新图像模型", "category": "基础模型与多模态", "cover_image": {"url": "assets/old.svg", "kind": "generated", "review_status": "pending"}}]}
+            (root / "editorial-issue.json").write_text(json.dumps(issue))
+            report = replace(root, {"story-1": source})
+            self.assertEqual(report["status"], "replacement_pending_review")
+
 
 if __name__ == "__main__":
     unittest.main()

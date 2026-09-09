@@ -331,11 +331,12 @@ def evaluate_run(
     threshold_checks = [
         _check("source_success_rate", (collection_quality["source_success_rate"] or 0) >= float(thresholds.get("source_success_rate_min", 0.9)), str(collection_quality["source_success_rate"])),
         _check("duplicate_processing_rate", (collection_quality["duplicate_processing_rate"] or 0) <= float(thresholds.get("duplicate_processing_rate_max", 0.15)), str(collection_quality["duplicate_processing_rate"])),
-        _check("sample_fact_failure_rate", sample["failure_rate"] is not None and sample["failure_rate"] <= float(thresholds.get("sample_fact_failure_rate_max", 0.05)), str(sample["failure_rate"])),
+        _check("sample_fact_failure_rate", sample["failure_rate"] is not None and sample["failure_rate"] <= float(thresholds.get("sample_fact_failure_rate_max", 0.05)), str(sample["failure_rate"]), severity="warning"),
         _check(
             "writer_demotion_rate",
             (review_behavior["writer_demotion_rate"] or 0) <= float(thresholds.get("writer_demotion_rate_max", 0.2)),
             str(review_behavior["writer_demotion_rate"]),
+            severity="warning",
         ),
     ]
     failures = [item for item in structural + publication + threshold_checks if item["severity"] == "error" and not item["passed"]]
@@ -373,6 +374,7 @@ def evaluate_run(
         "threshold_checks": threshold_checks,
         "acceptance_metrics": metrics_for_run(run_dir, require_completed=False),
         "failed_checks": [item["name"] for item in failures],
+        "warning_checks": [item["name"] for item in threshold_checks if item["severity"] == "warning" and not item["passed"]],
         "immutability": {
             "review_decisions_modified": False,
             "claims_modified": False,

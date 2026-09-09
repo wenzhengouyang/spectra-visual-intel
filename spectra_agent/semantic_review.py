@@ -76,15 +76,50 @@ def bounded_review(payload, client, repair=None, max_reworks=1):
 def review_run(run_dir, client, max_source_chars=24000):
     run_dir = Path(run_dir)
     read = lambda name: json.loads((run_dir / name).read_text())
-    issue, collection, facts = read('editorial-issue.json'), read('collection.json'), read('p1-review.json')
+    issue, collection, verified = read('editorial-issue.json'), read('collection.json'), read('verified-events.json')
+    prior_path = run_dir / 'semantic-review.json'
+    prior_records = {
+        item.get('story_id'): item
+        for item in (json.loads(prior_path.read_text()).get('records', []) if prior_path.exists() else [])
+    }
     source_map = {s['source_id']: s for s in collection['source_records']}
     outputs = []
     for story in issue.get('editorial_stories', []):
         source_ids = {s['source_id'] for s in story.get('source_links', [])}
+        referenced_claim_ids = set()
+        def collect_claim_ids(value):
+            if isinstance(value, dict):
+                referenced_claim_ids.update(value.get('claim_ids') or [])
+                for child in value.values():
+                    collect_claim_ids(child)
+            elif isinstance(value, list):
+                for child in value:
+                    collect_claim_ids(child)
+        collect_claim_ids(story)
+        selected = [{
+            **claim,
+            'text': claim.get('claim_text'),
+            'evidence_context': claim.get('quote_excerpt'),
+        } for claim in verified.get('evidence_claims', [])
+            if claim.get('source_id') in source_ids
+            and (not referenced_claim_ids or claim.get('claim_id') in referenced_claim_ids)]
         sources = [{'source_id': sid, 'url': source_map.get(sid, {}).get('canonical_url'),
                     'text': source_map.get(sid, {}).get('raw_text') or source_map.get(sid, {}).get('raw_excerpt')}
                    for sid in sorted(source_ids)]
-        selected = [c for r in facts.get('records', []) if r.get('source_id') in source_ids for c in r.get('claims', [])]
+        if sum(len(s.get('text') or '') for s in sources) > max_source_chars:
+            # A long filing must not be silently truncated. Review only the exact,
+            # human-located evidence passages referenced by this story instead.
+            evidence_by_source = {sid: [] for sid in source_ids}
+            for claim in selected:
+                context = str(claim.get('evidence_context') or '').strip()
+                if context:
+                    evidence_by_source.setdefault(claim.get('source_id'), []).append(context)
+            sources = [{
+                'source_id': source['source_id'],
+                'url': source['url'],
+                'text': '\n\n'.join(dict.fromkeys(evidence_by_source.get(source['source_id']) or [])),
+                'scope': 'human_located_evidence_passages',
+            } for source in sources]
         payload = {'sources': sources, 'facts': selected, 'final_article': {
             key: story.get(key) for key in ('headline', 'dek', 'one_line_takeaway', 'article_body',
                                              'what_happened', 'why_it_matters', 'under_the_hood',
@@ -95,7 +130,7 @@ def review_run(run_dir, client, max_source_chars=24000):
                        'elapsed_seconds': 0, 'issues': [{'location': 'sources', 'evidence': 'source exceeds configured context budget',
                        'requirement': '全文分段核验或人工复核；不得静默截断原文后放行'}]}
         else:
-            outcome = review(payload, client)
+            outcome = review(payload, client, cached=prior_records.get(story['story_id']))
         outputs.append({'story_id': story['story_id'], **outcome})
         atomic_json(run_dir / 'semantic-review.json', {'mode': 'shadow', 'status': 'in_progress', 'records': outputs})
     report = {'mode': 'shadow', 'status': 'completed', 'records': outputs,

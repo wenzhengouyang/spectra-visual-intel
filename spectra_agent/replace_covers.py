@@ -39,8 +39,8 @@ def replace(run_dir: Path, replacements: dict[str, Path]) -> dict:
             raise ValueError(f"replacement is not a supported image: {source}")
         story = stories[story_id]
         cover = story.get("cover_image") or {}
-        if cover.get("review_status") != "rejected":
-            raise ValueError(f"cover is not rejected: {story_id}")
+        if cover.get("review_status") == "approved":
+            raise ValueError(f"approved cover cannot be replaced without a new rejection: {story_id}")
         filename = f"{story_id}-topic-v2{source.suffix.lower()}"
         target = target_dir / filename
         shutil.copy2(source, target)

@@ -714,6 +714,45 @@ P2_BRIEF_COPY = {
 
 
 EXPANDED_STORY_COPY = {
+    "evt_8a5455b8cfcec60c": {
+        "headline": "宇树机器狗被曝篡改电池标签以规避航空规定",
+        "dek": "据雷峰网报道，部分商家篡改宇树机器狗电池标签，把高容量电池伪装成符合航空规定的电池。",
+        "one_line_takeaway": "部分商家被曝通过篡改电池标签，试图规避机器狗高容量电池的航空运输限制。",
+        "what": "据雷峰网报道，部分机器人租赁商篡改宇树机器狗电池标签，将高容量电池伪装成符合航空规定的电池，试图把产品带上飞机。",
+        "fact_points": ["部分商家篡改宇树机器狗电池标签，以规避航空运输规定。"],
+        "summary_paragraphs": ["部分商家被曝篡改宇树机器狗电池标签，以规避航空运输规定。"],
+        "why": "该案例提示，高容量机器人电池在租赁流通和航空运输环节仍需要核验真实规格。",
+        "how": "报道所述做法是撕下原厂标签，再换上标注更低额定能量的自行打印标签。",
+        "watch": ["航空运输环节是否加强对机器人电池真实规格的核验？", "相关平台与厂商是否发布处理措施？"],
+        "claim_ids": ["clm_8a5455b8cfcec60c_01"],
+        "reading": 2,
+    },
+    "evt_204f914826bac164": {
+        "headline": "快手披露2026年中期业绩",
+        "dek": "快手科技2026年中期收入为355.35亿元，同比增长1.4%；净利润为31.52亿元，同比下降36.0%。",
+        "one_line_takeaway": "快手中期收入保持增长，但净利润和经调整净利润同比下降。",
+        "what": "快手科技披露，2026年中期收入为355.35亿元，同比增长1.4%；净利润为31.52亿元，同比下降36.0%。",
+        "fact_points": [
+            "2026年中期收入为355.35亿元，同比增长1.4%。",
+            "2026年中期净利润为31.52亿元，同比下降36.0%。",
+            "非国际财务报告准则经调整净利润为39.13亿元，同比下降30.3%。",
+            "经调整EBITDA为71.22亿元，同比下降7.7%。",
+        ],
+        "summary_paragraphs": [
+            "快手科技2026年中期收入为355.35亿元，同比增长1.4%；净利润为31.52亿元，同比下降36.0%。",
+            "同期非国际财务报告准则经调整净利润为39.13亿元，同比下降30.3%；经调整EBITDA为71.22亿元，同比下降7.7%。",
+        ],
+        "why": "收入增长与利润指标下降同时出现，后续需要结合业务投入与分部表现观察盈利变化。",
+        "how": "同期非国际财务报告准则经调整净利润为39.13亿元，同比下降30.3%；经调整EBITDA为71.22亿元，同比下降7.7%。",
+        "watch": ["可灵AI相关业务对收入和成本的贡献是否进一步披露？", "利润指标的同比变化是否在后续季度收窄？"],
+        "claim_ids": [
+            "clm_204f914826bac164_04",
+            "clm_204f914826bac164_05",
+            "clm_204f914826bac164_06",
+            "clm_204f914826bac164_07",
+        ],
+        "reading": 2,
+    },
     "evt_39d45e3610efd0f0": {
         "headline": "Anthropic公开Claude消费端系统提示，并说明版权内容复现限制",
         "dek": "Simon Willison引述公开内容称，Anthropic披露了Claude消费端应用的系统提示，其中明确限制复现歌词、诗歌、书籍段落及特定视觉作品。",
@@ -1278,7 +1317,7 @@ def main() -> None:
     )
     prior_approved_images = set(prior_image_review.get("approved_story_ids") or [])
     prior_approved_covers = {
-        item.get('story_id'): item.get('asset_fingerprint')
+        item.get('story_id'): item
         for item in prior_image_review.get('approved_covers', [])
     }
     for rank, event in enumerate(ordered_events):
@@ -1300,7 +1339,7 @@ def main() -> None:
                 "take": None,
                 "watch": writer_draft["watch_next"],
             })
-        claim_ids = event["claim_ids"]
+        claim_ids = copy.get("claim_ids") or event["claim_ids"]
         source = {
             "source_id": event["primary_source_id"],
             "label": source_label(review_item["url"]),
@@ -1365,10 +1404,23 @@ def main() -> None:
             "published_at": event["event_at"],
         }
         cover_url = str(story['cover_image'].get('url') or '')
+        prior_cover = prior_approved_covers.get(story['story_id']) or {}
+        prior_url = str(prior_cover.get('url') or '')
+        if prior_url.startswith('assets/'):
+            prior_path = output_path.parent / prior_url
+            prior_fingerprint = hashlib.sha256(prior_path.read_bytes()).hexdigest() if prior_path.is_file() else None
+            if prior_fingerprint and prior_fingerprint == prior_cover.get('asset_fingerprint'):
+                story['cover_image'].update({
+                    'url': prior_url,
+                    'kind': prior_cover.get('kind') or 'generated',
+                    'semantic_motif': prior_cover.get('semantic_motif'),
+                    'semantic_match': prior_cover.get('semantic_match') or 'passed',
+                })
+                cover_url = prior_url
         cover_path = output_path.parent / cover_url
         cover_fingerprint = hashlib.sha256(cover_path.read_bytes()).hexdigest() if cover_path.is_file() else None
         if (story["story_id"] in prior_approved_images
-            and prior_approved_covers.get(story['story_id']) == cover_fingerprint
+            and prior_cover.get('asset_fingerprint') == cover_fingerprint
             and story["cover_image"].get("kind") in {"editorial_diagram", "generated"}):
             story["cover_image"].update({
                 "review_status": "approved",

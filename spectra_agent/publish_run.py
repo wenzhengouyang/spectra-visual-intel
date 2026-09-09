@@ -156,7 +156,10 @@ def main() -> int:
 
         checkout = prepare_checkout(config)
         changed_paths = copy_package(run_dir, checkout)
-        command(["git", "add", "--", *changed_paths], checkout)
+        # The publication checkout may ignore generated raster assets globally.
+        # Reviewed run assets are an explicit part of the validated package and
+        # must still be staged, otherwise the HTML can publish broken cover URLs.
+        command(["git", "add", "-f", "--", *changed_paths], checkout)
         staged = command(["git", "diff", "--cached", "--name-only"], checkout, capture=True)
         if not staged:
             print(json.dumps({"run_id": args.run_id, "status": "unchanged", "published": True}, ensure_ascii=False))
