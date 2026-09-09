@@ -8,6 +8,27 @@ const assert = require('node:assert/strict');
     const errors=[];
     page.on('pageerror', error => errors.push(error.message));
     await page.goto('http://127.0.0.1:4174/index.html');
+    for (const width of [1920,1440,1280]) {
+      await page.setViewportSize({width,height:1080});
+      for (const view of ['overview','selection','interests','ideas']) {
+        await page.locator(`[data-view-target=${view}]`).click();
+        assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`Desktop overflow: ${width}/${view}`);
+      }
+      await page.locator('[data-view-target=selection]').click();
+      const geometry = await page.evaluate(()=>{
+        const box=q=>document.querySelector(q).getBoundingClientRect();
+        return {headerBottom:box('.workspace-header').bottom,tabsTop:box('.channel-field-bar').top,tabsLeft:box('.channel-field-bar').left,cardsLeft:box('.story-card-grid').left};
+      });
+      assert.ok(geometry.tabsTop>=geometry.headerBottom+20,'Tabs overlap the header');
+      assert.ok(Math.abs(geometry.tabsLeft-geometry.cardsLeft)<2,'Separator and cards must share a left edge');
+      await page.locator('#advancedFilterToggle').click();
+      assert.ok(await page.locator('#advancedFilterPanel').isVisible());
+      await page.locator('#advancedFilterToggle').click();
+      await page.locator('.story-card-image img').evaluateAll(images=>Promise.all(images.map(img=>img.decode().catch(()=>{}))));
+      await page.screenshot({path:`/tmp/spectra-desktop-${width}.png`});
+    }
+    await page.setViewportSize({width:1440,height:1040});
+    await page.locator('[data-view-target=overview]').click();
     await page.screenshot({path:'/tmp/spectra-overview-deployed.png',fullPage:true});
     assert.equal(await page.locator('.timeline-event-card img').count(),0);
     await page.locator('.trend-point').first().click();
