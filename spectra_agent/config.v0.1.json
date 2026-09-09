@@ -140,6 +140,8 @@
   "publication_quality": {
     "minimum_core_events": 1,
     "core_event_min_characters": 260,
+    "industry_signal_min_characters": 220,
+    "industry_signal_min_fact_points": 3,
     "require_generated_image_review": true,
     "maximum_cover_duplicate_rate": 0.0
   },

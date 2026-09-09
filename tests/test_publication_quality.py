@@ -82,6 +82,38 @@ class PublicationQualityTest(unittest.TestCase):
             errors = publication_quality_errors(issue, self.config, asset_root=Path(temp))
         self.assertFalse(any("cover_" in error for error in errors))
 
+    def test_short_or_thin_industry_signal_is_blocked(self):
+        issue = sample_issue()
+        story = issue["editorial_stories"][0]
+        story.update({"article_type": "brief", "editorial_tier": "industry_signal"})
+        story["article_body"] = {
+            "full_text": {"text": "官方披露了一项业务变化。"},
+            "fact_points": ["一项事实。"],
+        }
+        self.config["publication_quality"].update({
+            "minimum_core_events": 0,
+            "industry_signal_min_characters": 220,
+            "industry_signal_min_fact_points": 3,
+        })
+        with tempfile.TemporaryDirectory() as temp:
+            errors = publication_quality_errors(issue, self.config, asset_root=Path(temp))
+        self.assertTrue(any("industry_signal_too_short" in error for error in errors))
+        self.assertTrue(any("industry_signal_too_thin" in error for error in errors))
+
+    def test_short_source_brief_does_not_enter_signal_length_gate(self):
+        issue = sample_issue()
+        story = issue["editorial_stories"][0]
+        story.update({"article_type": "brief", "editorial_tier": "brief"})
+        story["article_body"] = {"full_text": {"text": "一条已核验事实。"}}
+        self.config["publication_quality"].update({
+            "minimum_core_events": 0,
+            "industry_signal_min_characters": 220,
+            "industry_signal_min_fact_points": 3,
+        })
+        with tempfile.TemporaryDirectory() as temp:
+            errors = publication_quality_errors(issue, self.config, asset_root=Path(temp))
+        self.assertFalse(any("industry_signal_" in error for error in errors))
+
     def test_legacy_quality_config_names_remain_readable(self):
         legacy_config = {"publication_quality": {
             "minimum_deep_stories": 1,

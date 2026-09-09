@@ -307,17 +307,28 @@
       document.querySelectorAll('.day-node').forEach(node => node.classList.toggle('selected', node.dataset.date === day.date));
       const detail = document.getElementById('eventDetail');
       detail.className = `timeline-detail ${day.tone}`;
-      const cards = timelineItems.map(({kind,item}, index) => kind === 'story' ? `<article class="timeline-event-card ${index === 0 ? 'active' : ''}" style="--stack-index:${index}" data-stack-card>
-          <div class="event-card-meta"><span class="primary-intel-tag">${escapeHtml(TIER_LABELS[item.editorial_tier] || '正式内容')}</span><span class="priority-tag">${displayPriority(item)}</span><em>${escapeHtml(item.category)}</em></div>
-          <h3><button class="event-title-button" data-open-story="${escapeHtml(item.story_id)}">${escapeHtml(item.headline)}</button></h3>
-          <p class="event-fact">${escapeHtml(item.dek)}</p>
-          <div class="event-links"><span>${formatPublished(item.published_at)} · ${item.reading_time_minutes} 分钟阅读</span><button data-open-story="${escapeHtml(item.story_id)}">深度解读 →</button><a class="source-link" href="${safeUrl(item.source_links[0].url)}" target="_blank" rel="noopener noreferrer">原文 ↗</a></div>
-        </article>` : `<article class="timeline-event-card timeline-brief-card" style="--stack-index:${index}" data-stack-card>
+      const cards = timelineItems.map(({kind,item}, index) => {
+        if (kind === 'story') {
+          const sourceBrief = item.editorial_tier === 'brief';
+          const title = sourceBrief
+            ? `<a class="event-title-button" href="${safeUrl(item.source_links[0].url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.headline)}</a>`
+            : `<button class="event-title-button" data-open-story="${escapeHtml(item.story_id)}">${escapeHtml(item.headline)}</button>`;
+          const deepRead = sourceBrief ? '' : `<button data-open-story="${escapeHtml(item.story_id)}">深度解读 →</button>`;
+          const reading = sourceBrief ? '来源短读' : `${item.reading_time_minutes} 分钟阅读`;
+          return `<article class="timeline-event-card ${index === 0 ? 'active' : ''}" style="--stack-index:${index}" data-stack-card>
+            <div class="event-card-meta"><span class="primary-intel-tag">${escapeHtml(TIER_LABELS[item.editorial_tier] || '正式内容')}</span><span class="priority-tag">${displayPriority(item)}</span><em>${escapeHtml(item.category)}</em></div>
+            <h3>${title}</h3>
+            <p class="event-fact">${escapeHtml(item.dek)}</p>
+            <div class="event-links"><span>${formatPublished(item.published_at)} · ${reading}</span>${deepRead}<a class="source-link" href="${safeUrl(item.source_links[0].url)}" target="_blank" rel="noopener noreferrer">原文 ↗</a></div>
+          </article>`;
+        }
+        return `<article class="timeline-event-card timeline-brief-card" style="--stack-index:${index}" data-stack-card>
           <div class="event-card-meta"><span class="primary-intel-tag">${escapeHtml(intelligenceLabel(item))}</span><span class="priority-tag">P2</span><em>${escapeHtml(item.category)}</em><i>${escapeHtml(item.source_badge)} · 待核验</i></div>
           <h3><a class="event-title-button" href="${safeUrl(item.source_links[0].url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.headline)}</a></h3>
           <p class="event-fact">${escapeHtml(item.dek)}</p>
           <div class="event-links"><span>${formatPublished(item.published_at)} · 1 分钟阅读</span><a class="source-link" href="${safeUrl(item.source_links[0].url)}" target="_blank" rel="noopener noreferrer">查看来源 ↗</a></div>
-        </article>`).join('');
+        </article>`;
+      }).join('');
       const mix = timelineItems.length ? `当日 ${timelineItems.length} 条情报 · ${events.length} 重点 / ${briefs.length} 短讯` : '来源检查完成';
       detail.innerHTML = `<div class="timeline-detail-head"><span class="event-tag">${day.date}</span><div><strong>${mix}</strong><p>${escapeHtml(day.summary)}</p></div></div>` + (cards ? `<div class="timeline-event-list">${cards}</div>` : '<div class="timeline-empty"><span>✓</span><div><strong>完成检查，暂无达到阈值的事件</strong><p>固定关注来源已完成检查，本日没有需要进入近7日情报的新增动态。</p></div></div>');
     }
@@ -402,6 +413,7 @@
     }
     function renderArticle(storyId, scroll = false) {
       const story = storyFor(storyId); if (!story) return;
+      if (story.editorial_tier === 'brief') return;
       showView(story.editorial_channel || 'selection', false);
       selectedStoryId = storyId;
       document.querySelectorAll('[data-story-card]').forEach(card => card.classList.toggle('active', card.dataset.storyCard === storyId));
@@ -423,7 +435,11 @@
       const source = story.source_links[0];
       const coverMarkup = storyImageFigure(story, 'story-card-image');
       const dimensions = (story.capability_dimensions || []).map(item => `<span>${escapeHtml(CAPABILITY_LABELS[item] || item)}</span>`).join('');
-      return `<article class="story-browse-card tier-${escapeHtml(story.editorial_tier || 'brief')} ${selectedStoryId === story.story_id ? 'active' : ''}" data-intel="${escapeHtml(intelligenceGroup(story))}" data-story-card="${escapeHtml(story.story_id)}">${coverMarkup}<div class="story-card-content"><div class="story-card-meta"><span class="priority-badge">${displayPriority(story)}</span><b class="primary-type-badge">${escapeHtml(TIER_LABELS[story.editorial_tier] || intelligenceLabel(story))}</b><em>${escapeHtml(story.category)}</em></div><button class="story-card-copy" data-open-story="${escapeHtml(story.story_id)}"><strong>${escapeHtml(story.headline)}</strong><p>${escapeHtml(story.dek)}</p></button>${dimensions ? `<div class="capability-chips">${dimensions}</div>` : ''}<div class="story-card-footer"><span>${formatPublished(story.published_at)} · ${story.reading_time_minutes} 分钟阅读</span><a href="${safeUrl(source.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(source.label)} ↗</a></div></div></article>`;
+      const copy = story.editorial_tier === 'brief'
+        ? `<a class="story-card-copy" href="${safeUrl(source.url)}" target="_blank" rel="noopener noreferrer"><strong>${escapeHtml(story.headline)}</strong><p>${escapeHtml(story.dek)}</p></a>`
+        : `<button class="story-card-copy" data-open-story="${escapeHtml(story.story_id)}"><strong>${escapeHtml(story.headline)}</strong><p>${escapeHtml(story.dek)}</p></button>`;
+      const readLabel = story.editorial_tier === 'brief' ? '来源短读' : `${story.reading_time_minutes} 分钟阅读`;
+      return `<article class="story-browse-card tier-${escapeHtml(story.editorial_tier || 'brief')} ${selectedStoryId === story.story_id ? 'active' : ''}" data-intel="${escapeHtml(intelligenceGroup(story))}" data-story-card="${escapeHtml(story.story_id)}">${coverMarkup}<div class="story-card-content"><div class="story-card-meta"><span class="priority-badge">${displayPriority(story)}</span><b class="primary-type-badge">${escapeHtml(TIER_LABELS[story.editorial_tier] || intelligenceLabel(story))}</b><em>${escapeHtml(story.category)}</em></div>${copy}${dimensions ? `<div class="capability-chips">${dimensions}</div>` : ''}<div class="story-card-footer"><span>${formatPublished(story.published_at)} · ${readLabel}</span><a href="${safeUrl(source.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(source.label)} ↗</a></div></div></article>`;
     }
 
     function briefCard(story, index) {

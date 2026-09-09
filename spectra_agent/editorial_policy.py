@@ -158,12 +158,18 @@ def classify_story(
         event.get("primary_route") in DIRECT_VISUAL_ROUTES or dimensions
     ) else "medium" if relevance in {"direct", "adjacent"} else "low"
     complete = article_character_count(story) >= 260
+    fact_point_count = len((story.get("article_body") or {}).get("fact_points") or [])
+    # A broad financial filing can mention a visual-AI business without
+    # providing enough reviewed operating detail for a core event. Keep it as
+    # an industry signal until the fact envelope contains real depth; prose
+    # length alone must not promote it.
+    core_depth_ready = source_type != "financial_report" or fact_point_count >= 6
     actionable = bool(
         str(story.get("one_line_takeaway") or "").strip()
         or str((((story.get("article_body") or {}).get("judgment") or {}).get("text")) or "").strip()
         or story.get("watch_next")
     )
-    core_ready = selected and relevance == "direct" and impact == "high" and complete and actionable and evidence == "primary_reported"
+    core_ready = selected and relevance == "direct" and impact == "high" and complete and actionable and evidence == "primary_reported" and core_depth_ready
     tier = "core_event" if core_ready else "industry_signal" if relevance in {"direct", "adjacent"} else "brief"
     text = _text(story.get("headline"), story.get("dek"), copy.get("what"))
     priority = "p0" if core_ready and URGENT_TERMS.search(text) else "p1" if core_ready or (relevance == "direct" and impact == "high") else "p2" if tier == "industry_signal" else "p3"
@@ -175,7 +181,12 @@ def classify_story(
         "content_complete": complete,
         "editorial_tier": tier,
         "article_type": "core_event" if tier == "core_event" else "brief",
-        "content_format": "full_analysis" if writer_draft else "compact_analysis",
+        "content_format": (
+            "full_analysis" if tier == "core_event" and writer_draft
+            else "compact_analysis" if tier == "core_event"
+            else "signal_analysis" if tier == "industry_signal"
+            else "source_brief"
+        ),
         "editorial_priority": f"priority.{priority}",
         "editorial_channel": editorial_channel(event, copy),
         "capability_dimensions": dimensions,

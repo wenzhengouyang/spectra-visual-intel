@@ -50,6 +50,8 @@ def publication_quality_errors(
     quality = config.get("publication_quality") or {}
     minimum_core_events = int(compatible_value(quality, "minimum_core_events", default=1))
     minimum_characters = int(compatible_value(quality, "core_event_min_characters", default=0))
+    minimum_signal_characters = int(quality.get("industry_signal_min_characters", 0))
+    minimum_signal_facts = int(quality.get("industry_signal_min_fact_points", 0))
     require_image_review = bool(quality.get("require_generated_image_review", True))
     stories = issue.get("editorial_stories") or []
     briefs = issue.get("news_briefs") or []
@@ -74,6 +76,13 @@ def publication_quality_errors(
                 count = len(re.sub(r"\s+", "", body))
                 if minimum_characters > 0 and count < minimum_characters:
                     errors.append(f"{item_id}.core_event_too_short: {count}<{minimum_characters}")
+            elif item.get("editorial_tier") == "industry_signal":
+                count = len(re.sub(r"\s+", "", body))
+                fact_count = len((item.get("article_body") or {}).get("fact_points") or [])
+                if minimum_signal_characters > 0 and count < minimum_signal_characters:
+                    errors.append(f"{item_id}.industry_signal_too_short: {count}<{minimum_signal_characters}")
+                if minimum_signal_facts > 0 and fact_count < minimum_signal_facts:
+                    errors.append(f"{item_id}.industry_signal_too_thin: {fact_count}<{minimum_signal_facts}")
 
             # Only core events are image-led. Industry signals and briefs may
             # retain a cover reference for provenance/reuse, but it must not

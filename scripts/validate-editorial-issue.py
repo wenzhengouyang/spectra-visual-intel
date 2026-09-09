@@ -97,7 +97,13 @@ def main() -> None:
             require(set(section["claim_ids"]) <= claim_ids, f"{story['story_id']} {field} has unknown claims")
         require(all(number["claim_id"] in claim_ids for number in story["key_numbers"]), f"{story['story_id']} has unknown numeric claims")
         article = story.get("article_body") or {}
-        require(article.get("reading_mode") == "complete_in_page", f"{story['story_id']} must support complete in-page reading")
+        expected_reading_mode = (
+            "source_brief" if story.get("editorial_tier") == "brief" else "complete_in_page"
+        )
+        require(
+            article.get("reading_mode") == expected_reading_mode,
+            f"{story['story_id']} must use {expected_reading_mode} reading mode",
+        )
         for field in ("lead", "full_text", "evidence_boundary"):
             article_section = article.get(field)
             require(article_section and article_section.get("text"), f"{story['story_id']} article_body.{field} is required")

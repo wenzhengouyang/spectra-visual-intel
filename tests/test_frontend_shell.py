@@ -67,6 +67,12 @@ class FrontendShellTest(unittest.TestCase):
     def test_core_is_image_led_but_signals_and_briefs_are_not(self):
         self.assertIn("if (story.article_type !== 'core_event') return '';", self.html)
         self.assertIn('id="industrySignalIndex"', self.html)
+        self.assertIn("if (story.editorial_tier === 'brief') return;", self.html)
+        self.assertIn("story.editorial_tier === 'brief' ? '来源短读'", self.html)
+        self.assertIn("const deepRead = sourceBrief ? ''", self.html)
+        self.assertIn("const reading = sourceBrief ? '来源短读'", self.html)
+        validator = (ROOT / 'scripts/validate-editorial-issue.py').read_text()
+        self.assertIn('"source_brief" if story.get("editorial_tier") == "brief"', validator)
 
     def test_priority_zero_has_an_explicit_empty_state(self):
         self.assertIn("本期无 P0", self.html)
