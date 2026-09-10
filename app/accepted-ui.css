@@ -1,4 +1,6 @@
 /* SPECTRA · selected B · dark editorial workbench · 2026-09-10 */
+#advancedFilterPanel .primary-filter-row,#advancedFilterPanel .scope-filter-row{display:none}
+#channelFields{display:flex;flex-wrap:wrap;gap:8px}
 /* Hallmark · component: site footer · existing theme · pre-emit critique: P4 H5 E4 S4 R5 V3 */
 :root{--sp-bg:#091320;--sp-panel:#132132;--sp-hover:#1a2c40;--sp-text:#eef2f8;--sp-muted:#a5b5c9;--sp-line:#293b50;--sp-blue:#75baff;--color-paper:var(--sp-bg);--color-paper-2:var(--sp-panel);--color-paper-raised:var(--sp-hover);--color-ink:var(--sp-text);--color-ink-2:var(--sp-muted);--color-rule:var(--sp-line);--color-accent:var(--sp-blue)}
 html,body{overflow-x:clip;background:var(--sp-bg);color:var(--sp-text)}

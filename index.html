@@ -139,7 +139,7 @@
     const DEFAULT_INTERESTS = [];
     const KNOWN_TAGS = ['视频生成', '世界模型', '具身智能', '评测与标准', '空间与4D', '基础模型与多模态', 'AI Agent与工具', '算力与数据', '开源生态', '商业化', '大厂动态'];
     const CHANNEL_FIELDS = {
-      selection: [['all','全部文章'], ['core_event','核心事件'], ['p0','P0'], ['editorial_judgment','编辑判断']]
+      selection: [['all','全部'], ['type.industry_market','行业与市场'], ['product_company','产品与公司'], ['type.technology_breakthrough','技术突破'], ['scope.visual_core','视觉AI核心'], ['scope.ai_extended','外围AI观察']]
     };
     const readLocal = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch { return fallback; } };
     const writeLocal = (key, value) => { if (window.SpectraAccount?.changed(key, value)) return; try { localStorage.setItem(key, JSON.stringify(value)); } catch {} };
@@ -201,7 +201,8 @@
       const matchesFocus = focus === '全部领域' || tags.includes(focus);
       const matchesMine = !mineOnly || (feedback[story.story_id] !== 'not_relevant' && (feedback[story.story_id] === 'useful' || tags.some(tag => interests.includes(tag))));
       const matchesChannel = editorialChannel === 'weekly_selection' || story.editorial_channel === editorialChannel;
-      return matchesQuery && matchesPrimary && matchesScope && matchesSecondary && matchesFocus && matchesMine && matchesChannel && storyChannelFieldMatches(story);
+      const matchesMain = channelFieldFilter === 'all' || (channelFieldFilter.startsWith('scope.') ? scopeFor(story) === channelFieldFilter : intelligenceGroup(story) === channelFieldFilter);
+      return matchesQuery && matchesPrimary && matchesScope && matchesSecondary && matchesFocus && matchesMine && matchesChannel && matchesMain;
     };
     const intelligenceLabel = story => ({
       'type.industry_market': '行业与市场',
