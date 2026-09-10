@@ -20,6 +20,7 @@ except ImportError:
 
 TERMINAL_WRITER_STATES = {"completed", "demoted", "demoted_after_failed_long_story", "manual_review"}
 RUN_ARTIFACT_FILES = {
+    "candidates.evidence-search.json": "application/json; charset=utf-8",
     "REVIEW.md": "text/plain; charset=utf-8",
     "rolling-digest.html": "text/html; charset=utf-8",
     "semantic-review.json": "application/json; charset=utf-8",
@@ -160,6 +161,11 @@ def build_status(config: dict[str, Any]) -> dict[str, Any]:
     status = state.get("status")
     stage = state.get("current_stage")
     collection_done = (run_dir / "collection.json").exists() or bool(state.get("artifacts", {}).get("collection"))
+    collection = read_json_safe(run_dir / "collection.json")
+    collection_health = collection.get("source_checks", [])
+    if not collection_health:
+        partial = read_json_safe(run_dir / "collection.checkpoint.json")
+        collection_health = [entry.get("health", {}) for entry in partial.get("sources", {}).values()]
     writing_started = bool(jobs) or stage in {"p1_editorial_background", "core_event", "writer"}
     writing_done = bool(jobs) and writer_done == len(jobs)
     quality_started = stage in {"p2_localization", "p2_localizer", "localization", "image_preview", "semantic_review", "evaluation"} or (run_dir / "eval-report.json").exists()
@@ -207,6 +213,8 @@ def build_status(config: dict[str, Any]) -> dict[str, Any]:
         "target": _target_for(state),
         "overall_percent": min(round(overall), 100),
         "stages": stages,
+        "collection_health": collection_health,
+        "evidence_search": read_json_safe(run_dir / "candidates.evidence-search.json"),
         "writer": {"processed": writer_done, "total": len(jobs), "passed": writer_passed, "demoted": writer_demoted, "manual": writer_manual},
         "current_progress": (
             {"completed": localized, "total": localization_total, "label": "中文化已处理"}

@@ -692,6 +692,7 @@ def command(run_dir: Path, stage: str, args: list[str], timeout: int | None = No
             text=True,
             capture_output=True,
             timeout=timeout,
+            env={**os.environ, "SPECTRA_ACQUISITION_BUDGET_DB": str(run_dir / "acquisition-budget.sqlite")},
         )
         log(
             run_dir, stage, "command_finished",
@@ -841,6 +842,7 @@ def review_template(collection: dict[str, Any], candidates: dict[str, Any], run_
                 verification_questions.append(question)
         records.append({
             "candidate_id": item["candidate_id"],
+            "supplemental_evidence": item.get("supplemental_evidence"),
             "source_id": item["primary_source_id"],
             "title": item["canonical_title"],
             "url": source["canonical_url"],
@@ -1333,6 +1335,7 @@ def _create_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
         )
         write_json(run_dir / "p1-review.json", template)
         confidence_summary = evidence.get("summary", {})
+        write_json(run_dir / "review-input.json", template)
         log(run_dir, "verification_harness", "evidence_packet_ready", **confidence_summary)
 
         policy = template.get("review_policy") or {}
@@ -1491,6 +1494,7 @@ def _resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
             template, candidates, evidence, config.get("review_policy"), collection
         )
         write_json(review_path, template)
+        write_json(run_dir / "review-input.json", template)
         policy = template.get("review_policy") or {}
         if (
             template["records"]
@@ -1543,6 +1547,9 @@ def _resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
         verified_path = run_dir / "verified-events.json"
         command(run_dir, "verify", [sys.executable, "verification/build-final-events.py", "--review", str(review_path), "--collection", str(run_dir / "collection.json"), "--candidates", str(run_dir / "candidates.json"), "--output", str(verified_path)])
         command(run_dir, "validate_verified", [sys.executable, "scripts/validate-verified-events.py", "--verified", str(verified_path), "--collection", str(run_dir / "collection.json")])
+        from spectra_agent.review_samples import record_fact_review
+        baseline = read_json(run_dir / "review-input.json") if (run_dir / "review-input.json").exists() else {"records": []}
+        record_fact_review(run_dir, baseline, review, kind="fact_final")
         verified = read_json(verified_path)
         count = verified["summary"]["included_events"]
         approved_count = sum(

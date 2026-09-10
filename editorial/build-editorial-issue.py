@@ -25,6 +25,7 @@ if str(ROOT) not in sys.path:
 from spectra_agent.compat import rolling_thesis as compatible_rolling_thesis
 from spectra_agent.editorial_policy import classify_brief, classify_story
 from spectra_agent.publication_quality import expected_cover_motif
+from spectra_agent.brief_quality import isolate_headline
 
 
 VERIFIED_PATH = ROOT / "verification/runs/p1-verified-events-v0.2.json"
@@ -1156,6 +1157,14 @@ def build_news_briefs(
             or llm_analysis.get("canonical_title")
             or candidate["canonical_title"]
         )
+        original_headline = headline
+        headline = isolate_headline(headline, candidate["primary_route"])
+        if not headline:
+            continue
+        if headline != original_headline:
+            # The roundup's summary can describe unrelated events too. Keep only
+            # the source-supported segment and preserve the original source link.
+            summary = "来源标题提及上述动态，具体口径与背景尚待原文核验。"
         source_badge, verification_status = brief_source_status(source)
         tags = [ROUTE_CATEGORY.get(candidate["primary_route"], "视觉智能")]
         for values in (candidate.get("tags") or {}).values():

@@ -56,7 +56,9 @@ def pending_covers(issue: dict) -> list[dict]:
 
 
 def asset_fingerprint(run_dir: Path, url: str) -> str:
-    path = run_dir / url
+    path = (run_dir / url).resolve()
+    if not path.is_relative_to((run_dir / "assets").resolve()):
+        raise ValueError("cover asset must stay inside run assets")
     if not path.is_file():
         raise ValueError(f'cover asset is missing: {path}')
     return hashlib.sha256(path.read_bytes()).hexdigest()
@@ -70,6 +72,7 @@ def main() -> int:
     decision.add_argument("--reject", help="comma-separated story IDs, or all")
     parser.add_argument("--reason", help="required when rejecting covers")
     parser.add_argument("--reviewer")
+    parser.add_argument("--actor-type", choices=["human", "agent", "unspecified"], default="unspecified")
     args = parser.parse_args()
     run_dir = Path(args.run_dir).resolve()
     issue_path = run_dir / "editorial-issue.json"
@@ -125,6 +128,15 @@ def main() -> int:
         "pending": pending_covers(issue),
     }
     write_json(run_dir / "image-review.json", report)
+    from spectra_agent.review_samples import record_sample
+    for story in issue.get("editorial_stories", []):
+        if story.get("story_id") in selected:
+            cover = story["cover_image"]
+            record_sample(run_dir, kind="image", item_id=story["story_id"],
+                          before={"headline": story.get("headline"), "url": cover.get("url"),
+                                  "asset_fingerprint": asset_fingerprint(run_dir, str(cover.get("url") or ""))},
+                          after={"review_status": cover["review_status"]}, reviewer=args.reviewer,
+                          actor_type=args.actor_type, reason=args.reason)
     print(json.dumps(report, ensure_ascii=False, indent=2))
     return 0 if not report["pending"] else 2
 

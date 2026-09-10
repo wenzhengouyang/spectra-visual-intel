@@ -10,8 +10,15 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from spectra_agent.compat import rolling_thesis
 
 
 def read(path: str) -> dict:
@@ -63,7 +70,7 @@ def main() -> int:
     review["review_status"] = "approved"
     review["verified_at"] = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     review["verified_by"] = selection["verified_by"]
-    review["editorial_selection"] = {"weekly_thesis": selection["weekly_thesis"]}
+    review["editorial_selection"] = {"rolling_thesis": rolling_thesis(selection, "")}
     output = Path(args.output)
     output.write_text(json.dumps(review, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({"result": "pass", "include": len(include_ids), "watch": len(watch_ids), "output": str(output)}, ensure_ascii=False, indent=2))

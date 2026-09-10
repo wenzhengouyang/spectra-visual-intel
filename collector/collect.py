@@ -16,6 +16,7 @@ import json
 import os
 import re
 import signal
+import shlex
 import subprocess
 import sys
 import tempfile
@@ -29,15 +30,55 @@ from pathlib import Path
 from typing import Any, Iterable, Optional
 from urllib.parse import parse_qsl, urlencode, urljoin, urlsplit, urlunsplit
 from urllib.error import HTTPError
-from urllib.request import Request, urlopen
+from urllib.request import Request
 
-import arxiv
 import feedparser
 
 
 SCHEMA_VERSION = "0.2"
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from spectra_agent import safe_http
+from spectra_agent.sandbox import run_sandboxed
+
+
+def urlopen(request, timeout=30):
+    """Compatibility wrapper; adapters cannot bypass the pinned HTTP transport."""
+    url = request.full_url if isinstance(request, Request) else request
+    data = request.data if isinstance(request, Request) else None
+    headers = dict(request.header_items()) if isinstance(request, Request) else None
+    body, _ = safe_http.request_bytes(url, data=data, headers=headers, timeout=timeout)
+    return io.BytesIO(body)
 TRACKING_KEYS = {"fbclid", "gclid", "ref", "source", "spm", "utm_campaign", "utm_content", "utm_medium", "utm_source", "utm_term"}
+
+# Per-pass wall-time cap; safe_http adds the durable cross-client request ledger.
+REQUEST_POLICY: dict[str, Any] = {}
+
+
+def validate_external_url(url: str) -> None:
+    parts = urlsplit(url)
+    if parts.scheme not in {"http", "https"} or not parts.hostname or parts.username or parts.password:
+        raise ValueError("Only HTTP(S) URLs without embedded credentials are allowed")
+    import ipaddress
+    host = parts.hostname.lower().rstrip(".")
+    if host == "localhost" or host.endswith(".localhost"):
+        raise ValueError("Local URLs are not allowed for external extractors")
+    try:
+        address = ipaddress.ip_address(host)
+    except ValueError:
+        return
+    if not address.is_global:
+        raise ValueError("Non-public IP addresses are not allowed for external extractors")
+
+
+def source_health(batch: list[dict], health: dict) -> dict:
+    good = [r for r in batch if r.get("access_status") == "success"]
+    full = sum(bool(r.get("raw_text")) for r in good)
+    return {**health, "record_count": len(good), "full_text_count": full,
+            "summary_only_count": sum(not r.get("raw_text") and bool(r.get("raw_excerpt")) for r in good),
+            "metadata_only_count": sum(not r.get("raw_text") and not r.get("raw_excerpt") for r in good),
+            "body_validation": "not_verified", "failure_reason": health.get("error")}
 
 
 def load_local_env(path: Optional[Path] = None) -> None:
@@ -266,16 +307,40 @@ def retry_after_seconds(error: HTTPError, default: float, maximum: float) -> flo
 def fetch_bytes(url: str, attempts: int = 3, timeout: int = 45,
                 headers: Optional[dict[str, str]] = None,
                 max_retry_delay: float = 60.0) -> bytes:
+    if urlsplit(url).scheme not in {"http", "https"}:
+        raise ValueError("Collection requests only support HTTP(S)")
     last_error: Optional[Exception] = None
     for attempt in range(attempts):
         try:
+            if REQUEST_POLICY:
+                if REQUEST_POLICY["used"] >= REQUEST_POLICY["limit"]:
+                    raise RuntimeError("collection request budget exhausted")
+                remaining = REQUEST_POLICY["deadline"] - time.monotonic()
+                if remaining <= 0:
+                    raise TimeoutError("collection time budget exhausted")
+                domain = urlsplit(url).netloc
+                delay = max(0, REQUEST_POLICY["next"].get(domain, 0) - time.monotonic())
+                if delay >= remaining:
+                    raise TimeoutError("collection time budget exhausted")
+                if delay:
+                    time.sleep(delay)
+                REQUEST_POLICY["used"] += 1
+                REQUEST_POLICY["next"][domain] = time.monotonic() + REQUEST_POLICY["interval"]
+                timeout = min(timeout, REQUEST_POLICY["timeout"], max(0.1, remaining - delay))
             request_headers = {"User-Agent": "SPECTRA-Collector/0.2 (+research prototype)"}
             request_headers.update(headers or {})
             request = Request(url, headers=request_headers)
             with urlopen(request, timeout=timeout) as response:
-                return response.read()
+                body = response.read(10 * 1024 * 1024 + 1)
+                if len(body) > 10 * 1024 * 1024:
+                    raise ValueError("response exceeds 10 MiB collection limit")
+                return body
         except Exception as exc:
             last_error = exc
+            if "budget exhausted" in str(exc) or isinstance(exc, ValueError):
+                raise
+            if isinstance(exc, HTTPError) and exc.code in {400, 401, 403, 404, 410}:
+                raise
             if attempt + 1 < attempts:
                 backoff = min(max_retry_delay, 2.0 ** attempt)
                 if isinstance(exc, HTTPError) and exc.code == 429:
@@ -801,8 +866,10 @@ def werss_request_json(base_url: str, path: str, *, token: Optional[str] = None,
         headers=headers,
         method="POST" if body is not None else "GET",
     )
-    with urlopen(request, timeout=60) as response:
-        payload = json.loads(response.read().decode("utf-8"))
+    allowed = [base_url] if urlsplit(base_url).hostname in {"127.0.0.1", "localhost", "::1"} else []
+    body, _ = safe_http.request_bytes(request.full_url, data=body, headers=headers, timeout=30,
+                                     allowed_local_origins=allowed)
+    payload = json.loads(body.decode("utf-8"))
     if payload.get("code") != 0:
         raise RuntimeError(f"WeRSS API error: {payload.get('message') or payload.get('detail') or payload}")
     return payload.get("data") or {}
@@ -1381,19 +1448,25 @@ def collect_arxiv(source: dict[str, Any], ctx: Context) -> tuple[list[dict[str, 
     records = []
     scanned = 0
     try:
-        search = arxiv.Search(query=query, max_results=source.get("max_results", 60), sort_by=arxiv.SortCriterion.SubmittedDate)
-        client = arxiv.Client(page_size=50, delay_seconds=3, num_retries=2)
-        for result in client.results(search):
-            scanned += 1
-            published = result.published
-            if published < ctx.window_start:
+        maximum = min(int(source.get("max_results", 60)), 100)
+        for start in range(0, maximum, 50):
+            url = "https://export.arxiv.org/api/query?" + urlencode({"search_query": query, "start": start,
+                "max_results": min(50, maximum - start), "sortBy": "submittedDate", "sortOrder": "descending"})
+            parsed = feedparser.parse(fetch_bytes(url))
+            if parsed.get("bozo") and not parsed.entries:
+                raise ValueError("arXiv returned invalid Atom")
+            for entry in parsed.entries:
+                scanned += 1
+                published = parse_feed_datetime(entry)
+                if not in_window(published, ctx):
+                    continue
+                records.append(make_record(source=source, url=entry.get("id") or entry["link"],
+                    title=clean_html(entry.get("title")) or "arXiv article", ctx=ctx, published_at=published,
+                    authors=[a.get("name", "") for a in entry.get("authors", [])],
+                    raw_excerpt=clean_html(entry.get("summary")), rights_scope="excerpt", discovery_context=f"arxiv:{query}"))
+            if len(parsed.entries) < 50 or any(parse_feed_datetime(e) and parse_feed_datetime(e) < ctx.window_start for e in parsed.entries):
                 break
-            if not in_window(published, ctx):
-                continue
-            records.append(make_record(source=source, url=result.entry_id, title=result.title, ctx=ctx,
-                                       published_at=published, authors=[a.name for a in result.authors],
-                                       raw_excerpt=clean_html(result.summary), rights_scope="excerpt",
-                                       discovery_context=f"arxiv:{query}"))
+            time.sleep(3)
         return records, {"status": "success", "scanned": scanned, "accepted": len(records), "query": query}
     except Exception as exc:
         reason = f"{type(exc).__name__}: {exc}"
@@ -1438,8 +1511,11 @@ def collect_newscrawler(source: dict[str, Any], ctx: Context) -> tuple[list[dict
         return [make_record(source=source, url=source["url"], title="Collection unavailable: NewsCrawler", ctx=ctx,
                             access_status="failed", failure_reason=reason, rights_scope="metadata_only")], {"status": "failed", "error": reason}
     try:
-        command = ctx.newscrawler_command.format(url=source["url"])
-        completed = subprocess.run(command, shell=True, check=True, capture_output=True, text=True, timeout=90)
+        validate_external_url(source["url"])
+        command = [part.replace("{url}", source["url"]) for part in shlex.split(ctx.newscrawler_command)]
+        if not command or any(part in {"|", ";", "&&", "||", ">", "<"} for part in command):
+            raise ValueError("Shell expressions are not allowed in extractor commands")
+        completed = run_sandboxed(command, timeout=90)
         payload = json.loads(completed.stdout)
         return [normalize_newscrawler_payload(payload, source, ctx)], {"status": "success", "scanned": 1, "accepted": 1}
     except Exception as exc:
@@ -1449,38 +1525,22 @@ def collect_newscrawler(source: dict[str, Any], ctx: Context) -> tuple[list[dict
 
 
 def collect_news_extractor(source: dict[str, Any], ctx: Context) -> tuple[list[dict[str, Any]], dict[str, Any]]:
-    command = source.get("command")
-    if not command:
-        reason = "news-extractor command is not configured"
-        return [make_record(source=source, url=source["url"], title="Collection unavailable: news-extractor", ctx=ctx,
-                            access_status="failed", failure_reason=reason, rights_scope="metadata_only")], {"status": "failed", "error": reason}
     try:
-        with tempfile.TemporaryDirectory(prefix="spectra-news-") as output_dir:
-            args = [part.format(url=source["url"], output=output_dir) for part in command]
-            # Keep uv's cache outside the installed Skill directory. This makes
-            # the isolated Skill callable from restricted/scheduled runtimes
-            # without modifying the Skill or relying on a writable home cache.
-            command_env = os.environ.copy()
-            command_env.setdefault(
-                "UV_CACHE_DIR",
-                str(Path(tempfile.gettempdir()) / "spectra-news-extractor-uv-cache"),
-            )
-            completed = subprocess.run(
-                args,
-                check=True,
-                capture_output=True,
-                text=True,
-                timeout=120,
-                env=command_env,
-            )
-            outputs = list(Path(output_dir).glob("*.json"))
-            if len(outputs) != 1:
-                raise ValueError(f"expected one JSON output, got {len(outputs)}")
-            payload = json.loads(outputs[0].read_text(encoding="utf-8"))
-            record = normalize_newscrawler_payload(payload, source, ctx)
-            if not in_window(datetime.fromisoformat(record["published_at"].replace("Z", "+00:00")) if record["published_at"] else None, ctx):
-                return [], {"status": "success", "scanned": 1, "accepted": 0, "note": "article outside collection window"}
-            return [record], {"status": "success", "scanned": 1, "accepted": 1, "stdout": completed.stdout[-1000:]}
+        validate_external_url(source["url"])
+        raw = fetch_bytes(source["url"])
+        completed = run_sandboxed([sys.executable, str(ROOT / "collector/offline_extract.py")],
+                                 input_text=raw.decode("utf-8", errors="replace"))
+        payload = json.loads(completed.stdout)
+        if len(payload.get("content", "")) < 180:
+            raise ValueError("offline extraction insufficient; page may require JS/login")
+        if any(marker in payload["content"].lower() for marker in ("verify you are human", "enable javascript", "access denied", "请完成验证", "访问过于频繁")):
+            raise ValueError("source returned an access challenge, not article text")
+        payload["url"] = source["url"]
+        payload["published_at"] = source.get("discovered_published_at")
+        payload["title"] = source.get("discovered_title") or payload.get("title")
+        record = normalize_newscrawler_payload(payload, source, ctx)
+        record["discovery_context"] = "offline_html_paragraphs; completeness_not_verified"
+        return [record], {"status": "success", "scanned": 1, "accepted": 1, "extraction_method": "sandboxed_offline"}
     except Exception as exc:
         reason = f"{type(exc).__name__}: {exc}"
         return [make_record(source=source, url=source["url"], title="Collection failed: news-extractor", ctx=ctx,
@@ -1651,7 +1711,8 @@ def collect_news_extractor_feed(source: dict[str, Any], ctx: Context, keywords: 
     records = []
     errors = []
     for entry, article_url in selected:
-        article_source = {**source, "url": article_url}
+        article_source = {**source, "url": article_url, "discovered_title": clean_html(entry.get("title")),
+                          "discovered_published_at": iso(parse_feed_datetime(entry))}
         batch, health = collect_news_extractor(article_source, ctx)
         records.extend(batch)
         if health["status"] == "failed":
@@ -1772,6 +1833,27 @@ def run(config: dict[str, Any], ctx: Context) -> dict[str, Any]:
     groups = config.get("keyword_groups", {})
     # Per-source timeout in seconds (5 minutes default)
     source_timeout = config.get("source_timeout_seconds", 300)
+    limits = config.get("request_budget", {})
+    budget_path = os.environ.get("SPECTRA_ACQUISITION_BUDGET_DB")
+    if not budget_path and config.get("checkpoint_path"):
+        budget_path = str(Path(config["checkpoint_path"]).with_suffix(".budget.sqlite"))
+    safe_http.configure_budget(budget_path, int(limits.get("max_requests", 180)),
+                               float(limits.get("domain_interval_seconds", 1)))
+    REQUEST_POLICY.update(used=0, limit=int(limits.get("max_requests", 180)),
+                          deadline=time.monotonic() + float(limits.get("total_seconds", 1200)),
+                          timeout=float(limits.get("timeout_seconds", 30)),
+                          interval=float(limits.get("domain_interval_seconds", 1)), next={})
+    checkpoint_path = Path(config["checkpoint_path"]) if config.get("checkpoint_path") else None
+    fingerprint = hashlib.sha256(json.dumps({"config": config, "start": iso(ctx.window_start),
+                                            "end": iso(ctx.window_end)}, sort_keys=True).encode()).hexdigest()
+    saved = {}
+    if checkpoint_path and checkpoint_path.exists():
+        try:
+            checkpoint = json.loads(checkpoint_path.read_text(encoding="utf-8"))
+            if checkpoint.get("fingerprint") == fingerprint:
+                saved = checkpoint.get("sources", {})
+        except (ValueError, OSError):
+            pass
 
     def timeout_handler(signum, frame):
         raise TimeoutError("source collection timeout")
@@ -1782,12 +1864,22 @@ def run(config: dict[str, Any], ctx: Context) -> dict[str, Any]:
         adapter = source["adapter"]
         registry_id = source["registry_id"]
         keywords = groups.get(source.get("keyword_group"), [])
+        cached = saved.get(registry_id)
+        if cached and cached["health"].get("status") == "success":
+            records.extend(cached["records"])
+            checks.append({**cached["health"], "resumed_from_checkpoint": True})
+            continue
+        started = time.monotonic()
+        requests_before = REQUEST_POLICY["used"]
+        batch = []
 
         # Set alarm for this source collection
         signal.signal(signal.SIGALRM, timeout_handler)
         signal.alarm(source_timeout)
 
         try:
+            if time.monotonic() >= REQUEST_POLICY["deadline"]:
+                raise TimeoutError("collection time budget exhausted")
             if adapter in {"rss", "github_atom"}:
                 batch, health = collect_feed(source, ctx, keywords)
             elif adapter == "batch_index":
@@ -1836,6 +1928,18 @@ def run(config: dict[str, Any], ctx: Context) -> dict[str, Any]:
         finally:
             # Cancel alarm for this source
             signal.alarm(0)
+            checks[-1] = source_health(batch, checks[-1])
+            checks[-1].update(source_name=source.get("source_name", registry_id),
+                              duration_seconds=round(time.monotonic() - started, 2),
+                              http_requests=REQUEST_POLICY["used"] - requests_before)
+            checks[-1]["acquisition_requests_total"] = safe_http.current_budget().count()
+            saved[registry_id] = {"records": batch, "health": checks[-1]}
+            if checkpoint_path:
+                checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
+                temporary = checkpoint_path.with_suffix(".tmp")
+                temporary.write_text(json.dumps({"fingerprint": fingerprint, "sources": saved}, ensure_ascii=False), encoding="utf-8")
+                temporary.replace(checkpoint_path)
+    REQUEST_POLICY.clear()
     unique = dedupe(records)
     return {
         "schema_version": SCHEMA_VERSION,
@@ -1900,6 +2004,7 @@ def main() -> int:
     if start >= end:
         parser.error("--start must be earlier than --end")
     ctx = Context(collected_at=datetime.now(timezone.utc), window_start=start, window_end=end, newscrawler_command=args.newscrawler_command)
+    config["checkpoint_path"] = str(Path(args.output).with_suffix(".checkpoint.json"))
     result = run(config, ctx)
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)

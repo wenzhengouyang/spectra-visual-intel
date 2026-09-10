@@ -11,17 +11,18 @@ from spectra_agent.review_cli import decisions_for, interactive_decisions, parse
 
 
 class DailyRuntimeTest(unittest.TestCase):
-    def test_launchd_schedules_collection_at_eight_and_dingtalk_at_ten(self):
+    def test_installer_preserves_bounded_morning_schedule(self):
+        import importlib.util
         root = Path(__file__).resolve().parents[1]
-        with (root / "spectra_agent/launchd/com.spectra.visual-intel.daily.plist").open("rb") as handle:
-            collection = plistlib.load(handle)
-        with (root / "spectra_agent/launchd/com.spectra.visual-intel.dingtalk.plist").open("rb") as handle:
-            dingtalk = plistlib.load(handle)
-        self.assertEqual(collection["StartCalendarInterval"], {"Hour": 8, "Minute": 0})
-        self.assertNotIn("/Documents/", collection["WorkingDirectory"])
-        self.assertIn("Application Support/SPECTRA/runtime", collection["WorkingDirectory"])
-        self.assertEqual(dingtalk["StartInterval"], 1800)
-        self.assertTrue(dingtalk["RunAtLoad"])
+        spec = importlib.util.spec_from_file_location("morning_schedule", root / "scripts/install-morning-schedule.py")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        self.assertEqual(module.PLAN["com.spectra.visual-intel.daily"], [{"Hour": 8, "Minute": 0}, {"Hour": 10, "Minute": 10}])
+        self.assertEqual(module.PLAN["com.spectra.visual-intel.dingtalk"], [{"Hour": 10, "Minute": m} for m in (20, 25, 28, 30)])
+        revised = module.revised({"StartInterval": 1800, "RunAtLoad": True, "WorkingDirectory": "unchanged"}, module.PLAN["com.spectra.visual-intel.daily"])
+        self.assertNotIn("StartInterval", revised)
+        self.assertNotIn("RunAtLoad", revised)
+        self.assertEqual(revised["WorkingDirectory"], "unchanged")
 
     def test_dingtalk_push_is_enabled_and_uses_environment_secrets(self):
         root = Path(__file__).resolve().parents[1]

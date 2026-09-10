@@ -79,3 +79,9 @@ yarn-error.log*
 /*.pre-sync-*.html
 /.publish-remote/
 /archive/
+
+# Acquisition budgets and local review datasets are operational, not public assets.
+**/acquisition-budget.sqlite*
+**/*.budget.sqlite*
+**/review-samples.sqlite*
+**/evidence-sources/

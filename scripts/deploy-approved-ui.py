@@ -17,6 +17,11 @@ FILES += ['editorial/build-editorial-issue.py', 'processor/p2_localizer.py']
 FILES += ['spectra_agent/publication_quality.py']
 FILES += ['scripts/validate-editorial-issue.py']
 FILES += ['spectra_agent/image_generation.py']
+FILES += ['collector/collect.py', 'processor/structure.py', 'spectra_agent/brief_quality.py',
+          'spectra_agent/progress-dashboard.html']
+FILES += ['spectra_agent/safe_http.py', 'spectra_agent/sandbox.py', 'collector/offline_extract.py',
+          'spectra_agent/evidence_search.py', 'spectra_agent/review_samples.py', 'spectra_agent/review_cli.py',
+          'verification/apply-fact-review-decisions.py']
 FILES += ['spectra_agent/image_review.py']
 FILES += ['assets/dingtalk/spectra-header-v2.svg', 'assets/dingtalk/spectra-header-v2.png']
 FILES += ['spectra_agent/progress_server.py', 'spectra_agent/publish_run.py',

@@ -39,6 +39,8 @@ def print_queue(review: dict) -> None:
         print(f"{index:02d}. {record.get('title')}")
         print(f"    {record.get('url')}")
         print(f"    confidence={record.get('harness_confidence')} risks={risks} facts={len(record.get('suggested_evidence') or [])}")
+        for source in (record.get("supplemental_evidence") or {}).get("evidence", []):
+            print(f"    补搜来源（尚未核验）: {source.get('url')}")
 
 
 def prompt_choice(prompt: str, choices: set[str], input_fn=input) -> str:
@@ -56,6 +58,8 @@ def interactive_decisions(review: dict, reviewer: str, input_fn=input) -> dict:
         print("\n" + "=" * 78)
         print(f"候选 {index}/{len(review.get('records', []))}: {record.get('title')}")
         print(f"原文：{record.get('url')}")
+        for source in (record.get("supplemental_evidence") or {}).get("evidence", []):
+            print(f"补搜来源（尚未核验）：{source.get('url')}")
         print(f"机器建议：{record.get('agent_recommendation') or '未提供'}")
         risks = "、".join(record.get("risk_flags") or []) or "无"
         print(f"风险：{risks}；置信度：{record.get('harness_confidence') or '未知'}")
@@ -159,6 +163,7 @@ def main() -> int:
     parser.add_argument("--verified-primary", help="indexes whose primary source was actually checked")
     parser.add_argument("--verified-secondary", help="indexes checked only against secondary sources")
     parser.add_argument("--reviewer")
+    parser.add_argument("--actor-type", choices=["human", "agent", "unspecified"], default="unspecified")
     parser.add_argument("--interactive", action="store_true", help="review candidates and facts interactively")
     parser.add_argument("--resume", action="store_true")
     args = parser.parse_args()
@@ -196,6 +201,7 @@ def main() -> int:
             parse_selection(args.verified_secondary, size),
         )
     with tempfile.TemporaryDirectory(prefix="spectra-review-") as temp:
+        decisions["actor_type"] = args.actor_type
         decision_path = Path(temp) / "decisions.json"
         decision_path.write_text(json.dumps(decisions, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         apply_command = [

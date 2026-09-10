@@ -1187,6 +1187,17 @@ def main() -> int:
         result["llm"] = {"status": "not_requested"}
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
+    from spectra_agent.brief_quality import evidence_search_plan
+    from spectra_agent.evidence_search import execute_plans
+    from spectra_agent import safe_http
+    safe_http.configure_budget(os.environ.get("SPECTRA_ACQUISITION_BUDGET_DB") or str(output.parent / "acquisition-budget.sqlite"))
+    candidates_for_search = {c["candidate_id"]: c for c in [*result.get("feed_candidates", []), *result.get("selected_candidates", [])]}
+    plans = [evidence_search_plan(item) for item in candidates_for_search.values()]
+    search_packet = execute_plans(output.with_suffix(".evidence-search.json"), plans)
+    supplements = {j["candidate_id"]: j for j in search_packet["jobs"]}
+    for candidate in [*result.get("feed_candidates", []), *result.get("selected_candidates", [])]:
+        if candidate["candidate_id"] in supplements:
+            candidate["supplemental_evidence"] = supplements[candidate["candidate_id"]]
     output.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(result["summary"], ensure_ascii=False, indent=2))
     return 0
