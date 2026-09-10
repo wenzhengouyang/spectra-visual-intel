@@ -97,7 +97,7 @@ def notification_payload(issue: dict, public_url: str, header_image_url: str = "
         headline_link = f"[{headline}]({source_url.replace('(', '%28').replace(')', '%29')})" if source_url else headline
         summary = _bold_data(_compact(story.get("one_line_takeaway") or story.get("dek"), 56))
         items.append(
-            f"**{index:02d} · {headline_link}**\n"
+            f"**🔹 {index:02d}｜{headline_link}**\n\n"
             f"{summary or '打开工作台查看详情'}"
         )
     top_three = "\n\n".join(items) or "今日暂无达到发布标准的焦点事件"
@@ -106,10 +106,10 @@ def notification_payload(issue: dict, public_url: str, header_image_url: str = "
         blocks.append(f"![SPECTRA 今日视觉情报]({header_image_url})")
     blocks.extend((
         f"{date_label} · 近7日视觉情报",
-        f"**30 秒结论**\n{thesis}",
-        "**今日焦点**",
+        f"**⚡ 30 秒结论**\n\n{thesis}",
+        "**🔥 今日 Top 3 焦点**",
         top_three,
-        f"[查看完整情报 →]({public_url})",
+        f"[打开 SPECTRA 网页工作台 →]({public_url})",
     ))
     text = "\n\n".join(blocks)
     return {"msgtype": "markdown", "markdown": {"title": title, "text": text}}

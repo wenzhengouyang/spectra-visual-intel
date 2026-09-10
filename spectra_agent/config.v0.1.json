@@ -161,7 +161,7 @@
     "secret_env": "DINGTALK_SECRET",
     "require_published": true,
     "public_url": "https://wenzhengouyang.github.io/spectra-visual-intel/",
-    "header_image_url": "https://wenzhengouyang.github.io/spectra-visual-intel/assets/dingtalk/spectra-header-v2.png"
+    "header_image_url": "https://wenzhengouyang.github.io/spectra-visual-intel/assets/dingtalk/spectra-header-blue-approved.png"
   },
   "publishing": {
     "remote": "origin",
