@@ -1778,7 +1778,7 @@ def _resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
             image_jobs = prepare_image_generation(run_dir)
             if image_jobs['status'] == 'pending':
                 update_state(run_dir, status='waiting_for_editorial_review', current_stage='image_generation',
-                             paused_reason='waiting for actual Imagegen output', publish_status='not_published')
+                             paused_reason='等待配图：新闻原图 → 官方素材 → AI 兜底', publish_status='not_published')
                 return 2
             issue = read_json(issue_path)
         from spectra_agent.publication_quality import requires_cover
@@ -1794,7 +1794,7 @@ def _resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
                 run_dir,
                 status="waiting_for_editorial_review",
                 current_stage="image_preview",
-                paused_reason="generated story covers require human preview",
+                paused_reason="等待图文一致性审核：允许授权 Agent 审核具体图片",
                 pending_image_story_ids=pending_image_ids,
                 error=None,
             )
@@ -1804,7 +1804,7 @@ def _resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
                 "pending_image_story_ids": pending_image_ids,
                 "next": (
                     f"python3 spectra_agent/image_review.py --run-dir {run_dir} "
-                    "--approve all --reviewer <name>, then resume"
+                    "--approve <reviewed-story-ids> --reviewer <name>, then resume"
                 ),
                 "publish_status": "not_published",
             }, ensure_ascii=False, indent=2))

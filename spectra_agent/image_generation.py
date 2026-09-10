@@ -28,14 +28,14 @@ def prepare(run_dir: Path) -> dict:
         if job.get('prompt_sha256') != key:
             job = {'story_id': story['story_id'], 'prompt': prompt, 'prompt_sha256': key,
                    'status': 'pending', 'provider': 'codex_imagegen'}
-        if job.get('status') != 'generated':
-            job['provider'] = 'codex_imagegen' if job.get('source_search', {}).get('fallback_allowed') else 'source_search'
         job['source_links'] = story.get('source_links', [])
         job['selection_order'] = ['news_original', 'official', 'ai_fallback']
         target = run_dir / job.get('url', 'missing')
         if job.get('status') == 'generated' and (not target.is_file() or
                 hashlib.sha256(target.read_bytes()).hexdigest() != job.get('sha256')):
             job['status'] = 'pending'
+        if job.get('status') != 'generated':
+            job['provider'] = 'codex_imagegen' if job.get('source_search', {}).get('fallback_allowed') else 'source_search'
         if job.get('status') == 'generated':
             cover = story.get('cover_image') or {}
             restored = make_cover(story, job)
@@ -69,7 +69,10 @@ def record_search(run_dir: Path, story_id: str, evidence: dict):
     """Require an auditable search of both source tiers before spending generation resources."""
     for tier in ('news_original', 'official'):
         check = evidence.get(tier, {})
-        if check.get('result') != 'unavailable' or not check.get('reason') or not check.get('checked_urls'):
+        urls = check.get('checked_urls')
+        if (check.get('result') != 'unavailable' or not str(check.get('reason', '')).strip()
+                or not isinstance(urls, list) or not urls
+                or any(not isinstance(url, str) or not url.startswith('https://') for url in urls)):
             raise ValueError('Both source tiers need checked_urls, unavailable result and reason')
     queue = json.loads((run_dir / 'image-generation.json').read_text())
     job = next(j for j in queue['jobs'] if j['story_id'] == story_id)

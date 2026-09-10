@@ -44,6 +44,13 @@ class ImageGenerationTest(unittest.TestCase):
             cover=json.loads((root/'editorial-issue.json').read_text())['editorial_stories'][0]['cover_image']
             self.assertEqual(cover['kind'],'source')
             self.assertEqual(cover['review_status'],'pending')
+            job=prepare(root)['jobs'][0]
+            (root/job['url']).write_bytes(b'corrupt')
+            recovered=prepare(root)['jobs'][0]
+            self.assertEqual(recovered['status'],'pending')
+            self.assertEqual(recovered['provider'],'source_search')
+            with self.assertRaises(ValueError):
+                record_search(root,'a',{tier:{'result':'unavailable','reason':'none','checked_urls':'not-a-list'} for tier in ('news_original','official')})
     def test_industry_signal_is_an_image_card(self):
         from spectra_agent.image_review import pending_covers
         from spectra_agent.publication_quality import publication_quality_errors
