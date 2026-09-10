@@ -1193,7 +1193,12 @@ def main() -> int:
     safe_http.configure_budget(os.environ.get("SPECTRA_ACQUISITION_BUDGET_DB") or str(output.parent / "acquisition-budget.sqlite"))
     candidates_for_search = {c["candidate_id"]: c for c in [*result.get("feed_candidates", []), *result.get("selected_candidates", [])]}
     plans = [evidence_search_plan(item) for item in candidates_for_search.values()]
-    search_packet = execute_plans(output.with_suffix(".evidence-search.json"), plans)
+    search_packet = (
+        execute_plans(output.with_suffix(".evidence-search.json"), plans)
+        if (config.get("evidence_search") or {}).get("enabled", False)
+        else {"status": "disabled", "auto_approve": False, "jobs": []}
+    )
+    result["evidence_search"] = {"status": search_packet["status"]}
     supplements = {j["candidate_id"]: j for j in search_packet["jobs"]}
     for candidate in [*result.get("feed_candidates", []), *result.get("selected_candidates", [])]:
         if candidate["candidate_id"] in supplements:
