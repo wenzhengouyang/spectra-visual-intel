@@ -118,15 +118,15 @@ body .story-card-image{flex-shrink:0}
 body .channel-field-bar button{font-family:inherit;line-height:1.4;min-height:38px}
 body .library-entry{cursor:pointer}
 body.is-reading .editorial-section.reading .reader-heading{
-  position:fixed;top:0;left:50%;right:auto;transform:translateX(-50%);
-  width:min(920px,calc(100% - 32px));z-index:100;box-sizing:border-box;
-  min-height:72px;margin:0;padding:14px 24px;display:flex;justify-content:flex-start;
-  border:1px solid #34495e;border-top:0;border-radius:0 0 12px 12px;
-  background:#192c3e;box-shadow:0 8px 24px #050d1826;backdrop-filter:none;
+  position:relative;top:auto;left:auto;right:auto;transform:none;
+  width:auto;z-index:auto;box-sizing:border-box;
+  min-height:0;margin:0;padding:16px 24px 0;display:flex;justify-content:flex-start;
+  border:0;border-radius:0;
+  background:transparent;box-shadow:none;backdrop-filter:none;
 }
 body.is-reading .reader-heading>span{display:none}
 body.is-reading .editorial-section.reading .reader-heading button{font-size:14px;padding:10px 16px}
-body.is-reading .article-reader{background:#142536;border-color:#2c4358;padding-top:80px;overflow:visible}
+body.is-reading .article-reader{background:#142536;border-color:#2c4358;padding-top:0;overflow:visible}
 body.is-reading .editorial-feature,body.is-reading .complete-story,body.is-reading .article-prose{background:transparent}
 body.is-reading .complete-story .article-section{
   display:block;padding:26px 28px;margin:0;border:1px solid #30465a;
@@ -140,8 +140,8 @@ body.is-reading .structured-analysis{gap:24px}
 body.is-reading .source-audit,body.is-reading .key-number-row>div{background:#1a2e40;border-color:#30465a}
 body.is-reading .article-section,body.is-reading .source-audit{scroll-margin-top:96px}
 @media(max-width:650px){
-  body.is-reading .editorial-section.reading .reader-heading{width:100%;min-height:64px;padding:10px 16px;border-radius:0}
-  body.is-reading .article-reader{padding:68px 14px 18px}
+  body.is-reading .editorial-section.reading .reader-heading{width:auto;min-height:0;padding:14px 0 0;border-radius:0}
+  body.is-reading .article-reader{padding:0 14px 18px}
   body.is-reading .editorial-section.reading .editorial-feature{padding:20px 0}
   body.is-reading .complete-story .article-section{padding:22px 20px}
   body.is-reading .complete-story .article-section>div>b{font-size:21px}
