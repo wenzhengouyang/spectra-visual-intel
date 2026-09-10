@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="220" viewBox="0 0 1200 220">
+<defs><linearGradient id="bg"><stop stop-color="#123979"/><stop offset="1" stop-color="#256bcd"/></linearGradient><linearGradient id="line"><stop stop-color="#99c8ff" stop-opacity=".15"/><stop offset="1" stop-color="#b8e0ff" stop-opacity=".55"/></linearGradient></defs>
+<rect width="1200" height="220" rx="20" fill="url(#bg)"/>
+<g fill="none" stroke="url(#line)" stroke-width="1.5"><ellipse cx="1080" cy="110" rx="160" ry="160"/><ellipse cx="1080" cy="110" rx="116" ry="160"/><ellipse cx="1080" cy="110" rx="56" ry="160"/><ellipse cx="1080" cy="110" rx="160" ry="65"/><path d="M920 110h280"/></g>
+<g transform="translate(52 71)" fill="none" stroke="#d2e8ff" stroke-width="2"><rect width="76" height="76" rx="20" fill="#ffffff0d" stroke="#ffffff40"/><circle cx="38" cy="38" r="22"/><ellipse cx="38" cy="38" rx="10" ry="22"/><path d="M16 38h44"/><circle cx="54" cy="24" r="5" fill="#d2e8ff" stroke="none"/></g>
+<text x="152" y="109" fill="white" font-family="Arial,sans-serif" font-size="46" font-weight="600" letter-spacing="6">SPECTRA</text>
+<text x="153" y="151" fill="#c0dcff" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="23" letter-spacing="2">视频 · 图像 · 世界模型</text>
+<text x="875" y="123" fill="#e0efff" text-anchor="end" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="28">今日视觉情报</text>
+</svg>
