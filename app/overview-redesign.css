@@ -1,0 +1,519 @@
+/* ============================================================
+   SPECTRA Overview Redesign - 总览页面重新设计
+   参考 The Batch 风格，优化信息密度和布局
+   ============================================================ */
+
+/* ========== 整体布局优化 ========== */
+
+/* 容器宽度优化 - 更好地利用空间 */
+.workspace {
+  max-width: 1480px;
+  margin: 0 auto;
+  padding: var(--space-lg) var(--space-xl);
+}
+
+/* 总览页面的主容器 - 左右布局 */
+.overview-main {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 1.25rem;
+  margin-top: 1.25rem;
+  height: calc(100vh - 240px);
+  min-height: 700px;
+  max-height: 900px;
+}
+
+/* ========== 趋势雷达重新设计（左侧栏） ========== */
+
+.signal-radar {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 1.5rem;
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-card);
+  background: var(--color-paper-raised);
+  height: 100%;
+  overflow-y: auto;
+}
+
+.signal-radar .panel-heading {
+  padding: 0 0 1rem;
+  border-bottom: 1px solid var(--color-rule);
+  margin-bottom: 1rem;
+  flex-shrink: 0;
+}
+
+.signal-radar .panel-heading h2 {
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.signal-radar .legend {
+  font-size: 0.75rem;
+}
+
+/* 趋势总结 - 紧凑版 */
+.trend-one-line {
+  display: block;
+  padding: 1rem;
+  border-left: 3px solid var(--color-accent);
+  border-radius: var(--radius-control);
+  background: var(--color-paper-2);
+  margin-bottom: 1rem;
+  flex-shrink: 0;
+}
+
+.trend-one-line span {
+  display: block;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-muted);
+  margin-bottom: 0.375rem;
+}
+
+.trend-one-line strong {
+  display: block;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--color-ink);
+  font-weight: 500;
+}
+
+/* 隐藏散点图 - 用列表替代 */
+.trend-scatter-shell {
+  display: none !important;
+}
+
+/* 趋势卡片 - 垂直列表 */
+.trend-focus-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.radar-key {
+  padding: 0.875rem;
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-control);
+  background: var(--color-paper-2);
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.radar-key:hover,
+.radar-key.active {
+  background: var(--color-paper-3);
+  border-color: var(--color-rule-strong);
+}
+
+.radar-key i {
+  display: inline-block;
+  width: 1.375rem;
+  height: 1.375rem;
+  line-height: 1.375rem;
+  text-align: center;
+  border-radius: 50%;
+  background: var(--key-tone, var(--color-accent));
+  color: var(--color-paper);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  font-style: normal;
+  margin-right: 0.5rem;
+}
+
+.radar-key span {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-ink);
+  line-height: 1.4;
+}
+
+.radar-key em {
+  display: block;
+  margin-top: 0.375rem;
+  font-size: 0.75rem;
+  color: var(--color-muted);
+  font-style: normal;
+}
+
+/* ========== 时间线重新设计（右侧主区域） ========== */
+
+.timeline-panel {
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-card);
+  background: var(--color-paper-raised);
+  height: 100%;
+  overflow: hidden;
+}
+
+.timeline-panel .panel-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 0 1rem;
+  border-bottom: 1px solid var(--color-rule);
+  margin-bottom: 1rem;
+  flex-shrink: 0;
+}
+
+.timeline-panel .panel-heading h2 {
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.timeline-panel .text-button {
+  font-size: 0.8125rem;
+  color: var(--color-muted);
+  font-weight: 500;
+}
+
+/* 时间线日期网格 - 横向滚动 */
+.timeline-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(80px, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 0;
+  border: none;
+  flex-shrink: 0;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+}
+
+.day-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.625rem 0.5rem;
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-control);
+  background: var(--color-paper-2);
+  cursor: pointer;
+  transition: all 0.2s;
+  min-height: auto;
+  min-width: 80px;
+}
+
+.day-node:hover {
+  background: var(--color-paper-3);
+  border-color: var(--color-rule-strong);
+}
+
+.day-node.selected,
+.day-node.active {
+  background: var(--color-accent-soft);
+  border-color: var(--color-accent);
+}
+
+.day-node .day-name {
+  font-size: 0.6875rem;
+  color: var(--color-muted);
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.day-node b {
+  font-size: 0.9375rem;
+  color: var(--color-ink);
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.day-node small {
+  font-size: 0.75rem;
+  color: var(--color-muted);
+}
+
+/* 时间线事件详情 - 可滚动区域 */
+.timeline-detail {
+  flex: 1;
+  padding: 1.25rem;
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-control);
+  background: var(--color-paper-2);
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.timeline-detail-head {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--color-rule);
+}
+
+.timeline-detail-head .event-tag {
+  flex-shrink: 0;
+  padding: 0.25rem 0.625rem;
+  background: var(--color-accent-soft);
+  color: var(--color-accent-ink);
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: var(--radius-control);
+}
+
+.timeline-detail-head strong {
+  font-size: 0.875rem;
+  color: var(--color-ink);
+  font-weight: 600;
+}
+
+.timeline-detail-head p {
+  margin: 0.375rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--color-ink-2);
+  line-height: 1.6;
+}
+
+/* 时间线事件列表 */
+.timeline-event-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.timeline-event-card {
+  padding: 1rem;
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-control);
+  background: var(--color-paper-raised);
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.timeline-event-card:hover {
+  background: var(--color-paper-3);
+  border-color: var(--color-rule-strong);
+  transform: translateX(4px);
+}
+
+.timeline-event-card h3 {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.45;
+  margin: 0 0 0.5rem;
+  color: var(--color-ink);
+}
+
+.timeline-event-card .event-fact {
+  font-size: 0.8125rem;
+  line-height: 1.65;
+  color: var(--color-ink-2);
+  margin: 0;
+}
+
+.event-card-meta {
+  display: flex;
+  gap: 0.625rem;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--color-muted);
+}
+
+.event-links {
+  display: flex;
+  gap: 0.875rem;
+  align-items: center;
+  margin-top: 0.625rem;
+  padding-top: 0.625rem;
+  border-top: 1px solid var(--color-rule);
+  font-size: 0.75rem;
+}
+
+/* ========== 文章卡片优化（缩小） ========== */
+
+/* 缩小文章卡片尺寸 */
+.story-card-grid {
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+}
+
+/* 核心事件改为3列 */
+.core-event-group .story-card-grid {
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+}
+
+.story-card-content {
+  min-height: 15rem;
+  padding: 1.25rem;
+}
+
+.brief-card .story-card-content {
+  min-height: 12rem;
+}
+
+/* 卡片标题字号缩小 */
+.story-card-copy strong {
+  font-size: clamp(0.9375rem, 1.2vw, 1.125rem);
+  line-height: 1.45;
+  -webkit-line-clamp: 3;
+}
+
+/* 卡片摘要 */
+.story-card-copy p {
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  -webkit-line-clamp: 3;
+}
+
+/* 卡片封面图 */
+.story-card-image {
+  aspect-ratio: 16 / 9;
+}
+
+/* 编辑区域内边距 */
+.editorial-browse {
+  padding: 1.5rem;
+  gap: 2rem;
+}
+
+.editorial-heading {
+  padding: 1.25rem 1.5rem;
+}
+
+/* ========== 响应式设计 ========== */
+
+@media (max-width: 1400px) {
+  .story-card-grid,
+  .core-event-group .story-card-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 1200px) {
+  .story-card-grid,
+  .core-event-group .story-card-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 1024px) {
+  .overview-main {
+    grid-template-columns: 1fr;
+    height: auto;
+    min-height: auto;
+  }
+
+  .signal-radar,
+  .timeline-panel {
+    height: auto;
+  }
+
+  .signal-radar {
+    max-height: 500px;
+  }
+
+  .timeline-detail {
+    max-height: 600px;
+  }
+}
+
+@media (max-width: 900px) {
+  .timeline-grid {
+    grid-template-columns: repeat(7, 80px);
+  }
+
+  .story-card-grid,
+  .core-event-group .story-card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .workspace {
+    padding: var(--space-md);
+  }
+
+  .signal-radar,
+  .timeline-panel {
+    padding: 1.25rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .timeline-grid {
+    gap: 0.375rem;
+  }
+
+  .day-node {
+    padding: 0.5rem 0.375rem;
+    min-width: 70px;
+  }
+
+  .day-node .day-name {
+    font-size: 0.625rem;
+  }
+
+  .day-node b {
+    font-size: 0.875rem;
+  }
+
+  .signal-radar .panel-heading h2,
+  .timeline-panel .panel-heading h2 {
+    font-size: 1rem;
+  }
+
+  .timeline-event-card h3 {
+    font-size: 0.875rem;
+  }
+
+  .timeline-event-card .event-fact {
+    font-size: 0.75rem;
+  }
+}
+
+/* ========== 禁用之前的过大设计 ========== */
+
+/* 覆盖 magazine-improvements.css 中的过大设置 */
+body .workspace {
+  max-width: 1480px !important;
+}
+
+body .story-card-content {
+  min-height: 15rem !important;
+  padding: 1.25rem !important;
+}
+
+body .story-card-grid {
+  gap: 1.25rem !important;
+}
+
+body .core-event-group .story-card-grid {
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 1.25rem !important;
+}
+
+/* 移除 Hero 风格的第一张卡片（太大了） */
+body .core-event-group .story-card-grid > .story-browse-card:first-child {
+  grid-column: auto !important;
+  display: block !important;
+  grid-template-columns: none !important;
+}
+
+body .core-event-group .story-card-grid > .story-browse-card:first-child .story-card-image {
+  aspect-ratio: 16 / 9 !important;
+  border-right: none !important;
+  border-bottom: 1px solid var(--color-rule) !important;
+}
+
+body .core-event-group .story-card-grid > .story-browse-card:first-child .story-card-content {
+  min-height: 15rem !important;
+  padding: 1.25rem !important;
+}
+
+body .core-event-group .story-card-grid > .story-browse-card:first-child .story-card-copy strong {
+  font-size: clamp(0.9375rem, 1.2vw, 1.125rem) !important;
+  -webkit-line-clamp: 3 !important;
+}

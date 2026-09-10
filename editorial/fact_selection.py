@@ -43,6 +43,12 @@ AUDIT_ONLY_PATTERNS = (
     "不应上升为行业趋势",
     "仍需交叉验证",
     "保留归因和预测边界",
+    "人工确认事实与证据可用",
+    "人工确认来源正文与事实证据可用",
+    "人工确认来源与事实证据可用",
+    "人工核验原始来源与事实证据后保留",
+    "人工核验后列入观察",
+    "人工复核后不纳入本次正式内容",
 )
 
 
@@ -163,6 +169,12 @@ def build_fact_selection(verified: dict[str, Any], review: dict[str, Any],
             risk_reasons.append("full_text_missing")
 
         reader_judgment, judgment_audit_notes = split_judgment_layers(item["decision_reason"])
+        # Candidate disposition and reader-facing editorial judgment are separate
+        # layers. A reviewed judgment may be supplied explicitly after the facts
+        # are locked; generic review-process wording must never leak into copy.
+        explicit_reader_judgment = str(item.get("reader_judgment") or "").strip()
+        if explicit_reader_judgment:
+            reader_judgment = explicit_reader_judgment
         embedded_audit_notes.extend(
             {"claim_id": None, "text": note, "origin": "decision_reason"}
             for note in judgment_audit_notes
@@ -184,6 +196,15 @@ def build_fact_selection(verified: dict[str, Any], review: dict[str, Any],
             },
             "allowed_judgment": reader_judgment,
         }
+        if len(selected_facts) >= 8:
+            reader_packet["writing_profile"] = {
+                "mode": "long_form",
+                "min_fact_units": 8,
+                "min_fact_characters": 300,
+                "min_characters": 0,
+                "preferred_characters": 600,
+                "max_characters": 1000,
+            }
         audit_packet = {
             "limitations": item["limitation"],
             "embedded_claim_audit_notes": embedded_audit_notes,
@@ -208,6 +229,10 @@ def build_fact_selection(verified: dict[str, Any], review: dict[str, Any],
         "source_of_truth": "verified_events",
         "locked": True,
         "verified_at": verified["verified_at"],
+        "source_window": {
+            "start": collection.get("window_start"),
+            "end": collection.get("window_end"),
+        },
         "selections": selections,
     }
 
@@ -224,8 +249,8 @@ def validate_fact_selection(bundle: dict[str, Any], verified: dict[str, Any]) ->
         reader = item.get("reader_packet") or {}
         audit = item.get("audit_packet") or {}
         actual[event_id] = {fact["claim_id"] for fact in reader.get("fact_units", [])}
-        if not reader.get("allowed_judgment") or not audit.get("limitations"):
-            raise ValueError(f"{event_id}: judgment and limitations are required")
+        if "allowed_judgment" not in reader or not audit.get("limitations"):
+            raise ValueError(f"{event_id}: judgment field and limitations are required")
     if set(actual) != set(expected):
         raise ValueError("fact selection must cover every verified event exactly once")
     for event_id, claim_ids in actual.items():

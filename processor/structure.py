@@ -73,7 +73,7 @@ LLM_ANALYSIS_SCHEMA: dict[str, Any] = {
                     "same_event_group": {"type": "string"},
                     "what": {"type": "string"},
                     "why": {"type": "string"},
-                    "importance_score": {"type": "integer", "minimum": 0, "maximum": 100, "description": "0-100分。50为一般候选，70以上为本周重要，85以上仅用于行业级重大变化。"},
+                    "importance_score": {"type": "integer", "minimum": 0, "maximum": 100, "description": "0-100分。50为一般候选，70以上为近7日重要，85以上仅用于行业级重大变化。"},
                     "novelty_score": {"type": "integer", "minimum": 0, "maximum": 100, "description": "0-100分。衡量相对已知方法的新增程度，不得使用1-10量表。"},
                     "strategy_relevance_score": {"type": "integer", "minimum": 0, "maximum": 100, "description": "0-100分。衡量对视频/图像模型产品策略的直接相关性。"},
                     "confidence": {"type": "string", "enum": ["low", "medium", "high"]},
@@ -181,6 +181,39 @@ TALENT_ORGANIZATION_MARKERS = (
     "人才", "实习生", "招聘", "薪酬", "期权", "员工激励", "组织管理", "团队结构",
     "talent", "hiring", "recruiting", "employee stock", "organization design",
 )
+EMBODIED_PRODUCT_MARKERS = (
+    "宇树", "机器狗", "机器人", "人形机器人", "unitree", "robot", "robotic", "robotics",
+    "humanoid", "embodied", "具身智能",
+)
+
+
+def reconcile_llm_route(
+    candidate: dict[str, Any],
+    analysis: dict[str, Any],
+    source_map: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    """Prevent a secondary mixed-article topic from replacing the title's subject."""
+    title_text = " ".join(filter(None, [
+        candidate.get("canonical_title"),
+        *(str((source_map.get(source_id) or {}).get("raw_title") or "") for source_id in candidate.get("source_ids", [])),
+    ])).lower()
+    has_embodied_subject = any(marker in title_text for marker in EMBODIED_PRODUCT_MARKERS)
+    has_talent_subject = any(marker in title_text for marker in TALENT_ORGANIZATION_MARKERS)
+    if (
+        analysis.get("primary_route") == "extended.talent_organization"
+        and has_embodied_subject
+        and not has_talent_subject
+    ):
+        analysis["primary_route"] = "frontier.embodied_ai"
+        analysis["secondary_routes"] = [
+            route for route in analysis.get("secondary_routes", [])
+            if route not in {"frontier.embodied_ai", "extended.talent_organization"}
+        ][:3]
+        analysis["intelligence_type_reason"] = (
+            "标题主事件明确指向机器人产品或具身智能；混合文章中的人才、融资或组织信息"
+            "不得覆盖标题主体，具体主题纠偏为具身智能。"
+        )
+    return analysis
 
 
 def requires_attribution(text: str) -> bool:
@@ -427,6 +460,15 @@ def aggregate(scored: list[dict[str, Any]]) -> list[dict[str, Any]]:
         is_github_cluster = records[0]["source_name"] == "Wan-Animate-2 GitHub Commits"
         event_rule = same_event_rule(" ".join(record["raw_title"] for record in records), CONFIG)
         title = "Wan-Animate-2 repository opened and documented" if is_github_cluster else best["record"]["raw_title"]
+        if (best['record'].get('source_type') == 'financial_report'
+                and title.strip().lower() in {'interim report', 'annual report', 'quarterly report',
+                                               '2026 interim report', '2026 annual report'}
+                and best['record'].get('publisher')):
+            publisher = CONFIG.get('publisher_display_names', {}).get(
+                best['record']['publisher'], best['record']['publisher'])
+            match = re.match(r'(?:(\d{4})\s+)?(Interim|Annual|Quarterly) Report$', title, re.I)
+            report_type = {'interim': '中期报告', 'annual': '年度报告', 'quarterly': '季度报告'}[match.group(2).lower()]
+            title = f"{publisher} — {match.group(1) + '年' if match.group(1) else ''}{report_type}"
         cid = "cand_" + hashlib.sha256((title + (records[0]["published_at"] or "")).encode()).hexdigest()[:16]
         # Only source-authored title/excerpt content may determine editorial
         # type and tags. Discovery metadata is deliberately excluded.
@@ -456,7 +498,7 @@ def aggregate(scored: list[dict[str, Any]]) -> list[dict[str, Any]]:
             "negative_signals": sorted({term for item in group for term in item["soft_negative_hits"]}),
             "aggregation": {
                 "source_count": len(records),
-                "method": "fixed_repository_weekly_cluster" if is_github_cluster else ("same_event_rule" if event_rule and len(records) > 1 else ("near_title_dedupe" if len(records) > 1 else "single_source")),
+                "method": "fixed_repository_rolling_cluster" if is_github_cluster else ("same_event_rule" if event_rule and len(records) > 1 else ("near_title_dedupe" if len(records) > 1 else "single_source")),
                 "note": "多个提交仅构成一个仓库动态候选，不按多条新闻计数。" if is_github_cluster else (f"按可审计规则 {event_rule} 合并跨来源同事件。" if event_rule and len(records) > 1 else None)
             },
             "hard_gates": {
@@ -479,7 +521,7 @@ def aggregate(scored: list[dict[str, Any]]) -> list[dict[str, Any]]:
 def verification_questions(route: str, repo: bool,
                            source_types: set[str | None] | None = None) -> list[str]:
     if repo:
-        return ["仓库是否在本周正式首次开源？", "哪些提交属于能力或代码变化，而非文档维护？", "是否存在官方发布说明或模型权重？"]
+        return ["仓库是否在近7日正式首次开源？", "哪些提交属于能力或代码变化，而非文档维护？", "是否存在官方发布说明或模型权重？"]
     source_types = source_types or set()
     if "financial_report" in source_types:
         return [
@@ -689,7 +731,7 @@ def candidate_rationale(candidate: dict[str, Any]) -> str:
     if candidate.get("selection_reason") == "previously_verified_regression_sample":
         return "该信号已在真实样刊中完成二轮核验，本轮用于检验自动链路能否稳定召回。"
     if candidate["track"] == "track.fixed":
-        return "固定关注仓库在本周出现集中更新，需要确认是否构成正式开源、模型发布或能力变化。"
+        return "固定关注仓库在近7日出现集中更新，需要确认是否构成正式开源、模型发布或能力变化。"
     route_text = {
         "visual_value.evaluation": "可能补充视频/图像模型的评测维度、指标或诊断方法",
         "frontier.video_generation": "可能改变视频生成在时长、一致性、控制或生产效率上的能力边界",
@@ -790,6 +832,30 @@ def validate_llm_analyses(payload: dict[str, Any], selected: list[dict[str, Any]
     return analyses
 
 
+def _build_llm_batches(
+    selected: list[dict[str, Any]],
+    source_payload: dict[str, Any],
+    *,
+    batch_size: int,
+    max_input_chars: int,
+) -> list[list[dict[str, Any]]]:
+    """Batch small candidates while keeping long full-text items isolated."""
+    batches: list[list[dict[str, Any]]] = []
+    current: list[dict[str, Any]] = []
+    for item in selected:
+        proposed = [*current, item]
+        exceeds_count = len(proposed) > batch_size
+        exceeds_chars = bool(current) and len(_llm_input(proposed, source_payload)) > max_input_chars
+        if exceeds_count or exceeds_chars:
+            batches.append(current)
+            current = [item]
+        else:
+            current = proposed
+    if current:
+        batches.append(current)
+    return batches
+
+
 def enrich_with_llm(
     result: dict[str, Any],
     source_payload: dict[str, Any],
@@ -806,9 +872,12 @@ def enrich_with_llm(
             f"LLM candidate limit exceeded: {len(selected)} > {max_candidates}; "
             "tighten deterministic prefiltering first"
         )
-    configured_batch_size = batch_size or int(os.environ.get("SPECTRA_LLM_BATCH_SIZE", str(len(selected))))
+    configured_batch_size = batch_size or int(os.environ.get("SPECTRA_LLM_BATCH_SIZE", "3"))
     if configured_batch_size < 1:
         raise ValueError("SPECTRA_LLM_BATCH_SIZE must be at least 1")
+    max_input_chars = int(os.environ.get("SPECTRA_LLM_BATCH_INPUT_CHARS", "9000"))
+    if max_input_chars < 1000:
+        raise ValueError("SPECTRA_LLM_BATCH_INPUT_CHARS must be at least 1000")
     analyses: list[dict[str, Any]] = []
     batches: list[dict[str, Any]] = []
     completed: dict[str, dict[str, Any]] = {}
@@ -821,30 +890,66 @@ def enrich_with_llm(
     }
     source_map = {item["source_id"]: item for item in source_payload["source_records"]}
     if checkpoint_path and checkpoint_path.exists():
-        checkpoint = json.loads(checkpoint_path.read_text(encoding="utf-8"))
-        completed = {item["candidate_id"]: item for item in checkpoint.get("analyses", [])}
-        completed_fingerprints = checkpoint.get("input_fingerprints", {})
-        batches = checkpoint.get("batches", [])
-    for start in range(0, len(selected), configured_batch_size):
-        chunk = selected[start:start + configured_batch_size]
-        reusable = []
-        for item in chunk:
-            candidate_id = item["candidate_id"]
-            if candidate_id not in completed:
-                continue
-            saved_fingerprint = completed_fingerprints.get(candidate_id)
-            legacy_has_extracted_text = any(
-                (source_map.get(source_id) or {}).get("processing_status") == "text_extracted"
-                for source_id in item["source_ids"]
+        expected_model = getattr(getattr(client, "settings", None), "model", None)
+        try:
+            checkpoint = json.loads(checkpoint_path.read_text(encoding="utf-8"))
+        except (OSError, ValueError, json.JSONDecodeError):
+            checkpoint = {}
+        current_window = {
+            "start": source_payload.get("window_start"),
+            "end": source_payload.get("window_end"),
+        }
+        saved_window = checkpoint.get("source_window") or {}
+        window_compatible = True
+        if current_window["start"] and current_window["end"]:
+            window_compatible = bool(
+                saved_window.get("start") and saved_window.get("end")
+                and saved_window["end"] <= current_window["end"]
+                and saved_window["end"] >= current_window["start"]
             )
-            if saved_fingerprint == current_fingerprints[candidate_id] or (
-                saved_fingerprint is None and not legacy_has_extracted_text
-            ):
-                reusable.append(completed[candidate_id])
-        if len(reusable) == len(chunk):
-            analyses.extend(reusable)
-            print(json.dumps({"event": "llm_batch_reused", "completed": len(analyses), "total": len(selected)}, ensure_ascii=False), flush=True)
-            continue
+        checkpoint_compatible = (
+            checkpoint.get("schema_version") == "0.2"
+            and checkpoint.get("record_type") == "llm_structure_checkpoint"
+            and checkpoint.get("prompt_version") == prompt_version
+            and expected_model
+            and checkpoint.get("model") == expected_model
+            and window_compatible
+        )
+        if checkpoint_compatible:
+            completed = {item["candidate_id"]: item for item in checkpoint.get("analyses", [])}
+            completed_fingerprints = checkpoint.get("input_fingerprints", {})
+            batches = checkpoint.get("batches", [])
+        else:
+            print(json.dumps({
+                "event": "llm_checkpoint_invalidated",
+                "reason": "schema_prompt_model_or_window_mismatch",
+            }, ensure_ascii=False), flush=True)
+    reusable_by_id: dict[str, dict[str, Any]] = {}
+    pending: list[dict[str, Any]] = []
+    for item in selected:
+        candidate_id = item["candidate_id"]
+        if candidate_id in completed:
+            saved_fingerprint = completed_fingerprints.get(candidate_id)
+            if saved_fingerprint == current_fingerprints[candidate_id]:
+                reusable_by_id[candidate_id] = completed[candidate_id]
+                continue
+        pending.append(item)
+    analyses.extend(reusable_by_id.values())
+    if reusable_by_id:
+        print(json.dumps({
+            "event": "llm_checkpoint_reused",
+            "reused": len(reusable_by_id),
+            "pending": len(pending),
+            "total": len(selected),
+        }, ensure_ascii=False), flush=True)
+
+    new_batch_count = 0
+    for chunk in _build_llm_batches(
+        pending,
+        source_payload,
+        batch_size=configured_batch_size,
+        max_input_chars=max_input_chars,
+    ):
         llm_payload, metadata = client.generate_json(
             instructions=LLM_INSTRUCTIONS,
             input_text=_llm_input(chunk, source_payload),
@@ -853,14 +958,27 @@ def enrich_with_llm(
         )
         chunk_analyses = validate_llm_analyses(llm_payload, chunk)
         analyses.extend(chunk_analyses)
+        new_batch_count += 1
         batches.append({"index": len(batches) + 1, "candidate_count": len(chunk), **metadata})
         if checkpoint_path:
+            analysis_by_id = {item["candidate_id"]: item for item in analyses}
             checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
             checkpoint_path.write_text(json.dumps({
+                "schema_version": "0.2",
+                "record_type": "llm_structure_checkpoint",
                 "prompt_version": prompt_version,
+                "model": getattr(getattr(client, "settings", None), "model", None) or metadata.get("model"),
+                "source_window": {
+                    "start": source_payload.get("window_start"),
+                    "end": source_payload.get("window_end"),
+                },
                 "candidate_ids": [item["candidate_id"] for item in selected],
                 "input_fingerprints": current_fingerprints,
-                "analyses": analyses,
+                "analyses": [
+                    analysis_by_id[item["candidate_id"]]
+                    for item in selected
+                    if item["candidate_id"] in analysis_by_id
+                ],
                 "batches": batches,
             }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         print(json.dumps({
@@ -892,6 +1010,7 @@ def enrich_with_llm(
                 "该信息主要涉及人才招聘、激励或组织机制，属于公司战略；"
                 "二级主题按人才与组织归类，而非AI Agent产品。"
             )
+        analysis = reconcile_llm_route(candidate, analysis, source_map)
         candidate["deterministic_intelligence_type"] = candidate["intelligence_type"]
         candidate["intelligence_type"] = analysis["intelligence_type"]
         candidate["intelligence_type_reason"] = analysis["intelligence_type_reason"]
@@ -929,6 +1048,9 @@ def enrich_with_llm(
         "prompt_version": prompt_version,
         "candidate_count": len(selected),
         "batch_size": configured_batch_size,
+        "batch_input_char_limit": max_input_chars,
+        "reused_candidate_count": len(selected) - len(pending),
+        "new_batch_count": new_batch_count,
         "batch_count": len(batches),
         "batches": batches,
         "provider": metadata.get("provider"),
@@ -999,7 +1121,7 @@ def process(payload: dict[str, Any], config: dict[str, Any]) -> dict[str, Any]:
             "routed_before_aggregation": len(routed),
             "candidate_events_after_aggregation": len(candidates),
             "near_duplicate_records_collapsed": sum(max(0, c["aggregation"]["source_count"] - 1) for c in candidates if c["aggregation"]["method"] == "near_title_dedupe"),
-            "same_event_records_collapsed": sum(max(0, c["aggregation"]["source_count"] - 1) for c in candidates if c["aggregation"]["method"] in {"fixed_repository_weekly_cluster", "same_event_rule"}),
+            "same_event_records_collapsed": sum(max(0, c["aggregation"]["source_count"] - 1) for c in candidates if c["aggregation"]["method"] in {"fixed_repository_rolling_cluster", "same_event_rule"}),
             "selected_for_verification": len(selected),
             "feed_candidate_count": len(feed_candidates),
             "selected_by_intelligence_type": dict(Counter(c["intelligence_type"] for c in selected)),
@@ -1056,7 +1178,7 @@ def main() -> int:
                 client=create_llm_client(),
                 max_candidates=max_candidates,
                 prompt_version=llm_config.get("prompt_version", "structure.v0.2"),
-                batch_size=int(os.environ.get("SPECTRA_LLM_BATCH_SIZE", "1")),
+                batch_size=int(os.environ.get("SPECTRA_LLM_BATCH_SIZE", "3")),
                 checkpoint_path=Path(args.llm_checkpoint) if args.llm_checkpoint else None,
             )
         except (LLMConfigurationError, LLMProviderError) as exc:

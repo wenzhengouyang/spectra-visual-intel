@@ -3,6 +3,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script>
+    // The template contains fixture data; direct previews must use the rendered issue.
+    if (location.pathname.endsWith('/visual-intelligence-prototype.html')) {
+      location.replace(new URL('index.html' + location.search + location.hash, location.href).href);
+    }
+  </script>
   <title>Spectra — 视觉智能前沿</title>
   <meta name="description" content="面向AI产品策略从业者的视觉生成能力、模型前沿与产业信号。" />
   <link rel="stylesheet" href="tokens.css?v=4" />

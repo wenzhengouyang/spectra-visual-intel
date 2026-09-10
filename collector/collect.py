@@ -15,6 +15,7 @@ import io
 import json
 import os
 import re
+import signal
 import subprocess
 import sys
 import tempfile
@@ -27,6 +28,7 @@ from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any, Iterable, Optional
 from urllib.parse import parse_qsl, urlencode, urljoin, urlsplit, urlunsplit
+from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 import arxiv
@@ -119,7 +121,8 @@ def make_record(*, source: dict[str, Any], url: str, title: str, ctx: Context,
                 raw_text: Optional[str] = None, raw_excerpt: Optional[str] = None,
                 access_status: str = "success", http_status: Optional[int] = None,
                 failure_reason: Optional[str] = None, rights_scope: str = "excerpt",
-                discovery_context: Optional[str] = None) -> dict[str, Any]:
+                discovery_context: Optional[str] = None,
+                official_image_url: Optional[str] = None) -> dict[str, Any]:
     canonical = canonicalize_url(url)
     safe_title = title.strip() or "Untitled source"
     return {
@@ -136,6 +139,7 @@ def make_record(*, source: dict[str, Any], url: str, title: str, ctx: Context,
         "raw_title": safe_title,
         "raw_text": raw_text,
         "raw_excerpt": raw_excerpt,
+        "official_image_url": official_image_url,
         "published_at": iso(published_at),
         "collected_at": iso(ctx.collected_at),
         "language": language_hint(" ".join([safe_title, raw_excerpt or ""]), source.get("language", "und")),
@@ -189,6 +193,7 @@ def feed_entry_media(entry: Any) -> dict[str, Any]:
     enclosures = list(entry.get("enclosures", []) or [])
     audio_urls: list[str] = []
     transcript_urls: list[str] = []
+    image_urls: list[str] = []
 
     for link in links + enclosures:
         if not isinstance(link, dict):
@@ -200,6 +205,22 @@ def feed_entry_media(entry: Any) -> dict[str, Any]:
             audio_urls.append(href)
         if href and (relation == "transcript" or "transcript" in media_type):
             transcript_urls.append(href)
+        if href and media_type.startswith("image/"):
+            image_urls.append(href)
+
+    for key in ("media_thumbnail", "media_content"):
+        for candidate in entry.get(key, []) or []:
+            if not isinstance(candidate, dict):
+                continue
+            href = str(candidate.get("url") or candidate.get("href") or "").strip()
+            media_type = str(candidate.get("type") or "").lower()
+            if href and (key == "media_thumbnail" or not media_type or media_type.startswith("image/")):
+                image_urls.append(href)
+    image = entry.get("image") or {}
+    if isinstance(image, dict):
+        href = str(image.get("href") or image.get("url") or "").strip()
+        if href:
+            image_urls.append(href)
 
     # feedparser preserves namespaced podcast transcript elements under keys
     # that vary across feed versions. Only accept an explicit public URL.
@@ -219,12 +240,32 @@ def feed_entry_media(entry: Any) -> dict[str, Any]:
     return {
         "audio_urls": list(dict.fromkeys(audio_urls)),
         "transcript_urls": list(dict.fromkeys(transcript_urls)),
+        "image_urls": list(dict.fromkeys(image_urls)),
         "duration": str(duration).strip() if duration else None,
     }
 
 
+def retry_after_seconds(error: HTTPError, default: float, maximum: float) -> float:
+    """Return a bounded Retry-After delay for a rate-limited request."""
+    raw = error.headers.get("Retry-After") if error.headers else None
+    delay = default
+    if raw:
+        try:
+            delay = float(raw)
+        except ValueError:
+            try:
+                retry_at = parsedate_to_datetime(raw)
+                if retry_at.tzinfo is None:
+                    retry_at = retry_at.replace(tzinfo=timezone.utc)
+                delay = max(0.0, (retry_at - datetime.now(timezone.utc)).total_seconds())
+            except (TypeError, ValueError, OverflowError):
+                pass
+    return min(maximum, max(0.0, delay))
+
+
 def fetch_bytes(url: str, attempts: int = 3, timeout: int = 45,
-                headers: Optional[dict[str, str]] = None) -> bytes:
+                headers: Optional[dict[str, str]] = None,
+                max_retry_delay: float = 60.0) -> bytes:
     last_error: Optional[Exception] = None
     for attempt in range(attempts):
         try:
@@ -236,7 +277,10 @@ def fetch_bytes(url: str, attempts: int = 3, timeout: int = 45,
         except Exception as exc:
             last_error = exc
             if attempt + 1 < attempts:
-                time.sleep(1.5 * (attempt + 1))
+                backoff = min(max_retry_delay, 2.0 ** attempt)
+                if isinstance(exc, HTTPError) and exc.code == 429:
+                    backoff = retry_after_seconds(exc, backoff, max_retry_delay)
+                time.sleep(backoff)
     assert last_error is not None
     raise last_error
 
@@ -789,6 +833,9 @@ def normalize_werss_article(item: dict[str, Any], source: dict[str, Any], ctx: C
         raw_excerpt=clean_html(item.get("description")),
         rights_scope="excerpt",
         discovery_context=f"werss:{item.get('mp_id') or publisher}",
+        official_image_url=str(
+            item.get("cover") or item.get("cover_url") or item.get("image") or item.get("thumb_url") or ""
+        ).strip() or None,
     )
 
 
@@ -864,7 +911,7 @@ def collect_werss(source: dict[str, Any], ctx: Context) -> tuple[list[dict[str, 
             refresh_limit = max(0, min(int(source.get("refresh_limit", 1)), len(available_accounts)))
             if refresh_limit:
                 # Monday/Thursday runs cover complementary halves of the
-                # watchlist. The weekly anchor rotates so no publisher stays
+                # watchlist. The rolling anchor rotates so no publisher stays
                 # permanently at the edge of the selection.
                 run_date = ctx.window_end.date()
                 week_anchor = run_date.toordinal() - run_date.weekday()
@@ -1083,7 +1130,8 @@ def collect_feed(source: dict[str, Any], ctx: Context, keywords: list[str]) -> t
         records.append(make_record(source=source, url=entry.get("link", source["url"]), title=title, ctx=ctx,
                                    published_at=published, authors=authors, raw_excerpt=excerpt,
                                    rights_scope=source.get("rights_scope", "excerpt"),
-                                   discovery_context="; ".join(context_parts)))
+                                   discovery_context="; ".join(context_parts),
+                                   official_image_url=(media.get("image_urls") or [None])[0]))
     health = {
         "status": "success",
         "scanned": scanned,
@@ -1722,41 +1770,72 @@ def run(config: dict[str, Any], ctx: Context) -> dict[str, Any]:
     records: list[dict[str, Any]] = []
     checks = []
     groups = config.get("keyword_groups", {})
+    # Per-source timeout in seconds (5 minutes default)
+    source_timeout = config.get("source_timeout_seconds", 300)
+
+    def timeout_handler(signum, frame):
+        raise TimeoutError("source collection timeout")
+
     for source in config["sources"]:
         if not source.get("enabled", True):
             continue
         adapter = source["adapter"]
+        registry_id = source["registry_id"]
         keywords = groups.get(source.get("keyword_group"), [])
-        if adapter in {"rss", "github_atom"}:
-            batch, health = collect_feed(source, ctx, keywords)
-        elif adapter == "batch_index":
-            batch, health = collect_batch_index(source, ctx, keywords)
-        elif adapter == "arxiv":
-            batch, health = collect_arxiv(source, ctx)
-        elif adapter == "newscrawler":
-            batch, health = collect_newscrawler(source, ctx)
-        elif adapter == "news_extractor":
-            batch, health = collect_news_extractor(source, ctx)
-        elif adapter == "news_extractor_feed":
-            batch, health = collect_news_extractor_feed(source, ctx, keywords)
-        elif adapter == "news_extractor_inbox":
-            batch, health = collect_news_extractor_inbox(source, ctx)
-        elif adapter == "werss_api":
-            batch, health = collect_werss(source, ctx)
-        elif adapter == "official_ir_index":
-            batch, health = collect_official_ir_index(source, ctx)
-        elif adapter == "hkex_title_search":
-            batch, health = collect_hkex_title_search(source, ctx)
-        elif adapter == "sec_submissions":
-            batch, health = collect_sec_submissions(source, ctx)
-        elif adapter == "sitemap":
-            batch, health = collect_sitemap(source, ctx)
-        else:
-            batch, health = [], {"status": "failed", "error": f"Unknown adapter: {adapter}"}
-        if source.get("extract_pdf_text"):
-            health["pdf_extraction"] = enrich_pdf_records(batch, source)
-        records.extend(batch)
-        checks.append({"registry_id": source["registry_id"], "adapter": adapter, **health})
+
+        # Set alarm for this source collection
+        signal.signal(signal.SIGALRM, timeout_handler)
+        signal.alarm(source_timeout)
+
+        try:
+            if adapter in {"rss", "github_atom"}:
+                batch, health = collect_feed(source, ctx, keywords)
+            elif adapter == "batch_index":
+                batch, health = collect_batch_index(source, ctx, keywords)
+            elif adapter == "arxiv":
+                batch, health = collect_arxiv(source, ctx)
+            elif adapter == "newscrawler":
+                batch, health = collect_newscrawler(source, ctx)
+            elif adapter == "news_extractor":
+                batch, health = collect_news_extractor(source, ctx)
+            elif adapter == "news_extractor_feed":
+                batch, health = collect_news_extractor_feed(source, ctx, keywords)
+            elif adapter == "news_extractor_inbox":
+                batch, health = collect_news_extractor_inbox(source, ctx)
+            elif adapter == "werss_api":
+                batch, health = collect_werss(source, ctx)
+            elif adapter == "official_ir_index":
+                batch, health = collect_official_ir_index(source, ctx)
+            elif adapter == "hkex_title_search":
+                batch, health = collect_hkex_title_search(source, ctx)
+            elif adapter == "sec_submissions":
+                batch, health = collect_sec_submissions(source, ctx)
+            elif adapter == "sitemap":
+                batch, health = collect_sitemap(source, ctx)
+            else:
+                batch, health = [], {"status": "failed", "error": f"Unknown adapter: {adapter}"}
+
+            if source.get("extract_pdf_text"):
+                health["pdf_extraction"] = enrich_pdf_records(batch, source)
+            records.extend(batch)
+            checks.append({"registry_id": registry_id, "adapter": adapter, **health})
+        except TimeoutError:
+            # Source collection timed out, mark as failed and continue
+            batch, health = [], {
+                "status": "failed",
+                "error": f"Source collection timed out after {source_timeout}s"
+            }
+            checks.append({"registry_id": registry_id, "adapter": adapter, **health})
+        except Exception as exc:
+            # Catch any other exception to prevent one source from breaking entire collection
+            batch, health = [], {
+                "status": "failed",
+                "error": f"Source collection failed: {str(exc)[:200]}"
+            }
+            checks.append({"registry_id": registry_id, "adapter": adapter, **health})
+        finally:
+            # Cancel alarm for this source
+            signal.alarm(0)
     unique = dedupe(records)
     return {
         "schema_version": SCHEMA_VERSION,
@@ -1784,11 +1863,17 @@ def main() -> int:
     parser.add_argument("--config", default="collector/source_registry.v0.2.json")
     parser.add_argument("--output", default="collector/runs/latest.json")
     parser.add_argument("--end", help="ISO timestamp; default now")
+    parser.add_argument("--start", help="ISO timestamp; overrides --days for incremental collection")
     parser.add_argument("--days", type=int, help="Override config window_days")
     parser.add_argument(
         "--source",
         action="append",
         help="Run only the selected registry_id; repeat to select multiple sources",
+    )
+    parser.add_argument(
+        "--exclude-source",
+        action="append",
+        help="Skip a registry_id that is still in source-level cooldown; repeat as needed",
     )
     parser.add_argument("--newscrawler-command", help="Command template returning JSON on stdout; use {url} placeholder")
     args = parser.parse_args()
@@ -1802,11 +1887,19 @@ def main() -> int:
         missing = selected_ids - {item["registry_id"] for item in config["sources"]}
         if missing:
             parser.error(f"unknown source registry_id: {', '.join(sorted(missing))}")
+    if args.exclude_source:
+        excluded_ids = set(args.exclude_source)
+        config["sources"] = [item for item in config["sources"] if item["registry_id"] not in excluded_ids]
     end = datetime.fromisoformat(args.end.replace("Z", "+00:00")) if args.end else datetime.now(timezone.utc)
     if end.tzinfo is None:
         end = end.replace(tzinfo=timezone.utc)
     days = args.days or config.get("window_days", 7)
-    ctx = Context(collected_at=datetime.now(timezone.utc), window_start=end - timedelta(days=days), window_end=end, newscrawler_command=args.newscrawler_command)
+    start = datetime.fromisoformat(args.start.replace("Z", "+00:00")) if args.start else end - timedelta(days=days)
+    if start.tzinfo is None:
+        start = start.replace(tzinfo=timezone.utc)
+    if start >= end:
+        parser.error("--start must be earlier than --end")
+    ctx = Context(collected_at=datetime.now(timezone.utc), window_start=start, window_end=end, newscrawler_command=args.newscrawler_command)
     result = run(config, ctx)
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)

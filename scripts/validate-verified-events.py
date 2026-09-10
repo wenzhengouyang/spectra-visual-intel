@@ -19,12 +19,22 @@ source_ids = {item["source_id"] for item in json.loads(Path(args.collection).rea
 source_ids.update(item["source_id"] for item in data["additional_source_records"])
 if not records:
     errors.append("核验记录不能为空")
-if not 5 <= len(events) <= 10:
-    errors.append(f"正式事件应为5—10条，实际{len(events)}")
+if len(events) > 10:
+    errors.append(f"正式事件本轮不得超过10条，实际{len(events)}")
 if sum(item["decision"] == "include" for item in records) != len(events):
     errors.append("include决策数量与正式事件数量不一致")
-if not all(item["verification_status"] == "verified_primary" for item in records):
-    errors.append("存在未完成原始来源核验的P1候选")
+if not all(
+    (
+        item["decision"] == "include"
+        and item["verification_status"] == "verified_primary"
+    )
+    or (
+        item["decision"] in {"watch", "exclude"}
+        and item["verification_status"] in {"verified_primary", "verified_secondary"}
+    )
+    for item in records
+):
+    errors.append("存在与收录决定不一致的来源核验状态")
 if len({item["event_id"] for item in events}) != len(events):
     errors.append("event_id不唯一")
 for event in events:

@@ -1,0 +1,277 @@
+import json
+import tempfile
+import unittest
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+
+from collector.merge_incremental_runs import merge
+from spectra_agent.run import active_rate_limit_cooldowns, find_incremental_baseline, incremental_retry_plan, incremental_retry_source_ids
+
+
+def record(source_id, url, digest, published, title="item"):
+    return {
+        "source_id": source_id, "canonical_url": url, "content_hash": digest,
+        "published_at": published, "source_name": "source", "raw_title": title,
+        "access_status": "success",
+    }
+
+
+class IncrementalCollectionTest(unittest.TestCase):
+    def test_merge_keeps_baseline_and_prefers_delta_update(self):
+        baseline = {
+            "schema_version": "0.2", "run_id": "monday",
+            "source_checks": [{"registry_id": "feed", "status": "success"}],
+            "source_records": [
+                record("old", "https://example.com/old", "h1", "2026-08-31T01:00:00Z"),
+                record("changed-old", "https://example.com/change", "h2", "2026-09-01T01:00:00Z"),
+            ],
+        }
+        delta = {
+            "run_id": "thursday", "collected_at": "2026-09-03T02:00:00Z",
+            "window_start": "2026-08-31T02:00:00Z", "window_end": "2026-09-03T02:00:00Z",
+            "source_checks": [{"registry_id": "feed", "status": "success"}],
+            "source_records": [
+                record("changed-new", "https://example.com/change", "h3", "2026-09-02T01:00:00Z"),
+                record("new", "https://example.com/new", "h4", "2026-09-03T01:00:00Z"),
+            ],
+        }
+        result = merge(baseline, delta, None, "2026-08-27T02:00:00Z", "2026-09-03T02:00:00Z")
+        self.assertEqual({item["source_id"] for item in result["source_records"]}, {"old", "changed-new", "new"})
+        self.assertEqual(result["summary"]["baseline_records_reused"], 1)
+        self.assertEqual(result["summary"]["incremental_records"], 2)
+        self.assertEqual(result["summary"]["changed_records"], 2)
+        self.assertEqual(result["incremental"]["processing_scope"], "changed_records_only")
+
+    def test_unchanged_delta_record_keeps_baseline_and_is_not_reprocessed(self):
+        baseline = {
+            "run_id": "monday",
+            "source_checks": [{"registry_id": "feed", "status": "success"}],
+            "source_records": [
+                record("old", "https://example.com/same", "same-hash", "2026-09-01T01:00:00Z"),
+            ],
+        }
+        delta = {
+            "run_id": "thursday",
+            "collected_at": "2026-09-03T02:00:00Z",
+            "window_start": "2026-08-31T02:00:00Z",
+            "window_end": "2026-09-03T02:00:00Z",
+            "source_checks": [{"registry_id": "feed", "status": "success"}],
+            "source_records": [
+                record("duplicate", "https://example.com/same", "same-hash", "2026-09-01T01:00:00Z"),
+            ],
+        }
+        result = merge(
+            baseline,
+            delta,
+            None,
+            "2026-08-27T02:00:00Z",
+            "2026-09-03T02:00:00Z",
+        )
+        self.assertEqual(result["source_records"][0]["source_id"], "old")
+        self.assertEqual(result["summary"]["changed_records"], 0)
+        self.assertEqual(result["summary"]["unchanged_records"], 1)
+        self.assertEqual(result["incremental"]["changed_source_ids"], [])
+
+    def test_same_content_at_new_url_does_not_replace_baseline(self):
+        baseline = {
+            "run_id": "monday",
+            "source_checks": [{"registry_id": "feed", "status": "success"}],
+            "source_records": [
+                record("old", "https://example.com/original", "same-hash", "2026-09-01T01:00:00Z"),
+            ],
+        }
+        delta = {
+            "run_id": "thursday",
+            "collected_at": "2026-09-03T02:00:00Z",
+            "source_checks": [{"registry_id": "feed", "status": "success"}],
+            "source_records": [
+                record("copy", "https://mirror.example.com/copy", "same-hash", "2026-09-02T01:00:00Z"),
+            ],
+        }
+        result = merge(
+            baseline,
+            delta,
+            None,
+            "2026-08-27T02:00:00Z",
+            "2026-09-03T02:00:00Z",
+        )
+        self.assertEqual([item["source_id"] for item in result["source_records"]], ["old"])
+        self.assertEqual(result["summary"]["changed_records"], 0)
+
+    def test_full_window_retry_wins_and_is_visible(self):
+        baseline = {"run_id": "monday", "source_checks": [{"registry_id": "feed", "status": "failed"}], "source_records": []}
+        delta = {"run_id": "thursday", "collected_at": "2026-09-03T02:00:00Z", "window_start": "2026-08-31T02:00:00Z", "window_end": "2026-09-03T02:00:00Z", "source_checks": [{"registry_id": "feed", "status": "failed"}], "source_records": []}
+        retry = {"source_checks": [{"registry_id": "feed", "status": "success"}], "source_records": [record("recovered", "https://example.com/a", "h1", "2026-09-01T01:00:00Z")]}
+        result = merge(baseline, delta, retry, "2026-08-27T02:00:00Z", "2026-09-03T02:00:00Z")
+        self.assertEqual(result["source_checks"][0]["effective_status"], "recovered_by_full_window_retry")
+        self.assertEqual(result["summary"]["retry_records"], 1)
+
+    def test_full_window_retry_is_limited_to_failed_and_new_sources(self):
+        baseline = {
+            "source_checks": [
+                {"registry_id": "healthy", "status": "success"},
+                {"registry_id": "failed_before", "status": "failed"},
+            ],
+        }
+        delta = {
+            "source_checks": [
+                {"registry_id": "healthy", "status": "success"},
+                {"registry_id": "failed_before", "status": "success"},
+                {"registry_id": "failed_now", "status": "failed"},
+                {"registry_id": "new_source", "status": "success"},
+            ],
+        }
+        self.assertEqual(incremental_retry_source_ids(baseline, delta), [
+            "failed_before",
+            "failed_now",
+            "new_source",
+        ])
+
+    def test_rate_limited_source_is_cooled_instead_of_full_window_retry(self):
+        baseline = {"source_checks": []}
+        delta = {"source_checks": [{
+            "registry_id": "venturebeat", "adapter": "rss", "status": "failed",
+            "error": "HTTP Error 429: Too Many Requests",
+        }]}
+        retry, cooled = incremental_retry_plan(baseline, delta)
+        self.assertEqual(retry, [])
+        self.assertEqual(cooled, {"venturebeat": "rate_limited_429"})
+
+    def test_unavailable_werss_is_not_retried_over_full_window(self):
+        baseline = {"source_checks": [{
+            "registry_id": "werss", "adapter": "werss_api", "status": "failed",
+            "error": "connection refused",
+        }]}
+        delta = {"source_checks": [{
+            "registry_id": "werss", "adapter": "werss_api", "status": "failed",
+            "error": "WeRSS is not running",
+        }]}
+        retry, cooled = incremental_retry_plan(baseline, delta)
+        self.assertEqual(retry, [])
+        self.assertEqual(cooled, {"werss": "werss_unavailable"})
+
+    def test_recent_429_remains_in_source_cooldown(self):
+        now = datetime(2026, 9, 8, 2, tzinfo=timezone.utc)
+        collection = {
+            "collected_at": (now - timedelta(hours=3)).isoformat(),
+            "source_checks": [{
+                "registry_id": "venturebeat", "status": "failed",
+                "error": "HTTP Error 429: Too Many Requests",
+            }],
+        }
+        self.assertEqual(active_rate_limit_cooldowns(collection, now, 24), ["venturebeat"])
+        self.assertEqual(active_rate_limit_cooldowns(collection, now + timedelta(hours=22), 24), [])
+
+    def test_thursday_selects_latest_same_week_collection(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            monday = root / "monday"
+            monday.mkdir()
+            (monday / "collection.json").write_text(json.dumps({
+                "window_end": "2026-08-31T02:00:00Z",
+                "source_records": [record("old", "https://example.com/old", "h1", "2026-08-31T01:00:00Z")],
+                "source_checks": [{"registry_id": "feed", "status": "success"}],
+            }))
+            wednesday = root / "wednesday"
+            wednesday.mkdir()
+            (wednesday / "collection.json").write_text(json.dumps({
+                "window_end": "2026-09-02T02:00:00Z",
+                "source_records": [record("newer", "https://example.com/newer", "h2", "2026-09-02T01:00:00Z")],
+                "source_checks": [{"registry_id": "feed", "status": "success"}],
+            }))
+            config = {"runs_dir": str(root), "timezone": "Asia/Shanghai", "incremental_collection": {
+                "enabled": True, "baseline_weekday": 0, "incremental_weekdays": [1, 2, 3, 4, 5, 6],
+            }}
+            selected = find_incremental_baseline(config, datetime(2026, 9, 3, 2, tzinfo=timezone.utc), root / "current")
+        self.assertEqual(selected, wednesday / "collection.json")
+
+    def test_corrupt_monday_baseline_falls_back_to_full_collection(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            monday = root / "monday"
+            monday.mkdir()
+            (monday / "collection.json").write_text('{"window_end":"2026-08-31T02:00:00Z","source_records":[]}')
+            config = {"runs_dir": str(root), "timezone": "Asia/Shanghai", "incremental_collection": {
+                "enabled": True, "baseline_weekday": 0, "incremental_weekday": 3,
+            }}
+            selected = find_incremental_baseline(config, datetime(2026, 9, 3, 2, tzinfo=timezone.utc), root / "current")
+        self.assertIsNone(selected)
+
+    def test_valid_empty_monday_baseline_can_be_reused(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            monday = root / "monday"
+            monday.mkdir()
+            (monday / "collection.json").write_text(json.dumps({
+                "window_end": "2026-08-31T02:00:00Z",
+                "source_records": [],
+                "source_checks": [{"registry_id": "feed", "status": "success"}],
+            }))
+            config = {
+                "runs_dir": str(root),
+                "timezone": "Asia/Shanghai",
+                "incremental_collection": {
+                    "enabled": True,
+                    "baseline_weekday": 0,
+                    "incremental_weekday": 3,
+                },
+            }
+            selected = find_incremental_baseline(
+                config,
+                datetime(2026, 9, 3, 2, tzinfo=timezone.utc),
+                root / "current",
+            )
+        self.assertEqual(selected, monday / "collection.json")
+
+    def test_monday_uses_full_collection(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            config = {"runs_dir": str(root), "timezone": "Asia/Shanghai", "incremental_collection": {
+                "enabled": True, "baseline_weekday": 0, "incremental_weekday": 3,
+            }}
+            selected = find_incremental_baseline(config, datetime(2026, 8, 31, 2, tzinfo=timezone.utc), root / "current")
+        self.assertIsNone(selected)
+
+    def test_tuesday_reuses_monday_collection(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            monday = root / "monday"
+            monday.mkdir()
+            (monday / "collection.json").write_text(json.dumps({
+                "window_end": "2026-08-31T02:00:00Z",
+                "source_records": [],
+                "source_checks": [{"registry_id": "feed", "status": "success"}],
+            }))
+            config = {"runs_dir": str(root), "timezone": "Asia/Shanghai", "incremental_collection": {
+                "enabled": True, "baseline_weekday": 0, "incremental_weekdays": [1, 2, 3, 4, 5, 6],
+            }}
+            selected = find_incremental_baseline(
+                config,
+                datetime(2026, 9, 1, 2, tzinfo=timezone.utc),
+                root / "current",
+            )
+        self.assertEqual(selected, monday / "collection.json")
+
+    def test_previous_week_collection_is_not_reused(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            prior = root / "prior"
+            prior.mkdir()
+            (prior / "collection.json").write_text(json.dumps({
+                "window_end": "2026-08-30T02:00:00Z",
+                "source_records": [],
+                "source_checks": [{"registry_id": "feed", "status": "success"}],
+            }))
+            config = {"runs_dir": str(root), "timezone": "Asia/Shanghai", "incremental_collection": {
+                "enabled": True, "baseline_weekday": 0, "incremental_weekdays": [1, 2, 3, 4, 5, 6],
+            }}
+            selected = find_incremental_baseline(
+                config,
+                datetime(2026, 9, 1, 2, tzinfo=timezone.utc),
+                root / "current",
+            )
+        self.assertIsNone(selected)
+
+
+if __name__ == "__main__":
+    unittest.main()

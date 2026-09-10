@@ -20,14 +20,19 @@
   },
   "p1_score_threshold": 16,
   "source_type_selection_boosts": {
-    "wechat_official_account": 2
+    "wechat_official_account": 3,
+    "financial_report": 3
   },
   "source_name_selection_boosts": {
-    "机器之心": 1,
-    "新智元": 1,
-    "量子位": 1,
-    "晚点LatePost": 1,
-    "AI科技评论": 1
+    "机器之心": 3,
+    "新智元": 3,
+    "量子位": 3,
+    "晚点LatePost": 3,
+    "AI科技评论": 3,
+    "Kuaishou Technology HKEX Filings": 4
+  },
+  "publisher_display_names": {
+    "Kuaishou Technology": "快手科技"
   },
   "p2_only_source_types_before_verification": [
     "wechat_official_account",

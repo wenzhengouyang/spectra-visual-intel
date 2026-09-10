@@ -2,6 +2,51 @@
   "schema_version": "0.1",
   "covers": [
     {
+      "event_id": "evt_39d45e3610efd0f0",
+      "url": "assets/editorial/story-claude-system-prompt-v1.jpg",
+      "kind": "generated",
+      "label": "编辑配图",
+      "credit": "SPECTRA",
+      "source_url": null,
+      "generation_method": "image_model"
+    },
+    {
+      "event_id": "evt_1e49b16f1fe4ceea",
+      "url": "assets/editorial/story-octworld-v1.jpg",
+      "kind": "generated",
+      "label": "编辑配图",
+      "credit": "SPECTRA",
+      "source_url": null,
+      "generation_method": "image_model"
+    },
+    {
+      "event_id": "evt_ac49713e57aa8242",
+      "url": "assets/editorial/story-worldreward-v1.jpg",
+      "kind": "generated",
+      "label": "编辑配图",
+      "credit": "SPECTRA",
+      "source_url": null,
+      "generation_method": "image_model"
+    },
+    {
+      "event_id": "evt_9020503988ba270d",
+      "url": "assets/editorial/story-openai-wiki-disclosure-v1.jpg",
+      "kind": "generated",
+      "label": "编辑配图",
+      "credit": "SPECTRA",
+      "source_url": null,
+      "generation_method": "image_model"
+    },
+    {
+      "event_id": "evt_df39ff6b4ef46b7a",
+      "url": "assets/editorial/story-openai-coding-agents-v1.jpg",
+      "kind": "generated",
+      "label": "编辑配图",
+      "credit": "SPECTRA",
+      "source_url": null,
+      "generation_method": "image_model"
+    },
+    {
       "event_id": "evt_20260825_gemini_enterprise_legal",
       "url": "https://storage.googleapis.com/gweb-cloudblog-publish/images/Gemini_Enterprise_for_legal.max-2500x2500.jpg",
       "kind": "official",

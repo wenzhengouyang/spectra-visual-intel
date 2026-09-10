@@ -2,7 +2,8 @@ import json
 import unittest
 
 from editorial.editorial_writer import (
-    apply_revision_patches, input_for_event, source_text, validate_draft, write_drafts,
+    apply_revision_patches, core_event_readiness, input_for_event, source_text,
+    validate_draft, write_drafts,
 )
 
 
@@ -11,11 +12,29 @@ class EditorialWriterTest(unittest.TestCase):
     def supported_plan(attribution_required=False):
         return {"reader_packet": {
             "allowed_judgment": "该事件对视频模型产品化具有参考价值。",
-            "fact_units": [{
-                "claim_id": "clm_1",
-                "text": "公司文章称新模型支持十秒视频生成。",
-                "attribution_required": attribution_required,
-            }],
+            "fact_units": [
+                {
+                    "claim_id": "clm_1",
+                    "text": "公司文章称新模型支持十秒视频生成，并说明该能力面向既有产品工作流；文章同时明确了该功能属于本次产品发布范围。",
+                    "atomic_units": ["新模型支持十秒视频生成"],
+                    "evidence_context": "来源提供了对应能力说明。",
+                    "attribution_required": attribution_required,
+                },
+                {
+                    "claim_id": "clm_2",
+                    "text": "公司文章介绍了该模型的输入方式、生成环节与输出范围，并说明这些环节均属于已经发布的产品能力和当前使用范围。",
+                    "atomic_units": ["文章介绍模型工作方式"],
+                    "evidence_context": "来源解释了模型工作方式。",
+                    "attribution_required": False,
+                },
+                {
+                    "claim_id": "clm_3",
+                    "text": "公司文章将该模型定位为现有视频产品线的一项新增能力，并给出了适用对象、产品使用范围和对应工作环节。",
+                    "atomic_units": ["模型属于新增产品能力"],
+                    "evidence_context": "来源说明了产品定位。",
+                    "attribution_required": False,
+                },
+            ],
         }}
 
     @staticmethod
@@ -67,9 +86,12 @@ class EditorialWriterTest(unittest.TestCase):
             "source_name": "官方来源", "canonical_url": "https://example.com",
         }]}
 
-        payload = json.loads(input_for_event(event, plan, collection, "deep_story"))
+        payload = json.loads(input_for_event(event, plan, collection, "core_event"))
 
-        self.assertEqual(set(payload), {"event_id", "fact_units", "evidence_context", "allowed_judgment"})
+        self.assertEqual(
+            set(payload),
+            {"event_id", "fact_units", "evidence_context", "allowed_judgment", "writing_profile"},
+        )
         self.assertNotIn("audit_packet", payload)
         self.assertEqual(payload["evidence_context"], [{"claim_id": "clm_1", "text": "短证据片段"}])
         serialized = json.dumps(payload, ensure_ascii=False)
@@ -83,6 +105,57 @@ class EditorialWriterTest(unittest.TestCase):
         self.assertNotIn("旧标题", serialized)
         self.assertNotIn("frontier.video", serialized)
         self.assertNotIn("内部定位", serialized)
+
+    def test_model_input_accepts_raw_excerpt_because_only_locked_facts_are_visible(self):
+        event = {"event_id": "evt_1", "primary_source_id": "src_1"}
+        plan = {"reader_packet": {
+            "fact_units": [{
+                "claim_id": "clm_1", "text": "正式事实。",
+                "atomic_units": ["正式事实"], "evidence_context": "证据片段",
+            }],
+            "allowed_judgment": "允许判断。",
+        }}
+        collection = {"source_records": [{"source_id": "src_1", "raw_excerpt": "来源摘要"}]}
+
+        payload = json.loads(input_for_event(event, plan, collection, "core_event"))
+
+        self.assertEqual(payload["fact_units"][0]["text"], "正式事实。")
+        self.assertNotIn("来源摘要", json.dumps(payload, ensure_ascii=False))
+
+    def test_core_event_readiness_accepts_three_substantive_verified_facts(self):
+        facts = [
+            {"claim_id": f"clm_{index}", "text": "这是一条经过确认且足够具体的正式事实内容。" * 3,
+             "atomic_units": ["正式事实"], "evidence_context": "对应证据上下文"}
+            for index in range(3)
+        ]
+        result = core_event_readiness({"reader_packet": {
+            "fact_units": facts, "allowed_judgment": "允许给出克制判断。",
+        }})
+        self.assertTrue(result["ready"])
+        self.assertEqual(result["status"], "ready")
+
+    def test_core_event_readiness_does_not_require_editorial_judgment(self):
+        facts = [
+            {"claim_id": f"clm_{index}", "text": "这是一条经过确认且足够具体的正式事实内容。" * 3,
+             "atomic_units": ["正式事实"], "evidence_context": "对应证据上下文"}
+            for index in range(3)
+        ]
+        result = core_event_readiness({"reader_packet": {
+            "fact_units": facts, "allowed_judgment": "",
+        }})
+        self.assertTrue(result["ready"])
+
+    def test_core_event_readiness_demotes_sparse_event(self):
+        result = core_event_readiness({"reader_packet": {
+            "fact_units": [{
+                "claim_id": "clm_1", "text": "只有一条事实。",
+                "atomic_units": ["只有一条事实"], "evidence_context": "一条证据",
+            }],
+            "allowed_judgment": "允许判断。",
+        }})
+        self.assertFalse(result["ready"])
+        self.assertEqual(result["status"], "quick_read")
+        self.assertIn("fewer_than_3_distinct_verified_claims", result["reasons"])
 
     def test_rejects_unknown_claim(self):
         event = {"event_id": "evt_1", "claim_ids": ["clm_1"]}

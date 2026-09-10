@@ -1,6 +1,7 @@
 import importlib.util
 import json
 import sys
+import tempfile
 import unittest
 from unittest import mock
 from pathlib import Path
@@ -97,6 +98,15 @@ class ProcessorTest(unittest.TestCase):
         candidate = MODULE.aggregate([scored])[0]
         self.assertEqual(candidate["intelligence_type"], "type.industry_market")
 
+    def test_generic_financial_title_includes_issuer(self):
+        item = record("2026 Interim Report", name="Kuaishou Technology HKEX Filings",
+                      source_type="financial_report")
+        item["publisher"] = "Kuaishou Technology"
+        item["raw_excerpt"] = "Kling AI video generation revenue and company results."
+        candidate = MODULE.aggregate([MODULE.score_record(item, CONFIG)])[0]
+        self.assertEqual(candidate["canonical_title"], "快手科技 — 2026年中期报告")
+        self.assertGreaterEqual(MODULE.score_record(item, CONFIG)["score"], 12)
+
     def test_official_product_release_is_product_release(self):
         item = record("Company launches a new video generation API", name="Official", source_type="official_announcement")
         item["raw_excerpt"] = "The product release includes pricing and a new controllable video feature."
@@ -148,6 +158,42 @@ class ProcessorTest(unittest.TestCase):
                 scored = MODULE.score_record(item, CONFIG)
                 self.assertEqual(scored["primary_route"], expected_route)
                 self.assertGreaterEqual(scored["score"], CONFIG["minimum_score"])
+
+    def test_embodied_title_overrides_spurious_talent_route_from_mixed_article(self):
+        candidate = {
+            "canonical_title": "宇树机器狗被曝篡改电池标签以规避航空规定",
+            "source_ids": ["src_unitree"],
+        }
+        source_map = {
+            "src_unitree": {
+                "raw_title": "宇树机器狗电池贴假标签；月之暗面启动IPO",
+            }
+        }
+        analysis = {
+            "primary_route": "extended.talent_organization",
+            "secondary_routes": ["frontier.embodied_ai", "extended.compute_data"],
+            "intelligence_type_reason": "混合文章还包含公司动态。",
+        }
+        corrected = MODULE.reconcile_llm_route(candidate, analysis, source_map)
+        self.assertEqual(corrected["primary_route"], "frontier.embodied_ai")
+        self.assertNotIn("extended.talent_organization", corrected["secondary_routes"])
+        self.assertIn("标题主事件", corrected["intelligence_type_reason"])
+
+    def test_embodied_company_hiring_remains_talent_route(self):
+        candidate = {
+            "canonical_title": "宇树机器人团队发布招聘计划",
+            "source_ids": ["src_unitree_hiring"],
+        }
+        source_map = {
+            "src_unitree_hiring": {"raw_title": "Unitree robotics hiring and talent plan"}
+        }
+        analysis = {
+            "primary_route": "extended.talent_organization",
+            "secondary_routes": [],
+            "intelligence_type_reason": "来源讨论招聘与人才计划。",
+        }
+        unchanged = MODULE.reconcile_llm_route(candidate, analysis, source_map)
+        self.assertEqual(unchanged["primary_route"], "extended.talent_organization")
 
     def test_wechat_source_cannot_become_p1_before_original_verification(self):
         candidate = {
@@ -226,6 +272,76 @@ class ProcessorTest(unittest.TestCase):
         self.assertEqual(enriched["llm"]["status"], "completed")
         self.assertEqual(enriched["selected_candidates"][0]["llm_analysis"]["recommended_disposition"], "p1")
         self.assertEqual(enriched["selected_candidates"][0]["intelligence_type"], "type.technology_breakthrough")
+
+    def test_llm_checkpoint_reuse_does_not_resend_completed_candidate(self):
+        sources = [record("First", sid="src_first"), record("Second", sid="src_second")]
+        source_payload = {"source_records": sources}
+
+        def candidate(name):
+            return {
+                "candidate_id": f"cand_{name}", "canonical_title": name,
+                "intelligence_type": "type.technology_breakthrough",
+                "intelligence_type_signals": ["source_type:paper_report"],
+                "primary_route": "visual_value.evaluation", "secondary_routes": [],
+                "track": "track.emerging", "score": 14, "matched_signals": ["benchmark"],
+                "source_ids": [f"src_{name}"],
+            }
+
+        selected = [candidate("first"), candidate("second")]
+
+        def analysis(item):
+            return {
+                "candidate_id": item["candidate_id"], "canonical_title": item["canonical_title"],
+                "intelligence_type": "type.technology_breakthrough",
+                "intelligence_type_reason": "论文介绍了可核验的技术方法。",
+                "primary_route": "visual_value.evaluation", "secondary_routes": [],
+                "track": "track.emerging", "same_event_group": item["candidate_id"],
+                "what": "发布了新的评测方法。", "why": "可用于后续原文核验。",
+                "importance_score": 60, "novelty_score": 60, "strategy_relevance_score": 60,
+                "confidence": "medium", "proposed_claims": ["发布了评测方法"],
+                "missing_evidence": ["需核验原文"], "verification_questions": ["方法如何定义？"],
+                "recommended_disposition": "p1", "source_ids": item["source_ids"],
+                "disposition_reason": "与评测方向相关，仍需人工核验。",
+            }
+
+        class FakeClient:
+            calls = []
+            settings = type("Settings", (), {"model": "mock-model"})()
+
+            def generate_json(self, **kwargs):
+                ids = [item["candidate_id"] for item in json.loads(kwargs["input_text"])["candidates"]]
+                self.calls.append(ids)
+                by_id = {item["candidate_id"]: item for item in selected}
+                return {"analyses": [analysis(by_id[cid]) for cid in ids]}, {
+                    "provider": "mock", "model": "mock-model", "usage": {}
+                }
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            checkpoint_path = Path(temp_dir) / "checkpoint.json"
+            checkpoint_path.write_text(json.dumps({
+                "schema_version": "0.2",
+                "record_type": "llm_structure_checkpoint",
+                "prompt_version": "test.v1",
+                "model": "mock-model",
+                "source_window": {"start": None, "end": None},
+                "analyses": [analysis(selected[0])],
+                "input_fingerprints": {
+                    selected[0]["candidate_id"]: MODULE.hashlib.sha256(
+                        MODULE._llm_input([selected[0]], source_payload).encode("utf-8")
+                    ).hexdigest(),
+                },
+                "batches": [],
+            }))
+            client = FakeClient()
+            result = {"selected_candidates": selected, "summary": {}}
+            enriched = MODULE.enrich_with_llm(
+                result, source_payload, client=client, max_candidates=2,
+                prompt_version="test.v1", batch_size=3, checkpoint_path=checkpoint_path,
+            )
+
+        self.assertEqual(client.calls, [["cand_second"]])
+        self.assertEqual(enriched["llm"]["reused_candidate_count"], 1)
+        self.assertEqual(enriched["llm"]["new_batch_count"], 1)
 
     def test_llm_rejects_unknown_source_reference(self):
         selected = [{"candidate_id": "cand_test", "source_ids": ["src_allowed"]}]

@@ -12,6 +12,11 @@
 
 # testing
 /coverage
+.coverage
+.coverage.*
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 
 # next.js
 /.next/
@@ -21,6 +26,9 @@
 # misc
 .DS_Store
 *.pem
+*.bak
+*.orig
+*.swp
 
 # debug
 npm-debug.log*
@@ -48,6 +56,10 @@ yarn-error.log*
 /vendor/
 /spectra_agent/runs/
 /spectra_agent/.publish-remote/
+/spectra_agent/logs/
+/runtime/
+/.runtime/
+/data/
 /integrations/we-mp-rss/
 /collector/runs/*.json
 /processor/runs/*.json
@@ -55,5 +67,15 @@ yarn-error.log*
 /verification/*.evidence.json
 /verification/*.selection.json
 /assets/editorial/*.png
+/assets/editorial/story-auto-*.svg
 /tmp/
 /werss-wechat-qrcode.png
+
+# Local model experiments and generated QA artifacts
+/test-*.json
+/test-*.log
+/temp-*.json
+/few-shot-*.json
+/*.pre-sync-*.html
+/.publish-remote/
+/archive/

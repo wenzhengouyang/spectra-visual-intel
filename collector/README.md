@@ -6,7 +6,7 @@
 - `batch_index`：从 The Batch 官方列表页发现近一期，再把期刊正文拆成可独立追溯的单篇新闻（旧 RSS 地址已失效）；
 - `arxiv`：使用 `arxiv.py` 搜索近一周视觉、世界模型和具身论文；
 - `github_atom`：读取 GitHub Releases Atom；
-- `news_extractor_feed`：先从公开 Feed 发现本周链接，再调用已安装的 `news-extractor` Skill 提取正文并转为统一 JSON。
+- `news_extractor_feed`：先从公开 Feed 发现近7日链接，再调用已安装的 `news-extractor` Skill 提取正文并转为统一 JSON。
 - `news_extractor_inbox`：接收搜索、分享或其他连接器发现的公众号/腾讯/搜狐等文章链接，再走同一提取和标准化通道。
 - `werss_api`：从本机已授权的 WeRSS 读取固定公众号白名单，将文章元数据、摘要和原文链接直接转成统一记录。
 

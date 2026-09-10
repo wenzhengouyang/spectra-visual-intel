@@ -2,24 +2,51 @@
   "version": "0.1",
   "timezone": "Asia/Shanghai",
   "schedule": {
-    "frequency": "twice_weekly",
-    "weekdays": ["monday", "thursday"],
-    "local_time": "09:30",
+    "frequency": "daily",
+    "weekdays": ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"],
+    "local_time": "08:00",
     "window_days": 7,
     "action": "collect_structure_and_pause_for_review"
   },
+  "incremental_collection": {
+    "enabled": true,
+    "baseline_weekday": 0,
+    "incremental_weekdays": [1, 2, 3, 4, 5, 6],
+    "overlap_hours": 6,
+    "reuse_llm_checkpoint": true,
+    "full_window_retry_on_missing_or_failed_baseline_source": true,
+    "rate_limit_cooldown_hours": 24
+  },
+  "reliability": {
+    "max_automatic_attempts": 2
+  },
   "collector_python": ".venv-collector/bin/python",
   "llm_python": ".venv-llm/bin/python",
-  "p2_translation": {
+  "p2_localizer": {
     "enabled": true,
+    "required": true,
+    "model": "qwen3:8b",
+    "num_ctx": 8192,
     "batch_size": 6
   },
-  "deep_story_writer": {
+  "p1_fact_expander": {
     "enabled": true,
     "required": false,
+    "model": "qwen3:8b",
+    "num_ctx": 8192,
+    "minimum_facts": 8,
+    "maximum_facts": 12
+  },
+  "core_event_writer": {
+    "enabled": true,
+    "required": true,
     "model": "qwen3:14b",
-    "num_ctx": 16384,
-    "prompt_version": "deep_story_writer.v0.1"
+    "num_ctx": 8192,
+    "num_predict": 1200,
+    "max_attempts": 3,
+    "min_verified_fact_units": 8,
+    "generation_mode": "serial_background",
+    "prompt_version": "core_event_writer.v1.2.3"
   },
   "werss_service": {
     "enabled": true,
@@ -33,7 +60,8 @@
   },
   "processor_config": "processor/config.v0.1.json",
   "static_page": "visual-intelligence-prototype.html",
-  "runs_dir": "spectra_agent/runs",
+  "data_dir": "~/Library/Application Support/SPECTRA/data",
+  "runs_dir": "runs",
   "review_queue": {
     "max_count": 10,
     "intelligence_type_minimums": {
@@ -41,6 +69,106 @@
       "type.industry_market": 2,
       "type.company_strategy": 1
     }
+  },
+  "review_policy": {
+    "enabled": true,
+    "mode": "tiered",
+    "preserve_run_human_gate": true,
+    "minimum_consistent_sources": 2,
+    "official_source_types": [
+      "official_announcement",
+      "company_news",
+      "paper_report",
+      "public_report"
+    ],
+    "auto_lock": {
+      "enabled": true,
+      "minimum_confidence": "high",
+      "sample_rate": 0.2,
+      "sample_seed": "spectra-review-v1",
+      "allow_single_primary_source": false,
+      "maximum_model_expansion_depth": 1,
+      "allowed_intelligence_types": [
+        "type.technology_breakthrough",
+        "type.product_release",
+        "type.company_strategy"
+      ],
+      "allowed_source_types": [
+        "official_announcement",
+        "company_news",
+        "paper_report",
+        "public_report"
+      ]
+    },
+    "mandatory_review": {
+      "intelligence_types": [
+        "type.industry_market"
+      ],
+      "numeric_or_effect_claims": true,
+      "multi_source_fact_mix": true
+    }
+  },
+  "run_evaluation": {
+    "enabled": true,
+    "block_completion_on_failure": true,
+    "sample_rate": 0.25,
+    "sample_seed": 20260903,
+    "rolling_window": 3,
+    "use_llm": false,
+    "thresholds": {
+      "source_success_rate_min": 0.9,
+      "duplicate_processing_rate_max": 0.15,
+      "sample_fact_failure_rate_max": 0.05,
+      "auto_lock_post_edit_rate_max": 0.05,
+      "writer_demotion_rate_max": 0.2
+    },
+    "expansion_advice": {
+      "minimum_distinct_windows": 3,
+      "require_unchanged_strategy": true
+    }
+  },
+  "semantic_review": {
+    "enabled": true,
+    "mode": "shadow",
+    "provider": "ollama",
+    "model": "qwen3:8b",
+    "max_source_chars": 24000,
+    "max_reworks": 1,
+    "block_on_non_pass": true,
+    "automatic_approval_enabled": false
+  },
+  "image_generation": {"enabled": true, "provider": "codex_imagegen"},
+  "joint_delivery": {"enabled": true, "start_date": "2026-09-11"},
+  "publication_quality": {
+    "allow_brief_only": true,
+    "minimum_core_events": 1,
+    "core_event_min_characters": 260,
+    "industry_signal_min_characters": 220,
+    "industry_signal_min_fact_points": 3,
+    "require_generated_image_review": true,
+    "maximum_cover_duplicate_rate": 0.0
+  },
+  "local_runtime": {
+    "daily_run_prefix": "daily"
+  },
+  "local_review_notification": {
+    "enabled": true
+  },
+  "dingtalk_push": {
+    "enabled": true,
+    "local_time": "10:00",
+    "webhook_env": "DINGTALK_WEBHOOK_URL",
+    "secret_env": "DINGTALK_SECRET",
+    "require_published": true,
+    "public_url": "https://wenzhengouyang.github.io/spectra-visual-intel/",
+    "header_image_url": "https://wenzhengouyang.github.io/spectra-visual-intel/assets/dingtalk/spectra-header-v2.png"
+  },
+  "publishing": {
+    "remote": "origin",
+    "remote_url": "https://github.com/wenzhengouyang/spectra-visual-intel.git",
+    "branch": "main",
+    "require_completed_run": true,
+    "require_publication_checks": true
   },
   "minimum_formal_events": 5,
   "maximum_formal_events": 10
