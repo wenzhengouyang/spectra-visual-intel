@@ -1163,6 +1163,11 @@ def _create_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
                 int((config.get("incremental_collection") or {}).get("overlap_hours", 6)),
             )
             delta_start = baseline_end - timedelta(hours=overlap_hours)
+            local_end = target_end.astimezone(ZoneInfo(config.get('timezone', 'Asia/Shanghai')))
+            if local_end.weekday() == 0:
+                weekend_start = (local_end - timedelta(days=2)).replace(hour=0, minute=0, second=0, microsecond=0)
+                delta_start = min(delta_start, weekend_start.astimezone(timezone.utc))
+                update_state(run_dir, weekend_digest_start=weekend_start.isoformat())
             desired_start = target_end - timedelta(days=int(args.days or config.get("schedule", {}).get("window_days", 7)))
             delta_path = run_dir / "collection.incremental.json"
             check_werss_service(config, run_dir)

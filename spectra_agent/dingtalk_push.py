@@ -142,6 +142,11 @@ def readiness(run_dir: Path, require_published: bool) -> tuple[bool, str, dict]:
     return True, "ready", read_json(issue_path)
 
 
+def weekend_delivery_blocked(run_id, local_now):
+    issue_day = datetime.strptime(run_id[-8:], '%Y%m%d').date() if re.fullmatch(r'daily-\d{8}', run_id) else local_now.date()
+    return local_now.weekday() >= 5 or issue_day.weekday() >= 5
+
+
 def main() -> int:
     # Serialize scheduled retries and the immediate completion callback.
     options = argparse.ArgumentParser(add_help=False)
@@ -174,6 +179,9 @@ def deliver() -> int:
     run_dir = runs_dir(config) / run_id
     state_path = run_dir / "run.json"
     state = read_json(state_path) if state_path.exists() else {}
+    # Gate actual send day AND issue day: weekend issues are never back-sent on Monday.
+    local_now = datetime.now(ZoneInfo(timezone_name))
+    weekend = weekend_delivery_blocked(run_id, local_now)
     release = config.get("joint_delivery") or {}
     joint = (release.get("enabled", False)
              and run_id >= "daily-" + str(release.get("start_date", "9999-12-31")).replace("-", ""))
@@ -183,6 +191,9 @@ def deliver() -> int:
                 "--config", args.config, "--run-id", run_id, "--push", "--confirm"], cwd=ROOT)
             if result.returncode:
                 return result.returncode
+        if weekend:
+            print(json.dumps({'status': 'weekend_web_only', 'run_id': run_id}))
+            return 0
         # Pages deployment is asynchronous: never send a link to yesterday's issue.
         try:
             with urllib.request.urlopen(str(settings.get("public_url") or ""), timeout=20) as response:
@@ -193,6 +204,9 @@ def deliver() -> int:
         except (urllib.error.URLError, TimeoutError):
             print(json.dumps({"status": "waiting_for_web", "run_id": run_id}))
             return 0
+    if weekend:
+        print(json.dumps({'status': 'weekend_dingtalk_blocked', 'run_id': run_id}))
+        return 0
     ready, reason, issue = readiness(run_dir, bool(settings.get("require_published", True)))
     if not settings.get("enabled", False):
         print(json.dumps({"status": "disabled", "run_id": run_id}, ensure_ascii=False))

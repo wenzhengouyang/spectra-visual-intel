@@ -19,7 +19,10 @@ with (run_dir / 'stage-notification.lock').open('a') as lock:
     record = {'attempts': prior.get('attempts', 0) + 1, 'status': 'attempting'}
     records[key] = record
     path.write_text(json.dumps(records, ensure_ascii=False, indent=2))
-    message = f"SPECTRA {run_dir.name}：{stage}\n{state.get('paused_reason') or state.get('error') or '需要处理'}\n请在工作台查看，提示不会代替审核批准。"
+    mode_path = run_dir / 'early-publication-mode.json'
+    mode = json.loads(mode_path.read_text()) if mode_path.exists() else {}
+    coverage_note = '\n采集覆盖不足，请决定是否有限发布；默认不放行。' if mode.get('recommended_mode') == 'limited_requires_approval' else ''
+    message = f"SPECTRA {run_dir.name}：{stage}\n{state.get('paused_reason') or state.get('error') or '需要处理'}{coverage_note}\n请在工作台查看，提示不会代替审核批准。"
     script = 'on run argv\ndisplay dialog (item 1 of argv) with title "SPECTRA 阶段提醒" buttons {"稍后", "打开工作台"} default button "打开工作台" giving up after 30\nif button returned of result is "打开工作台" then open location "http://127.0.0.1:8010/"\nend run'
     try:
         result = subprocess.run(['/usr/bin/osascript', '-e', script, message], timeout=40, capture_output=True)
