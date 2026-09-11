@@ -54,6 +54,7 @@ if __name__ == '__main__':
             config['joint_delivery'] = json.loads(source.read_text()).get('joint_delivery', {})
             config['image_generation'] = json.loads(source.read_text()).get('image_generation', {})
             config.setdefault('dingtalk_push', {})['header_image_url'] = json.loads(source.read_text())['dingtalk_push']['header_image_url']
+            config['dingtalk_push']['enabled'] = json.loads(source.read_text())['dingtalk_push']['enabled']
             target.write_text(json.dumps(config, ensure_ascii=False, indent=2) + '\n')
             checks[name] = {'writer_prompt_version': version}
             continue

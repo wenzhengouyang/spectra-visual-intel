@@ -155,7 +155,7 @@
     "enabled": true
   },
   "dingtalk_push": {
-    "enabled": true,
+    "enabled": false,
     "local_time": "10:00",
     "webhook_env": "DINGTALK_WEBHOOK_URL",
     "secret_env": "DINGTALK_SECRET",

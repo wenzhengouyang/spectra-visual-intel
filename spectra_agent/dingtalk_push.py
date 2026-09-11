@@ -185,13 +185,13 @@ def deliver() -> int:
     release = config.get("joint_delivery") or {}
     joint = (release.get("enabled", False)
              and run_id >= "daily-" + str(release.get("start_date", "9999-12-31")).replace("-", ""))
-    if joint and settings.get("enabled") and not args.dry_run and state.get("status") == "completed":
+    if joint and not args.dry_run and state.get("status") == "completed":
         if state.get("publish_status") != "published":
             result = subprocess.run([sys.executable, str(ROOT / "spectra_agent/publish_run.py"),
                 "--config", args.config, "--run-id", run_id, "--push", "--confirm"], cwd=ROOT)
             if result.returncode:
                 return result.returncode
-        if weekend:
+        if weekend or not settings.get('enabled', False):
             print(json.dumps({'status': 'weekend_web_only', 'run_id': run_id}))
             return 0
         # Pages deployment is asynchronous: never send a link to yesterday's issue.
