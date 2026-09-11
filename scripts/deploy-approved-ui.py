@@ -13,7 +13,7 @@ FILES = ['visual-intelligence-prototype.html', 'app/accepted-ui.css',
          'app/accepted-ux.js', 'app/share.js', 'app/visual-library.js', 'spectra_agent/run.py',
          'spectra_agent/dingtalk_push.py', 'scripts/refresh-ui.py']
 FILES += ['index.html', 'app/account.js', 'app/account.css', 'spectra_agent/account_server.py']
-FILES += ['editorial/build-editorial-issue.py', 'processor/p2_localizer.py']
+FILES += ['editorial/build-editorial-issue.py', 'processor/p2_localizer.py', 'spectra_agent/morning_guards.py', 'spectra_agent/stage_notification.py']
 FILES += ['spectra_agent/publication_quality.py']
 FILES += ['scripts/validate-editorial-issue.py']
 FILES += ['spectra_agent/image_generation.py']

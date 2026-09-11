@@ -219,6 +219,16 @@ def update_state(run_dir: Path, **changes: Any) -> dict[str, Any]:
             # Write back to file with lock held
             write_json(state_path, state)
             sync_issue_workflow(run_dir, state)
+            if current != previous:
+                if state.get('current_stage') in {'image_generation', 'image_preview'}:
+                    from spectra_agent.morning_guards import image_window
+                    image_window(run_dir)
+                if state.get('status') in {'waiting_for_review', 'waiting_for_editorial_review', 'failed'}:
+                    try:
+                        subprocess.Popen([sys.executable, str(ROOT / 'spectra_agent/stage_notification.py'), str(run_dir)],
+                                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+                    except OSError as exc:
+                        log(run_dir, 'notification', 'launch_failed', error=str(exc))
             return state
         finally:
             fcntl.flock(f.fileno(), fcntl.LOCK_UN)
@@ -1137,6 +1147,8 @@ def _create_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
     write_json(latest_pointer(config), {"run_id": run_id})
     try:
         update_state(run_dir, status="running", current_stage="collect")
+        from spectra_agent.morning_guards import network_preflight, coverage_decision
+        network_preflight(run_dir)
         collection_path = run_dir / "collection.json"
         target_end = parse_timestamp(args.end) if args.end else datetime.now(timezone.utc)
         baseline_path = find_incremental_baseline(config, target_end, run_dir)
@@ -1250,6 +1262,10 @@ def _create_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
             )
         annotate_display_window(collection_path, config)
         command(run_dir, "validate_collection", [sys.executable, "scripts/validate-source-run.py", str(collection_path)])
+
+        mode = coverage_decision(run_dir, read_json(collection_path),
+            float((config.get('run_evaluation') or {}).get('thresholds', {}).get('source_success_rate_min', .9)))
+        update_state(run_dir, recommended_publication_mode=mode['recommended_mode'])
 
         radar_config = config.get("discussion_radar") or {"enabled": True, "required": False}
         if radar_config.get("enabled", True):
