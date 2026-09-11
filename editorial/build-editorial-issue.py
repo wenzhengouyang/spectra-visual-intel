@@ -1489,6 +1489,8 @@ def main() -> None:
     ][:5]
     candidate_core_event_ids = publication_core_event_ids(selected_top_event_ids, writer_drafts, draft_bundle)
     selected_set = set(candidate_core_event_ids)
+    override_path = Path(args.output).parent / 'editorial-tier-overrides.json'
+    tier_overrides = json.loads(override_path.read_text()) if override_path.exists() else {}
     for story in stories:
         event_id = story["primary_event_id"]
         event = dict(events[event_id])
@@ -1501,6 +1503,10 @@ def main() -> None:
             selected=event_id in selected_set,
             writer_draft=event_id in writer_drafts,
         ))
+        decision = tier_overrides.get(story['story_id'], {})
+        if decision.get('decision') == 'demote_to_brief' and decision.get('reviewed_by'):
+            story.update(editorial_tier='brief', article_type='brief', content_format='source_brief')
+            story['revision_note'] = decision.get('reason', '人工审核降为普通短讯')
         if story["editorial_tier"] == "brief":
             story["article_body"]["reading_mode"] = "source_brief"
         if story["article_type"] != "core_event":

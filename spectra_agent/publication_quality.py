@@ -83,7 +83,7 @@ def publication_quality_errors(
                 errors.append(f"{item_id}.{field}: {','.join(language_errors)}")
         if item.get("story_id"):
             body = story_text(item)
-            language_errors = reader_language_errors(body, "body")
+            language_errors = reader_language_errors(body, "dek" if item.get("editorial_tier") == "brief" else "body")
             if language_errors:
                 errors.append(f"{item_id}.body: {','.join(language_errors)}")
             if item.get("article_type") == "core_event":

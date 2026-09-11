@@ -117,9 +117,10 @@ def main() -> None:
             require(article_section and article_section.get("text"), f"{story['story_id']} article_body.{field} is required")
             require(set(article_section.get("claim_ids", [])) <= claim_ids, f"{story['story_id']} article_body.{field} has unknown claims")
         full_text = str((article.get("full_text") or {}).get("text") or "")
+        language_field = 'dek' if story.get('editorial_tier') == 'brief' else 'body'
         require(
-            not reader_language_errors(full_text, "body"),
-            f"{story['story_id']} body must be complete Chinese prose: {reader_language_errors(full_text, 'body')}",
+            not reader_language_errors(full_text, language_field),
+            f"{story['story_id']} body must be complete Chinese prose: {reader_language_errors(full_text, language_field)}",
         )
         judgment = article.get("judgment") or {}
         # A core event may omit judgment when the locked fact package does not
