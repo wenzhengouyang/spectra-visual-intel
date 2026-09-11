@@ -31,6 +31,29 @@ class ImageGenerationTest(unittest.TestCase):
             (root/'editorial-issue.json').write_text(json.dumps({'editorial_stories':[{'article_type':'brief'}]}))
             self.assertEqual(prepare(root)['jobs'],[])
 
+    def test_rebuilt_issue_restores_only_fingerprint_bound_review(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            issue = {'editorial_stories': [{'story_id': 'a', 'article_type': 'core_event', 'headline': '模型更新'}]}
+            (root/'editorial-issue.json').write_text(json.dumps(issue))
+            (root/'rolling-digest.html').write_text('<!-- ISSUE_DATA_START --><script></script><!-- ISSUE_DATA_END -->')
+            prepare(root)
+            asset = root/'original.png'
+            Image.new('RGB', (1280,720)).save(asset)
+            install(root,'a',asset,origin='official',source_url='https://example.com',credit='Author',usage_basis='Permission')
+            job = prepare(root)['jobs'][0]
+            cover = json.loads((root/'editorial-issue.json').read_text())['editorial_stories'][0]['cover_image']
+            (root/'image-review.json').write_text(json.dumps({'reviewed_by':'Agent','approved_covers':[
+                {'story_id':'a','url':job['url'],'asset_fingerprint':job['sha256'],
+                 'semantic_motif':cover['semantic_motif'],'semantic_match':'passed'}]}))
+            (root/'editorial-issue.json').write_text(json.dumps(issue))
+            prepare(root)
+            restored = json.loads((root/'editorial-issue.json').read_text())['editorial_stories'][0]['cover_image']
+            self.assertEqual(restored['review_status'], 'approved')
+            issue['editorial_stories'][0]['headline'] = '另一个模型更新'
+            (root/'editorial-issue.json').write_text(json.dumps(issue))
+            self.assertEqual(prepare(root)['jobs'][0]['status'], 'pending')
+
     def test_original_image_is_reused_without_generation(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

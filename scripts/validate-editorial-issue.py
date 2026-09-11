@@ -86,10 +86,14 @@ def main() -> None:
         if story.get("article_type") == "core_event":
             require(cover_url.startswith("https://") or cover_url.startswith("assets/"), f"{story['story_id']} needs a safe cover image")
             require(
-                cover.get("kind") in {"official", "editorial", "editorial_fallback", "editorial_diagram", "generated"},
+                cover.get("kind") in {"source", "official", "editorial", "editorial_fallback", "editorial_diagram", "generated"},
                 f"{story['story_id']} has invalid cover kind",
             )
             require(bool(cover.get("label")), f"{story['story_id']} needs a cover label")
+            if cover.get("kind") == "source":
+                require(str(cover.get("source_url") or "").startswith("https://")
+                        and bool(cover.get("credit")) and bool(cover.get("usage_basis")),
+                        f"{story['story_id']} source cover needs provenance")
             if cover_url.startswith("assets/"):
                 require((asset_root / cover_url).exists(), f"{story['story_id']} local cover asset is missing")
         require(story["what_happened"]["statement_type"] == "fact", f"{story['story_id']} WHAT must be fact")

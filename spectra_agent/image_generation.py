@@ -15,6 +15,9 @@ def prepare(run_dir: Path) -> dict:
     path = run_dir / 'image-generation.json'
     prior = json.loads(path.read_text()) if path.exists() else {}
     old = {job['story_id']: job for job in prior.get('jobs', [])}
+    review_path = run_dir / 'image-review.json'
+    review = json.loads(review_path.read_text()) if review_path.exists() else {}
+    approved = {item['story_id']: item for item in review.get('approved_covers', [])}
     jobs = []
     for story in issue.get('editorial_stories', []):
         if not requires_cover(story):
@@ -41,6 +44,14 @@ def prepare(run_dir: Path) -> dict:
             restored = make_cover(story, job)
             if cover.get('review_status') == 'approved' and cover.get('asset_fingerprint') == job['sha256']:
                 restored.update({key: cover[key] for key in ('review_status', 'asset_fingerprint', 'reviewed_at', 'reviewed_by') if key in cover})
+            else:
+                decision = approved.get(story['story_id'], {})
+                if (decision.get('url') == job['url']
+                        and decision.get('asset_fingerprint') == job['sha256']
+                        and decision.get('semantic_motif') == restored.get('semantic_motif')
+                        and decision.get('semantic_match') == 'passed'):
+                    restored.update(review_status='approved', asset_fingerprint=job['sha256'],
+                                    reviewed_at=review.get('reviewed_at'), reviewed_by=review.get('reviewed_by'))
             story['cover_image'] = restored
         jobs.append(job)
     result = {'run_id': run_dir.name, 'status': 'pending' if any(j['status'] != 'generated' for j in jobs) else 'completed', 'jobs': jobs}
