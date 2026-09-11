@@ -1818,6 +1818,19 @@ def _resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
             return 2
         update_state(run_dir, pending_image_story_ids=[])
         issue = read_json(issue_path)
+        release_path = run_dir / 'limited-release-approval.json'
+        release = read_json(release_path) if release_path.exists() else {}
+        limited_release = (release.get('run_id') == run_dir.name
+                           and release.get('approved_by') == 'user'
+                           and release.get('allowed_failed_checks') == ['source_success_rate']
+                           and bool(release.get('disclosure')))
+        if limited_release:
+            issue['issue']['rolling_thesis'] = release['disclosure']
+            issue['issue']['thesis_dek'] = release['disclosure']
+            issue['issue']['release_mode'] = 'limited_source_coverage'
+            write_json(issue_path, issue)
+            from spectra_agent.image_review import embed_issue
+            embed_issue(static_draft, issue)
         command(run_dir, "validate_issue", [sys.executable, "scripts/validate-editorial-issue.py", "--editorial", str(issue_path), "--verified", str(verified_path), "--config", str(resolve_config(args.config)[0])])
         validate_static_package(run_dir, static_draft, issue)
         reader_quality_errors = publication_quality_errors(issue, config, asset_root=run_dir)
@@ -1869,7 +1882,10 @@ def _resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
                 allow_expand=evaluation["rolling_advice"]["allow_expand"],
                 failed_checks=evaluation["failed_checks"],
             )
-            if evaluation["status"] == "fail" and evaluation_config.get("block_completion_on_failure", False):
+            coverage_exception = limited_release and set(evaluation['failed_checks']) == {'source_success_rate'}
+            if coverage_exception:
+                log(run_dir, 'run_evaluation', 'user_approved_limited_release', approval=str(release_path))
+            if evaluation["status"] == "fail" and evaluation_config.get("block_completion_on_failure", False) and not coverage_exception:
                 raise WorkflowError(
                     "run evaluation failed and block_completion_on_failure is enabled: "
                     + ", ".join(evaluation["failed_checks"])
