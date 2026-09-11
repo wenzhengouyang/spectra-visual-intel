@@ -106,7 +106,7 @@ def resolve_public(url, allowed_local_origins=()):
     except queue.Empty:
         raise TimeoutError("DNS resolution timed out") from None
     if isinstance(addresses, Exception):
-        raise BoundaryError("DNS resolution failed") from None
+        raise BoundaryError(f"DNS resolution failed for {host}: {type(addresses).__name__} errno={getattr(addresses, 'errno', None)}; check network and execution permissions") from addresses
     if not addresses:
         raise BoundaryError("DNS returned no addresses")
     for _, _, _, _, address in addresses:
