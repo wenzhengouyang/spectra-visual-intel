@@ -9,6 +9,7 @@ from pathlib import Path
 p = argparse.ArgumentParser()
 p.add_argument('--run-dir', required=True, type=Path)
 p.add_argument('--output', required=True, type=Path)
+p.add_argument('--evaluate-only', action='store_true')
 a = p.parse_args()
 prior = json.loads((a.run_dir / 'collection.json').read_text())
 # Fail once at the environment boundary instead of emitting dozens of source failures.
@@ -28,7 +29,7 @@ cmd = [sys.executable, 'collector/collect.py', '--output', str(a.output),
 for source in selected:
     cmd.extend(['--source', source])
 print(json.dumps({'recovery_sources': selected, 'published_run_unchanged': True}), flush=True)
-code = subprocess.call(cmd)
+code = 0 if a.evaluate_only else subprocess.call(cmd)
 if code == 0:
     result = json.loads(a.output.read_text())
     recovery_checks = {s['registry_id']: s for s in result['source_checks']}
