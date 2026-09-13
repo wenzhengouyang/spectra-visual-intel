@@ -1,0 +1,11 @@
+const fs = require('fs');
+const path = require('path');
+const dir = __dirname;
+const file = path.join(dir, 'overview-preview-v3.html');
+const base = fs.readFileSync(path.join(dir, 'overview-preview-v2.html'), 'utf8').match(/<style>([\s\S]*?)<\/style>/)[1];
+const css = ['orbit-v3.css', 'orbit-depth.css'].map(f => fs.readFileSync(path.join(dir, f), 'utf8')).join('\n');
+const js = fs.readFileSync(path.join(dir, 'orbit-v3.js'), 'utf8');
+let html = fs.readFileSync(file, 'utf8');
+html = html.replace(/<style>[\s\S]*?<\/style>/, () => '<style>' + base + '\n' + css + '\n</style>');
+html = html.replace(/\/\/ BlueYard-inspired progressive disclosure;[\s\S]*?<\/script>/, () => js + '\n</script>');
+fs.writeFileSync(file, html);
