@@ -478,7 +478,8 @@
       document.getElementById('publishCount').textContent = `${workflowLabel} · 今日新增 ${bundle.issue.today_new_count ?? bundle.issue.total_intelligence_count} · 近7日累计 ${bundle.issue.rolling_window_count ?? bundle.issue.total_intelligence_count}`;
       document.getElementById('issuePeriod').textContent = `${formatDay(bundle.issue.period_start)} — ${formatDay(bundle.issue.period_end)}`;
       document.getElementById('updatedAt').textContent = `更新于 ${updated.toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false})}`;
-      document.getElementById('trendCount').textContent = `${bundle.presentation.trend_radar.length}条趋势 · ${bundle.issue.story_count}个事件支撑`;
+      const trendCountNode = document.getElementById('trendCount');
+      if (trendCountNode) trendCountNode.textContent = `${bundle.presentation.trend_radar.length}条趋势 · ${bundle.issue.story_count}个事件支撑`;
       document.getElementById('timelineCount').textContent = `共 ${String(bundle.issue.total_intelligence_count || bundle.issue.story_count).padStart(2,'0')} 条 ↗`;
       const displayedCoreEventCount = bundle.issue.core_event_count || 0;
       if (!displayedCoreEventCount && bundle.issue.total_intelligence_count > 0) {
