@@ -54,18 +54,6 @@
       <div class="period-row"><div class="period-switch"><button>‹</button><strong id="issuePeriod">—</strong><button>›</button></div><div class="status-row"><span class="demo-badge">REAL SAMPLE</span><span id="updatedAt">更新时间加载中</span><span class="reviewed">● 原文核验</span></div></div>
 
       <div class="overview-main" data-platform-view="overview">
-      <section class="dashboard-grid" id="trend-radar">
-        <article class="signal-radar panel-card">
-          <div class="panel-heading"><div><span class="section-kicker">TREND RADAR</span><h2>趋势雷达 · 近7日判断</h2></div><div class="legend"><span id="trendCount">趋势加载中</span></div></div>
-          <div class="trend-one-line"><span>近7日趋势</span><strong id="trendOneLine">正在形成趋势判断…</strong></div>
-          <div class="trend-scatter-shell">
-            <div class="trend-y-label">战略影响 ↑</div>
-            <div class="trend-scatter" id="radarPlot" aria-label="趋势成熟度与战略影响散点图"></div>
-            <div class="trend-x-label">成熟度 / 落地确定性 →</div>
-          </div>
-          <div class="trend-focus-summary" id="radarSummary"></div>
-        </article>
-      </section>
 
       <section class="timeline-panel panel-card" id="rolling-timeline">
         <div class="panel-heading"><div><span class="section-kicker">ROLLING TIMELINE</span><h2>近7日关键事件</h2></div><button class="text-button" id="timelineCount">事件加载中</button></div>
@@ -511,7 +499,7 @@
       const thesisDekNode = document.getElementById('thesisDek');
       if (rollingThesisNode) rollingThesisNode.textContent = thesisLead;
       if (thesisDekNode) thesisDekNode.textContent = [thesisDetail, bundle.issue.thesis_dek].filter(Boolean).join(' ');
-      renderTimeline(); renderRadar(); renderFilters(); renderEditorial();
+      renderTimeline(); renderFilters(); renderEditorial();
       document.getElementById('search').addEventListener('input', event => { if (event.target.value.trim() && document.body.dataset.currentView === 'ideas') showView('selection', false); renderStoryGroups(); }); document.getElementById('focus').addEventListener('change', renderStoryGroups);
       document.getElementById('primaryFilters').addEventListener('click', event => { const trigger = event.target.closest('[data-primary-filter]'); if (!trigger) return; primaryFilter = trigger.dataset.primaryFilter; secondaryFilter = 'all'; refreshBrowse(); });
       document.getElementById('advancedFilterToggle').addEventListener('click', event => { const panel = document.getElementById('advancedFilterPanel'); const willOpen = panel.hidden; panel.hidden = !willOpen; event.currentTarget.setAttribute('aria-expanded', String(willOpen)); });
