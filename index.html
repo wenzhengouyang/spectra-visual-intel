@@ -53,13 +53,6 @@
 
       <div class="period-row"><div class="period-switch"><button>‹</button><strong id="issuePeriod">—</strong><button>›</button></div><div class="status-row"><span class="demo-badge">REAL SAMPLE</span><span id="updatedAt">更新时间加载中</span><span class="reviewed">● 原文核验</span></div></div>
 
-      <section class="thesis-card" data-platform-view="overview">
-        <div class="thesis-label"><span>ROLLING THESIS</span><b>编辑判断 · 基于已核验事件</b></div>
-        <div class="thesis-content">
-          <div class="thesis-copy"><span class="thesis-kicker">近7日主判断</span><h2 id="rollingThesis">正在加载本期判断…</h2><p id="thesisDek"></p></div>
-        </div><div class="thesis-glow"></div>
-      </section>
-
       <div class="overview-main" data-platform-view="overview">
       <section class="dashboard-grid" id="trend-radar">
         <article class="signal-radar panel-card">
@@ -514,8 +507,10 @@
       const thesisBreak = thesisText.search(/[；。]/);
       const thesisLead = thesisBreak >= 0 ? thesisText.slice(0, thesisBreak) : thesisText;
       const thesisDetail = thesisBreak >= 0 ? thesisText.slice(thesisBreak + 1).trim() : '';
-      document.getElementById('rollingThesis').textContent = thesisLead;
-      document.getElementById('thesisDek').textContent = [thesisDetail, bundle.issue.thesis_dek].filter(Boolean).join(' ');
+      const rollingThesisNode = document.getElementById('rollingThesis');
+      const thesisDekNode = document.getElementById('thesisDek');
+      if (rollingThesisNode) rollingThesisNode.textContent = thesisLead;
+      if (thesisDekNode) thesisDekNode.textContent = [thesisDetail, bundle.issue.thesis_dek].filter(Boolean).join(' ');
       renderTimeline(); renderRadar(); renderFilters(); renderEditorial();
       document.getElementById('search').addEventListener('input', event => { if (event.target.value.trim() && document.body.dataset.currentView === 'ideas') showView('selection', false); renderStoryGroups(); }); document.getElementById('focus').addEventListener('change', renderStoryGroups);
       document.getElementById('primaryFilters').addEventListener('click', event => { const trigger = event.target.closest('[data-primary-filter]'); if (!trigger) return; primaryFilter = trigger.dataset.primaryFilter; secondaryFilter = 'all'; refreshBrowse(); });
@@ -538,7 +533,7 @@
       document.querySelectorAll('.nav-item[data-view-target]').forEach(item => item.addEventListener('click', () => showView(item.dataset.viewTarget)));
       showView('overview', false);
     }
-    start().catch(error => { document.getElementById('rollingThesis').textContent = '数据加载失败，请刷新页面重试。'; console.error(error); });
+    start().catch(error => { const node = document.getElementById('rollingThesis'); if (node) node.textContent = '数据加载失败，请刷新页面重试。'; console.error(error); });
   </script>
 </body>
 </html>
