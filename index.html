@@ -408,6 +408,8 @@
       const coreEvents = filtered.filter(story => story.article_type === 'core_event' || story.editorial_tier === 'industry_signal');
       const formalBriefs = filtered.filter(story => story.editorial_tier === 'brief');
       const briefs = bundle.news_briefs.filter(storyMatches);
+      const chronologicalBriefs = [...formalBriefs, ...briefs]
+        .sort((left, right) => String(right.published_at || '').localeCompare(String(left.published_at || '')));
       const hasAny = coreEvents.length > 0 || formalBriefs.length > 0 || briefs.length > 0;
       document.getElementById('coreEventCount').textContent = `${coreEvents.length} 个`;
       document.getElementById('briefCount').textContent = `${formalBriefs.length + briefs.length} 条`;
@@ -416,7 +418,9 @@
       const interestEmpty = mineOnly && interests.length === 0;
       const emptyCopy = interestEmpty ? '尚未建立关注档案。请在上方选择关注领域，完成后这里才会出现个性化情报。' : '当前筛选下暂无内容';
       document.getElementById('coreEventIndex').innerHTML = coreEvents.map(story => storyCard(story, bundle.editorial_stories.indexOf(story))).join('') || `<div class="empty-search interest-empty">${emptyCopy}</div>`;
-      document.getElementById('briefIndex').innerHTML = formalBriefs.map(briefCard).join('') + briefs.map(newsBriefCard).join('') || (interestEmpty ? '' : '<div class="empty-search">当前页签暂无短讯</div>');
+      document.getElementById('briefIndex').innerHTML = chronologicalBriefs
+        .map(item => item.story_id ? briefCard(item) : newsBriefCard(item)).join('')
+        || (interestEmpty ? '' : '<div class="empty-search">当前页签暂无短讯</div>');
       document.querySelectorAll('[data-story-card]').forEach(card => card.classList.toggle('active', card.dataset.storyCard === selectedStoryId));
     }
 
