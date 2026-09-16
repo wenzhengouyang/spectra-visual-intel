@@ -1,0 +1,2633 @@
+{
+  "checkedAt": "2026-09-13",
+  "categories": [
+    {
+      "id": "general",
+      "name": "通用与多模态",
+      "hint": "对话 · 推理 · 视觉理解"
+    },
+    {
+      "id": "image",
+      "name": "图像生成",
+      "hint": "生成 · 编辑 · 视觉资产"
+    },
+    {
+      "id": "video",
+      "name": "视频生成",
+      "hint": "视频创作 · 音画生成"
+    },
+    {
+      "id": "world",
+      "name": "世界与空间",
+      "hint": "世界模型 · 3D · 具身智能"
+    },
+    {
+      "id": "coding",
+      "name": "编程与 Agent",
+      "hint": "代码开发 · 自主执行"
+    },
+    {
+      "id": "work",
+      "name": "工作 AI",
+      "hint": "文档 · 知识 · 会议 · 工作流"
+    }
+  ],
+  "models": [
+    {
+      "id": "happyhorse",
+      "name": "HappyHorse",
+      "company": "阿里巴巴",
+      "category": "video",
+      "kind": "视频模型系列",
+      "summary": "支持文本生成视频、首帧图生视频与参考图生视频；不同任务使用独立 API 型号。",
+      "versions": [
+        [
+          "happyhorse-1.1-t2v",
+          null
+        ],
+        [
+          "happyhorse-1.1-r2v",
+          null
+        ],
+        [
+          "happyhorse-1.0-i2v",
+          null
+        ],
+        [
+          "happyhorse-1.1-i2v",
+          null,
+          "官方文档列出；可用性以服务端为准",
+          "https://help.aliyun.com/zh/model-studio/models"
+        ],
+        [
+          "happyhorse-1.0-video-edit",
+          null,
+          "官方文档列出；可用性以服务端为准",
+          "https://help.aliyun.com/zh/model-studio/models"
+        ]
+      ],
+      "source": "https://www.alibabacloud.com/help/en/model-studio/happyhorse-text-to-video-api-reference",
+      "sourceLabel": "阿里云 HappyHorse 官方 API 文档",
+      "extraSource": "https://help.aliyun.com/en/model-studio/happyhorse-reference-to-video-api-reference",
+      "note": "归属由阿里集团公告佐证。API 文档更新时间不是模型发布日期；未据第三方同名网站认定开源或排名。",
+      "access": [
+        "API"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "happyhorse-1.1-t2v",
+      "currentVersionStatus": "已确认版本摘录",
+      "releaseDate": null,
+      "releaseDateStatus": "官方发布日期待核实"
+    },
+    {
+      "id": "happyoyster",
+      "name": "HappyOyster",
+      "company": "阿里巴巴",
+      "category": "world",
+      "kind": "交互式世界模型",
+      "summary": "面向实时创作与交互的生成式世界模型；与输出固定视频片段的 HappyHorse 分开建档。",
+      "versions": [],
+      "source": "https://www1.hkexnews.hk/listedco/listconews/sehk/2026/0520/2026052001340.pdf",
+      "sourceLabel": "阿里集团公告 · 港交所披露",
+      "note": "公告确认名称、归属及定位；当前开放范围、具体版本及性能尚未逐项核实。",
+      "access": [
+        "研究预览"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "系列/研究项目持续更新（官方未给出单一当前版本号）",
+      "currentVersionStatus": "官方未采用单一当前版本号",
+      "releaseDate": null,
+      "releaseDateStatus": "官方未披露统一发布日期"
+    },
+    {
+      "id": "qwen-vl",
+      "name": "Qwen-VL",
+      "company": "阿里巴巴",
+      "category": "general",
+      "kind": "视觉语言模型分支",
+      "summary": "面向图像问答、文字读取与视觉定位等理解任务；是 Qwen 的视觉分支，不是文生图模型。",
+      "versions": [
+        [
+          "Qwen-VL（系列）",
+          null,
+          "官方系列存在；当前主要版本待目录专项核对",
+          "https://help.aliyun.com/zh/model-studio/models"
+        ]
+      ],
+      "source": "https://arxiv.org/abs/2308.12966",
+      "sourceLabel": "Qwen-VL 作者论文",
+      "note": "历史论文确认系列定位，不表示当前最新版本；与 Qwen 母系列存在包含关系，目录条目数不等于独立基础模型数。",
+      "access": [
+        "开放权重/可下载",
+        "API"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "Qwen-VL（系列）",
+      "currentVersionStatus": "已确认版本摘录",
+      "releaseDate": null,
+      "releaseDateStatus": "官方发布日期未披露或待核实"
+    },
+    {
+      "id": "qwen-coder",
+      "name": "Qwen-Coder",
+      "company": "阿里巴巴",
+      "category": "coding",
+      "kind": "代码模型分支",
+      "summary": "代码生成与补全模型分支；区别于使用模型执行任务的 Qwen Code 工具。",
+      "versions": [
+        [
+          "Qwen3-Coder-Next",
+          null,
+          "阿里云官方 Coding Plan 列出",
+          "https://help.aliyun.com/zh/model-studio/coding-plan"
+        ]
+      ],
+      "source": "https://help.aliyun.com/zh/model-studio/qwen-coder",
+      "sourceLabel": "阿里云 Qwen-Coder 文档",
+      "note": "当前文档建议使用新的通用模型替代；保留系列档案，不将其默认推荐为最新选择。",
+      "access": [
+        "开放权重/可下载",
+        "API"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "Qwen3-Coder-Next",
+      "currentVersionStatus": "已确认版本摘录",
+      "releaseDate": null,
+      "releaseDateStatus": "官方发布日期未披露或待核实"
+    },
+    {
+      "id": "z-image",
+      "name": "Z-Image",
+      "company": "阿里巴巴",
+      "category": "image",
+      "kind": "图像生成模型系列",
+      "summary": "采用单流扩散架构的图像生成模型，关注生成效率；与 Qwen-Image 分别建档。",
+      "versions": [
+        [
+          "z-image-turbo",
+          null,
+          "阿里云官方资产中心列出",
+          "https://help.aliyun.com/zh/model-studio/asset-center"
+        ]
+      ],
+      "source": "https://tongyi-mai.github.io/Z-Image-blog/",
+      "sourceLabel": "通义 MAI 官方项目介绍",
+      "access": [
+        "开放权重/可下载"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "z-image-turbo",
+      "currentVersionStatus": "已确认版本摘录",
+      "releaseDate": null,
+      "releaseDateStatus": "官方发布日期未披露或待核实"
+    },
+    {
+      "id": "lingma",
+      "name": "通义灵码",
+      "company": "阿里巴巴",
+      "category": "coding",
+      "kind": "编程助手产品",
+      "summary": "提供代码续写、工程问答及单元测试辅助等开发能力；产品功能与底层模型分开记录。",
+      "versions": [],
+      "source": "https://lingma.aliyun.com/",
+      "sourceLabel": "通义灵码官网",
+      "access": [
+        "网页/App/桌面产品"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "持续更新产品（无统一公开版本号）",
+      "currentVersionStatus": "官方产品持续更新",
+      "releaseDate": null,
+      "releaseDateStatus": "未采用统一模型发布日期"
+    },
+    {
+      "id": "tingwu",
+      "name": "通义听悟",
+      "company": "阿里巴巴",
+      "category": "work",
+      "kind": "音视频工作助手",
+      "summary": "转写与分析音视频，提炼摘要、章节、发言总结和待办，适用于会议与资料整理。",
+      "versions": [],
+      "source": "https://help.aliyun.com/zh/tingwu/",
+      "sourceLabel": "阿里云听悟官方文档",
+      "access": [
+        "网页/App/桌面产品"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "持续更新产品（无统一公开版本号）",
+      "currentVersionStatus": "官方产品持续更新",
+      "releaseDate": null,
+      "releaseDateStatus": "未采用统一模型发布日期"
+    },
+    {
+      "id": "dingtalk-ai",
+      "name": "钉钉 AI 助理",
+      "company": "钉钉",
+      "category": "work",
+      "kind": "企业助理产品",
+      "summary": "面向工作场景的个性化 AI 助理入口；不是单一基础模型。",
+      "versions": [],
+      "source": "https://page.dingtalk.com/wow/dingtalk/default/dingtalk/AIzhuli",
+      "sourceLabel": "钉钉 AI 助理官方介绍",
+      "note": "仅为产品目录，不连接钉钉账号、不启用推送；具体版本、权限与套餐需另行确认。",
+      "access": [
+        "网页/App/桌面产品",
+        "企业服务"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "持续更新产品（无统一公开版本号）",
+      "currentVersionStatus": "官方产品持续更新",
+      "releaseDate": null,
+      "releaseDateStatus": "未采用统一模型发布日期"
+    },
+    {
+      "id": "jimeng",
+      "name": "即梦 AI",
+      "company": "字节跳动",
+      "category": "video",
+      "kind": "图像与视频创作产品",
+      "summary": "提供文字或图片驱动的图像、视频创作及首尾帧控制；与 Seedream、Seedance 底层模型分开记录。",
+      "versions": [],
+      "source": "https://www.jimeng.com/",
+      "sourceLabel": "即梦 AI 官方介绍",
+      "extraSource": "https://jimeng.jianying.com/developer",
+      "note": "按主入口放在视频分类，同时具备图像能力；不重复创建第二份产品档案。",
+      "access": [
+        "网页/App/桌面产品"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "持续更新产品（无统一公开版本号）",
+      "currentVersionStatus": "官方产品持续更新",
+      "releaseDate": null,
+      "releaseDateStatus": "未采用统一模型发布日期"
+    },
+    {
+      "id": "trae",
+      "name": "TRAE",
+      "company": "字节跳动",
+      "category": "coding",
+      "kind": "AI IDE 产品",
+      "summary": "在 IDE 中提供 AI 编程与任务执行能力，支持不同开发模式；不是基础模型名称。",
+      "versions": [],
+      "source": "https://docs.trae.cn/ide_what-is-trae-code",
+      "sourceLabel": "TRAE 官方产品文档",
+      "extraSource": "https://github.com/bytedance/trae-agent",
+      "note": "TRAE 产品与开源 trae-agent 组件不是同一发布物；不把组件版本当作 IDE 版本。",
+      "access": [
+        "网页/App/桌面产品"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "持续更新产品（无统一公开版本号）",
+      "currentVersionStatus": "官方产品持续更新",
+      "releaseDate": null,
+      "releaseDateStatus": "未采用统一模型发布日期"
+    },
+    {
+      "id": "hy-video",
+      "name": "HunyuanVideo",
+      "company": "腾讯",
+      "category": "video",
+      "kind": "视频生成模型系列",
+      "summary": "面向视频生成的混元模型线；开源模型与云端 API 服务的版本需分别核对。",
+      "versions": [
+        [
+          "HunyuanVideo-1.5",
+          null
+        ]
+      ],
+      "source": "https://github.com/Tencent-Hunyuan/HunyuanVideo-1.5",
+      "sourceLabel": "腾讯混元官方代码仓库",
+      "access": [
+        "开放权重/可下载"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "HunyuanVideo-1.5",
+      "currentVersionStatus": "已确认版本摘录",
+      "releaseDate": null,
+      "releaseDateStatus": "官方发布日期待核实"
+    },
+    {
+      "id": "cogview",
+      "name": "CogView",
+      "company": "智谱",
+      "category": "image",
+      "kind": "图像生成模型系列",
+      "summary": "根据文本生成图像，已核对版本支持中英文字生成与多种分辨率输出。",
+      "versions": [
+        [
+          "CogView-4",
+          null
+        ]
+      ],
+      "source": "https://docs.bigmodel.cn/cn/guide/models/image-generation/cogview-4",
+      "sourceLabel": "智谱 CogView 官方文档",
+      "access": [
+        "开放权重/可下载",
+        "API"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "CogView-4",
+      "currentVersionStatus": "已确认版本摘录",
+      "releaseDate": null,
+      "releaseDateStatus": "官方发布日期待核实"
+    },
+    {
+      "id": "cogvideox",
+      "name": "CogVideoX",
+      "company": "智谱",
+      "category": "video",
+      "kind": "视频生成模型系列",
+      "summary": "支持文本、图像及首尾帧条件下的视频生成；具体时长与分辨率以版本文档为准。",
+      "versions": [
+        [
+          "CogVideoX-3",
+          null
+        ]
+      ],
+      "source": "https://docs.bigmodel.cn/cn/guide/models/video-generation/cogvideox-3",
+      "sourceLabel": "智谱 CogVideoX 官方文档",
+      "access": [
+        "开放权重/可下载",
+        "API"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "CogVideoX-3",
+      "currentVersionStatus": "已确认版本摘录",
+      "releaseDate": null,
+      "releaseDateStatus": "官方发布日期待核实"
+    },
+    {
+      "id": "vidu",
+      "name": "Vidu",
+      "company": "生数科技",
+      "category": "video",
+      "kind": "视频生成模型系列",
+      "summary": "支持文生视频、图生视频和多主体参考生成，关注生成内容的一致性与控制。",
+      "versions": [
+        [
+          "Vidu Q3",
+          null,
+          "官方文档列出；可用性以服务端为准",
+          "https://platform.vidu.cn/docs/model-map"
+        ],
+        [
+          "Vidu Q2",
+          null,
+          "官方文档列出；可用性以服务端为准",
+          "https://platform.vidu.cn/docs/model-map"
+        ],
+        [
+          "Vidu Q1",
+          null,
+          "官方文档列出；可用性以服务端为准",
+          "https://platform.vidu.cn/docs/model-map"
+        ],
+        [
+          "Vidu 2.0",
+          null,
+          "官方文档列出；可用性以服务端为准",
+          "https://platform.vidu.cn/docs/model-map"
+        ]
+      ],
+      "source": "https://platform.vidu.cn/docs/introduction",
+      "sourceLabel": "生数 Vidu 官方平台介绍",
+      "note": "虽然其他平台也提供 Vidu API，研发归属仍为生数科技；不归入 API 经销平台旗下。",
+      "access": [
+        "API"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "Vidu Q3",
+      "currentVersionStatus": "已确认版本摘录",
+      "releaseDate": null,
+      "releaseDateStatus": "官方发布日期待核实"
+    },
+    {
+      "id": "pangu",
+      "name": "盘古",
+      "company": "华为",
+      "category": "general",
+      "kind": "行业模型体系",
+      "summary": "包含语言、视觉等基础能力及行业应用层次；不是仅面向聊天的单一模型。",
+      "versions": [],
+      "source": "https://www.huaweicloud.com/intl/zh-cn/product/pangu.html",
+      "sourceLabel": "华为云盘古官方介绍",
+      "access": [
+        "API"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "系列/研究项目持续更新（官方未给出单一当前版本号）",
+      "currentVersionStatus": "官方未采用单一当前版本号",
+      "releaseDate": null,
+      "releaseDateStatus": "官方未披露统一发布日期"
+    },
+    {
+      "id": "sensenova",
+      "name": "日日新 SenseNova",
+      "company": "商汤",
+      "category": "general",
+      "kind": "多模态模型体系",
+      "summary": "涵盖语言、图像生成等模型能力；具体空间智能与生成分支需要分别查看。",
+      "versions": [],
+      "source": "https://www.sensetime.com/cn/search",
+      "sourceLabel": "商汤官方模型体系介绍",
+      "extraSource": "https://largemodel.sensetime.com/",
+      "access": [
+        "API"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "系列/研究项目持续更新（官方未给出单一当前版本号）",
+      "currentVersionStatus": "官方未采用单一当前版本号",
+      "releaseDate": null,
+      "releaseDateStatus": "官方未披露统一发布日期"
+    },
+    {
+      "id": "sensenova-si",
+      "name": "SenseNova-SI",
+      "company": "商汤",
+      "category": "world",
+      "kind": "空间理解模型分支",
+      "summary": "面向空间理解与推理任务；不把空间理解能力等同于可交互世界生成。",
+      "versions": [],
+      "source": "https://www.sensetime.com/hk/research/",
+      "sourceLabel": "商汤官方研究目录",
+      "note": "属于日日新体系的空间智能分支；不作未经独立核实的性能排名。",
+      "access": [
+        "官方公开资料入口；具体开放方式待核实"
+      ],
+      "accessStatus": "待专项核实",
+      "currentVersion": "系列/研究项目持续更新（官方未给出单一当前版本号）",
+      "currentVersionStatus": "官方未采用单一当前版本号",
+      "releaseDate": null,
+      "releaseDateStatus": "官方未披露统一发布日期"
+    },
+    {
+      "id": "spark",
+      "name": "讯飞星火",
+      "company": "科大讯飞",
+      "category": "general",
+      "kind": "语言与推理模型系列",
+      "summary": "面向推理、文本生成与语言理解等任务；企业服务与模型系列分别管理。",
+      "versions": [
+        [
+          "Spark X1",
+          null
+        ]
+      ],
+      "source": "https://spark-aicc.iflytek.com/aicc-portal/",
+      "sourceLabel": "科大讯飞星火智算官方介绍",
+      "access": [
+        "API"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "Spark X1",
+      "currentVersionStatus": "已确认版本摘录",
+      "releaseDate": null,
+      "releaseDateStatus": "官方发布日期待核实"
+    },
+    {
+      "id": "step",
+      "name": "Step",
+      "company": "阶跃星辰",
+      "category": "general",
+      "kind": "多模态模型系列",
+      "summary": "覆盖语言、多模态理解及 Agent 工作流；具体输入能力依版本而定。",
+      "versions": [
+        [
+          "Step 3.7 Flash",
+          null
+        ],
+        [
+          "Step 3.5 Flash",
+          null
+        ]
+      ],
+      "source": "https://www.stepfun.com/",
+      "sourceLabel": "阶跃星辰官方模型目录",
+      "access": [
+        "API"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "Step 3.7 Flash",
+      "currentVersionStatus": "已确认版本摘录",
+      "releaseDate": null,
+      "releaseDateStatus": "官方发布日期待核实"
+    },
+    {
+      "id": "step-assistant",
+      "name": "阶跃 AI",
+      "company": "阶跃星辰",
+      "category": "work",
+      "kind": "知识工作助手产品",
+      "summary": "提供检索、知识库问答与创作等工作入口；与 Step 模型系列分别建档。",
+      "versions": [],
+      "source": "https://chat.stepfun.com/",
+      "sourceLabel": "阶跃 AI 官方产品入口",
+      "access": [
+        "网页/App/桌面产品"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "持续更新产品（无统一公开版本号）",
+      "currentVersionStatus": "官方产品持续更新",
+      "releaseDate": null,
+      "releaseDateStatus": "未采用统一模型发布日期"
+    },
+    {
+      "id": "gpt",
+      "name": "GPT",
+      "company": "OpenAI",
+      "category": "general",
+      "region": "global",
+      "kind": "模型系列",
+      "summary": "通用语言与多模态模型系列；ChatGPT 是使用模型的产品，Codex 是编程 Agent。",
+      "versions": [
+        [
+          "GPT-6 Astra",
+          null
+        ],
+        [
+          "GPT-5.6 Sol",
+          null
+        ]
+      ],
+      "source": "https://developers.openai.com/api/docs/guides/latest-model",
+      "sourceLabel": "OpenAI 官方模型说明",
+      "access": [
+        "API"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "GPT-6 Astra",
+      "currentVersionStatus": "已确认版本摘录",
+      "releaseDate": null,
+      "releaseDateStatus": "官方发布日期待核实"
+    },
+    {
+      "id": "qwen-code",
+      "name": "Qwen Code",
+      "company": "阿里巴巴",
+      "category": "coding",
+      "kind": "编程 Agent 产品",
+      "summary": "面向终端的开源编程 Agent，为 Qwen 系列模型优化；与模型权重版本分开管理。",
+      "versions": [],
+      "source": "https://qwen.ai/qwencode",
+      "sourceLabel": "Qwen Code 官方介绍",
+      "access": [
+        "网页/App/桌面产品"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "持续更新产品（无统一公开版本号）",
+      "currentVersionStatus": "官方产品持续更新",
+      "releaseDate": null,
+      "releaseDateStatus": "未采用统一模型发布日期"
+    },
+    {
+      "id": "qwen",
+      "name": "通义千问 Qwen",
+      "company": "阿里巴巴",
+      "category": "general",
+      "kind": "模型系列",
+      "summary": "覆盖语言、推理与多模态任务；具体能力以所选模型为准。",
+      "versions": [
+        [
+          "Qwen3.8-Max-0902",
+          "2026-09-02"
+        ],
+        [
+          "qwen3.8-max",
+          null,
+          "官方文档列出；可用性以服务端为准",
+          "https://help.aliyun.com/zh/model-studio/models"
+        ],
+        [
+          "qwen3.7-plus",
+          null,
+          "官方文档列出；可用性以服务端为准",
+          "https://help.aliyun.com/zh/model-studio/models"
+        ],
+        [
+          "qwen3.8-flash",
+          null,
+          "官方文档列出；可用性以服务端为准",
+          "https://help.aliyun.com/zh/model-studio/models"
+        ],
+        [
+          "qwen3.5-omni-plus",
+          null,
+          "官方文档列出；可用性以服务端为准",
+          "https://help.aliyun.com/zh/model-studio/models"
+        ]
+      ],
+      "source": "https://docs.qwencloud.com/changelog/models",
+      "sourceLabel": "QwenCloud 模型更新日志",
+      "update": "2026-09-02",
+      "change": "官方记录了 Max 快照更新，涉及编程、Agent 与视觉理解。",
+      "access": [
+        "开放权重/可下载",
+        "API"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "Qwen3.8-Max-0902",
+      "currentVersionStatus": "已确认版本摘录",
+      "releaseDate": "2026-09-02",
+      "releaseDateStatus": "已确认官方日期"
+    },
+    {
+      "id": "seed",
+      "name": "豆包 Seed",
+      "company": "字节跳动",
+      "category": "general",
+      "kind": "模型系列",
+      "summary": "提供通用多模态理解、推理和面向 Coding、Agent 的模型选择。",
+      "versions": [
+        [
+          "Doubao-Seed-2.1-Turbo",
+          null
+        ],
+        [
+          "Doubao-Seed-Evolving",
+          null
+        ]
+      ],
+      "source": "https://www.volcengine.com/product/doubao",
+      "sourceLabel": "火山引擎 · 豆包模型目录",
+      "note": "豆包是产品与品牌名称；Seed 是其模型系列之一，不能把 App 更新当成模型发布。",
+      "access": [
+        "API"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "Doubao-Seed-2.1-Turbo",
+      "currentVersionStatus": "已确认版本摘录",
+      "releaseDate": null,
+      "releaseDateStatus": "官方发布日期待核实"
+    },
+    {
+      "id": "deepseek",
+      "name": "DeepSeek",
+      "company": "深度求索",
+      "category": "general",
+      "kind": "模型系列",
+      "summary": "通用语言与推理模型；官方 V4-Pro 说明重点提及 Agent 能力。",
+      "versions": [
+        [
+          "DeepSeek-V4-Pro",
+          null
+        ],
+        [
+          "DeepSeek-V4",
+          "2026-04-24"
+        ],
+        [
+          "DeepSeek-V3.2",
+          "2025-12-01"
+        ],
+        [
+          "deepseek-v4-flash",
+          null,
+          "官方文档列出；可用性以服务端为准",
+          "https://api-docs.deepseek.com/api/list-models"
+        ]
+      ],
+      "source": "https://www.deepseek.com/en/transparency/",
+      "sourceLabel": "DeepSeek 透明度中心",
+      "extraSource": "https://www.deepseek.com/en/",
+      "note": "V4 系列日期不能替代 V4-Pro 正式版的发布日期，后者未在本预览中确认。",
+      "access": [
+        "开放权重/可下载",
+        "API"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "DeepSeek-V4-Pro",
+      "currentVersionStatus": "已确认版本摘录",
+      "releaseDate": null,
+      "releaseDateStatus": "官方发布日期待核实"
+    },
+    {
+      "id": "kimi",
+      "name": "Kimi",
+      "company": "月之暗面",
+      "category": "general",
+      "kind": "模型系列",
+      "summary": "支持长文本、多模态推理与 Agent 任务；产品入口与 API 能力范围需要分别确认。",
+      "versions": [
+        [
+          "Kimi K3",
+          "2026-07-16"
+        ],
+        [
+          "Kimi K2.6",
+          "2026-04-20"
+        ]
+      ],
+      "source": "https://www.kimi.ai/help/agent/agent-overview",
+      "sourceLabel": "Kimi 官方 Agent 介绍",
+      "note": "Kimi 同时是助手产品名称，此档案记录其底层模型；Kimi Code 单独归入编程工具。",
+      "access": [
+        "API"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "Kimi K3",
+      "currentVersionStatus": "已确认版本摘录",
+      "releaseDate": "2026-07-16",
+      "releaseDateStatus": "已确认官方日期"
+    },
+    {
+      "id": "hunyuan",
+      "name": "腾讯混元",
+      "company": "腾讯",
+      "category": "general",
+      "kind": "模型系列",
+      "summary": "通用模型、图像、视频和 3D 模型分属不同能力线；不合并为一个版本。",
+      "versions": [],
+      "source": "https://hunyuan.tencent.com",
+      "sourceLabel": "混元官网入口",
+      "pending": true,
+      "note": "官网读取超时，本条仅保留目录入口。通用模型版本与能力介绍待进一步核实。",
+      "access": [
+        "开放权重/可下载",
+        "API"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "系列/研究项目持续更新（官方未给出单一当前版本号）",
+      "currentVersionStatus": "官方未采用单一当前版本号",
+      "releaseDate": null,
+      "releaseDateStatus": "官方未披露统一发布日期"
+    },
+    {
+      "id": "ernie",
+      "name": "文心 ERNIE",
+      "company": "百度",
+      "category": "general",
+      "kind": "模型系列",
+      "summary": "覆盖语言与多模态任务，开放模型与云端服务版本分别管理。",
+      "versions": [
+        [
+          "ERNIE 5.1",
+          null
+        ],
+        [
+          "ERNIE 4.5",
+          null
+        ]
+      ],
+      "source": "https://cloud.baidu.com/product/model.html",
+      "sourceLabel": "百度智能云模型目录",
+      "access": [
+        "API"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "ERNIE 5.1",
+      "currentVersionStatus": "已确认版本摘录",
+      "releaseDate": null,
+      "releaseDateStatus": "官方发布日期待核实"
+    },
+    {
+      "id": "glm",
+      "name": "GLM",
+      "company": "智谱",
+      "category": "general",
+      "kind": "模型系列",
+      "summary": "面向推理、编程与 Agent 任务；视觉模型分支须单独查看输入支持。",
+      "versions": [
+        [
+          "GLM-5.2",
+          null
+        ],
+        [
+          "GLM-5.1",
+          null,
+          "官方文档列出；可用性以服务端为准",
+          "https://docs.bigmodel.cn/cn/guide/start/concept-param"
+        ],
+        [
+          "GLM-5",
+          null,
+          "官方文档列出；可用性以服务端为准",
+          "https://docs.bigmodel.cn/cn/guide/start/concept-param"
+        ],
+        [
+          "GLM-5-Turbo",
+          null,
+          "官方文档列出；可用性以服务端为准",
+          "https://docs.bigmodel.cn/cn/guide/start/concept-param"
+        ],
+        [
+          "GLM-5v-Turbo",
+          null,
+          "官方文档列出；可用性以服务端为准",
+          "https://docs.bigmodel.cn/cn/guide/start/concept-param"
+        ],
+        [
+          "GLM-4.7",
+          null,
+          "官方文档列出；可用性以服务端为准",
+          "https://docs.bigmodel.cn/cn/guide/start/concept-param"
+        ],
+        [
+          "GLM-4.6",
+          null,
+          "官方文档列出；可用性以服务端为准",
+          "https://docs.bigmodel.cn/cn/guide/start/concept-param"
+        ],
+        [
+          "GLM-4.6V",
+          null,
+          "官方文档列出；可用性以服务端为准",
+          "https://docs.bigmodel.cn/cn/guide/start/concept-param"
+        ],
+        [
+          "GLM-4.5",
+          null,
+          "官方文档列出；可用性以服务端为准",
+          "https://docs.bigmodel.cn/cn/guide/start/concept-param"
+        ],
+        [
+          "GLM-4.5V",
+          null,
+          "官方文档列出；可用性以服务端为准",
+          "https://docs.bigmodel.cn/cn/guide/start/concept-param"
+        ]
+      ],
+      "source": "https://docs.bigmodel.cn/cn/guide/models/text/glm-5.2",
+      "sourceLabel": "智谱模型文档",
+      "access": [
+        "开放权重/可下载",
+        "API"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "GLM-5.2",
+      "currentVersionStatus": "已确认版本摘录",
+      "releaseDate": null,
+      "releaseDateStatus": "官方发布日期待核实"
+    },
+    {
+      "id": "minimax",
+      "name": "MiniMax",
+      "company": "MiniMax",
+      "category": "general",
+      "kind": "模型系列",
+      "summary": "覆盖多模态理解与生成，同时面向编程、Agent 和长上下文任务。",
+      "versions": [
+        [
+          "MiniMax H3",
+          null
+        ],
+        [
+          "MiniMax-M2.5",
+          null,
+          "官方历史发布记录",
+          "https://platform.minimaxi.com/docs/release-notes/models"
+        ],
+        [
+          "MiniMax-M2.5-highspeed",
+          null,
+          "官方历史发布记录",
+          "https://platform.minimaxi.com/docs/release-notes/models"
+        ]
+      ],
+      "source": "https://minimax-h3.space.minimaxi.com/",
+      "sourceLabel": "MiniMax H3 官方介绍",
+      "access": [
+        "开放权重/可下载",
+        "API"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "MiniMax H3",
+      "currentVersionStatus": "已确认版本摘录",
+      "releaseDate": null,
+      "releaseDateStatus": "官方发布日期待核实"
+    },
+    {
+      "id": "claude",
+      "name": "Claude",
+      "company": "Anthropic",
+      "category": "general",
+      "region": "global",
+      "kind": "模型系列",
+      "summary": "语言、推理与编程能力按具体版本区分。Claude Code 是工具，不是同名基座模型。",
+      "versions": [
+        [
+          "Claude Opus 5",
+          "2026-07-24",
+          "Anthropic 官方发布",
+          "https://www.anthropic.com/news"
+        ],
+        [
+          "Claude Sonnet 5",
+          "2026-06-30",
+          "Anthropic 官方发布",
+          "https://www.anthropic.com/news"
+        ]
+      ],
+      "source": "https://www.anthropic.com/news",
+      "sourceLabel": "Anthropic 官方发布目录",
+      "access": [
+        "API"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "Claude Opus 5",
+      "currentVersionStatus": "已确认版本摘录",
+      "releaseDate": "2026-07-24",
+      "releaseDateStatus": "已确认官方日期"
+    },
+    {
+      "id": "gemini",
+      "name": "Gemini",
+      "company": "Google DeepMind",
+      "category": "general",
+      "region": "global",
+      "kind": "模型系列",
+      "summary": "多模态模型系列；具体输入、上下文与推理能力由版本决定。",
+      "versions": [
+        [
+          "Gemini 3.8 Flash",
+          "2026-09-02",
+          "Google DeepMind 模型卡更新日期",
+          "https://deepmind.google/models/model-cards/"
+        ],
+        [
+          "Gemini 3.7 Flash",
+          "2026-08-13",
+          "Google DeepMind 模型卡更新日期",
+          "https://deepmind.google/models/model-cards/"
+        ],
+        [
+          "Gemini 3.5 Flash",
+          "2026-05-19",
+          "Google DeepMind 模型卡更新日期",
+          "https://deepmind.google/models/model-cards/"
+        ]
+      ],
+      "source": "https://deepmind.google/models/model-cards/",
+      "sourceLabel": "Google DeepMind 官方模型卡目录",
+      "access": [
+        "API"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "Gemini 3.8 Flash",
+      "currentVersionStatus": "已确认版本摘录",
+      "releaseDate": "2026-09-02",
+      "releaseDateStatus": "已确认官方日期"
+    },
+    {
+      "id": "qwen-image",
+      "name": "Qwen-Image",
+      "company": "阿里巴巴",
+      "category": "image",
+      "kind": "模型系列",
+      "summary": "官方强调复杂内容编排、细节表现与文字渲染；生成与编辑能力按版本查看。",
+      "versions": [
+        [
+          "Qwen-Image-3.0",
+          "2026-07-21"
+        ],
+        [
+          "Qwen-Image-2.0",
+          "2026-02-10"
+        ],
+        [
+          "qwen-image-3.0-pro",
+          null,
+          "官方文档列出；可用性以服务端为准",
+          "https://help.aliyun.com/zh/model-studio/models"
+        ]
+      ],
+      "source": "https://qwen.ai/blog?id=qwen-image-3.0",
+      "sourceLabel": "Qwen-Image-3.0 官方发布",
+      "extraSource": "https://qwen.ai/blog?id=qwen-image-2.0",
+      "access": [
+        "开放权重/可下载",
+        "API"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "Qwen-Image-3.0",
+      "currentVersionStatus": "已确认版本摘录",
+      "releaseDate": "2026-07-21",
+      "releaseDateStatus": "已确认官方日期"
+    },
+    {
+      "id": "seedream",
+      "name": "Seedream",
+      "company": "字节跳动",
+      "category": "image",
+      "kind": "模型系列",
+      "summary": "根据文字或参考图像生成、编辑图片，适用于视觉内容创作。",
+      "versions": [
+        [
+          "Doubao-Seedream-4.5",
+          null
+        ],
+        [
+          "Doubao-Seedream-5.0-lite",
+          null,
+          "官方文档列出；可用性以服务端为准",
+          "https://www.volcengine.com/product/ark"
+        ],
+        [
+          "Doubao-Seedream-4.0",
+          null,
+          "官方文档列出；可用性以服务端为准",
+          "https://www.volcengine.com/product/ark"
+        ]
+      ],
+      "source": "https://www.volcengine.com/activity/newyear",
+      "sourceLabel": "火山引擎 · Seedream 4.5 介绍",
+      "note": "这里只确认已发布版本，不将活动页面展示版本认定为全系列最新版本。",
+      "access": [
+        "API"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "Doubao-Seedream-4.5",
+      "currentVersionStatus": "已确认版本摘录",
+      "releaseDate": null,
+      "releaseDateStatus": "官方发布日期待核实"
+    },
+    {
+      "id": "hy-image",
+      "name": "混元图像",
+      "company": "腾讯",
+      "category": "image",
+      "kind": "模型系列",
+      "summary": "图像生成模型线；官方迁移通知已将 HY-Image-3.0 列为旧接口替代方案。",
+      "versions": [
+        [
+          "HY-Image-3.0",
+          null
+        ]
+      ],
+      "source": "https://cloud.tencent.cn/announce/detail/2405",
+      "sourceLabel": "腾讯云接口调整公告",
+      "note": "旧版接口计划在 2026-09-30 终止服务；迁移安排不等于新模型发布日期。",
+      "access": [
+        "API"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "HY-Image-3.0",
+      "currentVersionStatus": "已确认版本摘录",
+      "releaseDate": null,
+      "releaseDateStatus": "官方发布日期待核实"
+    },
+    {
+      "id": "gpt-image",
+      "name": "GPT Image",
+      "company": "OpenAI",
+      "category": "image",
+      "region": "global",
+      "kind": "模型系列",
+      "summary": "用于图像生成与编辑；ChatGPT 中的图像入口与 API 模型版本分别记录。",
+      "versions": [],
+      "source": "https://openai.com/index/introducing-the-codex-app/",
+      "sourceLabel": "OpenAI 官方产品说明",
+      "note": "此页确认 GPT Image 用途，但不提供当前图像模型版本清单，因此不填未经核对的版本。",
+      "access": [
+        "API"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "系列/研究项目持续更新（官方未给出单一当前版本号）",
+      "currentVersionStatus": "官方未采用单一当前版本号",
+      "releaseDate": null,
+      "releaseDateStatus": "官方未披露统一发布日期"
+    },
+    {
+      "id": "wan",
+      "name": "通义万相 Wan",
+      "company": "阿里巴巴",
+      "category": "video",
+      "kind": "模型系列",
+      "summary": "图像与视频生成系列；具体型号区分图像、文生视频、图生视频等任务。",
+      "versions": [
+        [
+          "wan3.0-video",
+          null,
+          "官方文档列出；可用性以服务端为准",
+          "https://help.aliyun.com/zh/model-studio/models"
+        ],
+        [
+          "wan2.7-image-pro",
+          null,
+          "官方文档列出；可用性以服务端为准",
+          "https://help.aliyun.com/zh/model-studio/models"
+        ]
+      ],
+      "source": "https://arxiv.org/abs/2503.20314",
+      "sourceLabel": "Wan 作者技术报告",
+      "access": [
+        "开放权重/可下载",
+        "API"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "wan3.0-video",
+      "currentVersionStatus": "已确认版本摘录",
+      "releaseDate": null,
+      "releaseDateStatus": "官方发布日期待核实"
+    },
+    {
+      "id": "seedance",
+      "name": "Seedance",
+      "company": "字节跳动",
+      "category": "video",
+      "kind": "模型系列",
+      "summary": "面向视频生成，2.0 系列包含音画生成与多模态参考能力。",
+      "versions": [
+        [
+          "Doubao-Seedance-2.0",
+          null
+        ],
+        [
+          "Doubao-Seedance-2.0-fast",
+          null
+        ],
+        [
+          "Doubao-Seedance-2.0-mini",
+          null
+        ],
+        [
+          "Doubao-Seedance-1.5-pro",
+          null,
+          "官方文档列出；可用性以服务端为准",
+          "https://www.volcengine.com/activity/ai-savingsplans"
+        ]
+      ],
+      "source": "https://www.volcengine.com/product/doubao",
+      "sourceLabel": "火山引擎模型目录",
+      "access": [
+        "API"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "Doubao-Seedance-2.0",
+      "currentVersionStatus": "已确认版本摘录",
+      "releaseDate": null,
+      "releaseDateStatus": "官方发布日期待核实"
+    },
+    {
+      "id": "kling",
+      "name": "可灵 Kling",
+      "company": "快手",
+      "category": "video",
+      "kind": "模型 / 创作平台",
+      "summary": "面向视频与图像内容创作。模型版本和创作平台功能更新分开记录。",
+      "versions": [],
+      "source": "https://app.klingai.com/global/",
+      "sourceLabel": "可灵官方产品入口",
+      "access": [
+        "API",
+        "网页/App/桌面产品"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "持续更新产品（无统一公开版本号）",
+      "currentVersionStatus": "官方产品持续更新",
+      "releaseDate": null,
+      "releaseDateStatus": "未采用统一模型发布日期"
+    },
+    {
+      "id": "hailuo",
+      "name": "海螺 AI",
+      "company": "MiniMax",
+      "category": "video",
+      "kind": "创作产品",
+      "summary": "MiniMax 旗下视频创作产品；海螺产品名不等于底层视频模型版本。",
+      "versions": [],
+      "source": "https://minimaxi.com/news/s2v-01发布",
+      "sourceLabel": "MiniMax 官方视频产品介绍",
+      "access": [
+        "网页/App/桌面产品"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "持续更新产品（无统一公开版本号）",
+      "currentVersionStatus": "官方产品持续更新",
+      "releaseDate": null,
+      "releaseDateStatus": "未采用统一模型发布日期"
+    },
+    {
+      "id": "veo",
+      "name": "Veo",
+      "company": "Google DeepMind",
+      "category": "video",
+      "region": "global",
+      "kind": "模型系列",
+      "summary": "视频生成模型，官方介绍包括原生音频与创作控制能力。",
+      "versions": [
+        [
+          "Veo 3.1 Lite",
+          "2026-04-08",
+          "Google DeepMind 模型卡更新日期",
+          "https://deepmind.google/models/model-cards/"
+        ],
+        [
+          "Veo 3",
+          "2026-01-13",
+          "Google DeepMind 模型卡更新日期",
+          "https://deepmind.google/models/model-cards/"
+        ]
+      ],
+      "source": "https://ai.google.dev/gemini-api/docs/veo",
+      "sourceLabel": "Google Veo 官方 API 文档",
+      "access": [
+        "API"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "Veo 3.1 Lite",
+      "currentVersionStatus": "已确认版本摘录",
+      "releaseDate": "2026-04-08",
+      "releaseDateStatus": "已确认官方日期"
+    },
+    {
+      "id": "hunyuanworld",
+      "name": "HunyuanWorld",
+      "company": "腾讯",
+      "category": "world",
+      "kind": "世界模型",
+      "summary": "结合全景图像合成与分层 3D 重建，生成可漫游的三维场景。",
+      "versions": [
+        [
+          "HunyuanWorld-1.0",
+          null
+        ]
+      ],
+      "source": "https://3d-models.hunyuan.tencent.com/world/?currentTab=HunyuanWorld-1.0&envType=external&lang=zh&theme=light",
+      "sourceLabel": "腾讯混元世界模型介绍",
+      "access": [
+        "开放权重/可下载",
+        "研究预览"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "HunyuanWorld-1.0",
+      "currentVersionStatus": "已确认版本摘录",
+      "releaseDate": null,
+      "releaseDateStatus": "官方发布日期待核实"
+    },
+    {
+      "id": "hy3d",
+      "name": "混元 3D",
+      "company": "腾讯",
+      "category": "world",
+      "kind": "3D 生成模型",
+      "summary": "由文本或图像生成 3D 资产；不把三维资产生成等同于世界动态模拟。",
+      "versions": [
+        [
+          "HY-3D-3.1",
+          null
+        ]
+      ],
+      "source": "https://cloud.tencent.cn/announce/detail/2405",
+      "sourceLabel": "腾讯云官方迁移公告",
+      "access": [
+        "开放权重/可下载"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "HY-3D-3.1",
+      "currentVersionStatus": "已确认版本摘录",
+      "releaseDate": null,
+      "releaseDateStatus": "官方发布日期待核实"
+    },
+    {
+      "id": "genie",
+      "name": "Genie",
+      "company": "Google DeepMind",
+      "category": "world",
+      "region": "global",
+      "kind": "世界模型",
+      "summary": "生成可交互、可探索的世界；区别于只输出固定视频片段的生成模型。",
+      "versions": [
+        [
+          "Genie 3",
+          null
+        ]
+      ],
+      "source": "https://deepmind.google/models/genie/",
+      "sourceLabel": "Genie 官方模型页",
+      "access": [
+        "开放权重/可下载",
+        "研究预览"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "Genie 3",
+      "currentVersionStatus": "已确认版本摘录",
+      "releaseDate": null,
+      "releaseDateStatus": "官方发布日期待核实"
+    },
+    {
+      "id": "openwam",
+      "name": "OpenWAM",
+      "company": "论文研究项目",
+      "category": "world",
+      "region": "research",
+      "kind": "世界-动作研究框架",
+      "summary": "探索模块化世界-动作模型预训练；属于研究项目，不作为成熟商用产品。",
+      "versions": [
+        [
+          "OpenWAM",
+          "2026-09-07",
+          "作者论文公开日期",
+          "https://arxiv.org/abs/2609.07398"
+        ]
+      ],
+      "source": "https://arxiv.org/abs/2609.07398",
+      "sourceLabel": "作者论文 · 项目快照收录",
+      "newsIds": [
+        "openwam"
+      ],
+      "note": "论文条目沿用项目 09.10 快照，本次未重新复核全文与实验。",
+      "access": [
+        "开放权重/可下载",
+        "研究预览"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "OpenWAM",
+      "currentVersionStatus": "已确认版本摘录",
+      "releaseDate": "2026-09-07",
+      "releaseDateStatus": "已确认官方日期"
+    },
+    {
+      "id": "kimi-code",
+      "name": "Kimi Code",
+      "company": "月之暗面",
+      "category": "coding",
+      "kind": "编程 Agent 产品",
+      "summary": "面向终端与 Web 的编程任务；CLI 版本不等于底层 Kimi 模型版本。",
+      "versions": [
+        [
+          "CLI v0.41.0",
+          "2026-09-04"
+        ],
+        [
+          "CLI v0.40.0",
+          "2026-09-02"
+        ]
+      ],
+      "source": "https://www.kimi.com/code/docs/en/kimi-code/whats-new.html",
+      "sourceLabel": "Kimi Code 官方更新日志",
+      "update": "2026-09-04",
+      "change": "Web 新增实验性多 Agent 协作与文本选区批注。",
+      "note": "更新日志也包含权限行为变化；使用前需单独检查执行权限设置。",
+      "access": [
+        "API",
+        "网页/App/桌面产品"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "CLI v0.41.0",
+      "currentVersionStatus": "已确认版本摘录",
+      "releaseDate": "2026-09-04",
+      "releaseDateStatus": "已确认官方日期"
+    },
+    {
+      "id": "codebuddy",
+      "name": "CodeBuddy",
+      "company": "腾讯",
+      "category": "coding",
+      "kind": "编程 Agent 产品",
+      "summary": "提供 AI 编程辅助与 IDE 产品，覆盖从需求、设计到代码交付的工作。",
+      "versions": [],
+      "source": "https://copilot.tencent.com/home/",
+      "sourceLabel": "腾讯 CodeBuddy 官方产品页",
+      "access": [
+        "网页/App/桌面产品"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "持续更新产品（无统一公开版本号）",
+      "currentVersionStatus": "官方产品持续更新",
+      "releaseDate": null,
+      "releaseDateStatus": "未采用统一模型发布日期"
+    },
+    {
+      "id": "codex",
+      "name": "Codex",
+      "company": "OpenAI",
+      "category": "coding",
+      "region": "global",
+      "kind": "编程 Agent 产品",
+      "summary": "可处理功能开发、重构与迁移等软件工程任务；工具与所用模型单独管理。",
+      "versions": [],
+      "source": "https://openai.com/codex/",
+      "sourceLabel": "Codex 官方产品页",
+      "access": [
+        "API",
+        "网页/App/桌面产品"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "持续更新产品（无统一公开版本号）",
+      "currentVersionStatus": "官方产品持续更新",
+      "releaseDate": null,
+      "releaseDateStatus": "未采用统一模型发布日期"
+    },
+    {
+      "id": "claude-code",
+      "name": "Claude Code",
+      "company": "Anthropic",
+      "category": "coding",
+      "region": "global",
+      "kind": "编程 Agent 产品",
+      "summary": "在终端等开发环境中委托编程任务；其所用 Claude 模型需另外选择。",
+      "versions": [
+        [
+          "Claude Code research preview",
+          "2025-02-24",
+          "Anthropic 首次公开发布",
+          "https://www.anthropic.com/news/claude-3-7-sonnet"
+        ]
+      ],
+      "source": "https://support.anthropic.com/en/articles/11145838-using-claude-code-with-your-pro-or-max-plan",
+      "sourceLabel": "Anthropic 产品说明",
+      "access": [
+        "网页/App/桌面产品"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "Claude Code research preview",
+      "currentVersionStatus": "已确认版本摘录",
+      "releaseDate": "2025-02-24",
+      "releaseDateStatus": "已确认官方日期"
+    },
+    {
+      "id": "wps",
+      "name": "WPS AI",
+      "company": "金山办公",
+      "category": "work",
+      "kind": "办公产品",
+      "summary": "在文档、表格与演示文稿中提供 AI 辅助，具体功能受账号权益影响。",
+      "versions": [],
+      "source": "https://ai.wps.cn/landing",
+      "sourceLabel": "WPS AI 官方产品页",
+      "access": [
+        "网页/App/桌面产品"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "持续更新产品（无统一公开版本号）",
+      "currentVersionStatus": "官方产品持续更新",
+      "releaseDate": null,
+      "releaseDateStatus": "未采用统一模型发布日期"
+    },
+    {
+      "id": "ima",
+      "name": "ima",
+      "company": "腾讯",
+      "category": "work",
+      "kind": "知识工作台",
+      "summary": "围绕知识库和问答组织信息，与代码开发工具 CodeBuddy 分开呈现。",
+      "versions": [],
+      "source": "https://ima.qq.com/",
+      "sourceLabel": "腾讯 ima 官方入口",
+      "access": [
+        "网页/App/桌面产品"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "持续更新产品（无统一公开版本号）",
+      "currentVersionStatus": "官方产品持续更新",
+      "releaseDate": null,
+      "releaseDateStatus": "未采用统一模型发布日期"
+    },
+    {
+      "id": "feishu",
+      "name": "飞书 AI 会议",
+      "company": "字节跳动",
+      "category": "work",
+      "kind": "会议协作功能",
+      "summary": "提供会议总结、纪要与待办提炼，衔接会后知识沉淀与协作。",
+      "versions": [],
+      "source": "https://www.feishu.cn/content/article/7577317993749269689",
+      "sourceLabel": "飞书官方会议功能说明",
+      "access": [
+        "网页/App/桌面产品"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "持续更新产品（无统一公开版本号）",
+      "currentVersionStatus": "官方产品持续更新",
+      "releaseDate": null,
+      "releaseDateStatus": "未采用统一模型发布日期"
+    },
+    {
+      "id": "coze",
+      "name": "扣子 Coze",
+      "company": "字节跳动",
+      "category": "work",
+      "kind": "Agent / 工作流平台",
+      "summary": "通过工作流组织模型与业务处理步骤；平台不是单一基础模型。",
+      "versions": [],
+      "source": "https://docs.coze.cn/guides_workflow",
+      "sourceLabel": "扣子官方工作流文档",
+      "access": [
+        "网页/App/桌面产品"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "持续更新产品（无统一公开版本号）",
+      "currentVersionStatus": "官方产品持续更新",
+      "releaseDate": null,
+      "releaseDateStatus": "未采用统一模型发布日期"
+    },
+    {
+      "id": "kimi-work",
+      "name": "Kimi Work",
+      "company": "月之暗面",
+      "category": "work",
+      "kind": "桌面 Agent 产品",
+      "summary": "面向知识工作者的本地 Agent 产品；与 Kimi 基座模型、Kimi Code 分别建档。",
+      "versions": [],
+      "source": "https://www.kimi.com/en/help",
+      "sourceLabel": "Kimi 官方帮助中心",
+      "access": [
+        "网页/App/桌面产品"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "持续更新产品（无统一公开版本号）",
+      "currentVersionStatus": "官方产品持续更新",
+      "releaseDate": null,
+      "releaseDateStatus": "未采用统一模型发布日期"
+    },
+    {
+      "id": "workbuddy",
+      "name": "WorkBuddy",
+      "company": "腾讯",
+      "category": "work",
+      "kind": "桌面 Agent 产品",
+      "summary": "面向职场任务的桌面工作台，可操作本地文件；不同于 CodeBuddy IDE。",
+      "versions": [],
+      "source": "https://www.codebuddy.ai/docs/zh/workbuddy/Quickstart",
+      "sourceLabel": "腾讯 WorkBuddy 官方快速开始",
+      "access": [
+        "网页/App/桌面产品"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "持续更新产品（无统一公开版本号）",
+      "currentVersionStatus": "官方产品持续更新",
+      "releaseDate": null,
+      "releaseDateStatus": "未采用统一模型发布日期"
+    },
+    {
+      "id": "minimax-agent",
+      "name": "MiniMax Agent",
+      "company": "MiniMax",
+      "category": "work",
+      "kind": "Agent 产品",
+      "summary": "面向工作任务的 Agent 入口；不把产品与 MiniMax 模型系列合并计数。",
+      "versions": [],
+      "source": "https://agent.minimaxi.com/",
+      "sourceLabel": "MiniMax Agent 官方入口",
+      "access": [
+        "网页/App/桌面产品"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "持续更新产品（无统一公开版本号）",
+      "currentVersionStatus": "官方产品持续更新",
+      "releaseDate": null,
+      "releaseDateStatus": "未采用统一模型发布日期"
+    },
+    {
+      "id": "mimo",
+      "name": "MiMo",
+      "company": "小米",
+      "region": "cn",
+      "category": "general",
+      "kind": "语言与多模态模型系列",
+      "summary": "小米自研模型系列，覆盖推理、代码与多模态方向；具体能力按公开版本区分。",
+      "versions": [
+        [
+          "MiMo-V2-Flash",
+          null,
+          "小米官方代码组织列出",
+          "https://github.com/XiaomiMiMo"
+        ]
+      ],
+      "source": "https://github.com/XiaomiMiMo",
+      "sourceLabel": "小米 MiMo 官方组织",
+      "note": "仅收录官方公开系列；端侧产品能力不等同于同名基础模型版本。",
+      "access": [
+        "开放权重/可下载"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "MiMo-V2-Flash",
+      "currentVersionStatus": "已确认版本摘录",
+      "releaseDate": null,
+      "releaseDateStatus": "官方发布日期未披露或待核实"
+    },
+    {
+      "id": "ling-model",
+      "name": "蚂蚁百灵 Ling",
+      "company": "蚂蚁集团",
+      "region": "cn",
+      "category": "general",
+      "kind": "语言与多模态模型系列",
+      "summary": "蚂蚁集团公开模型线，覆盖语言、多模态及具身相关研究方向。",
+      "versions": [
+        [
+          "Ling-mini-2.0",
+          null,
+          "InclusionAI 官方仓库列出",
+          "https://github.com/inclusionAI/Ling-V2"
+        ],
+        [
+          "Ling-lite-1.5",
+          "2025-05-10",
+          "官方仓库更新记录",
+          "https://github.com/inclusionAI/Ling"
+        ]
+      ],
+      "source": "https://github.com/inclusionAI",
+      "sourceLabel": "蚂蚁 InclusionAI 官方组织",
+      "access": [
+        "开放权重/可下载"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "Ling-mini-2.0",
+      "currentVersionStatus": "已确认版本摘录",
+      "releaseDate": null,
+      "releaseDateStatus": "官方发布日期未披露或待核实"
+    },
+    {
+      "id": "baichuan",
+      "name": "Baichuan",
+      "company": "百川智能",
+      "region": "cn",
+      "category": "general",
+      "kind": "语言模型系列",
+      "summary": "面向通用对话、推理及行业应用的语言模型系列。",
+      "versions": [],
+      "source": "https://www.baichuan-ai.com/home",
+      "sourceLabel": "百川智能官网",
+      "access": [
+        "开放权重/可下载"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "系列/研究项目持续更新（官方未给出单一当前版本号）",
+      "currentVersionStatus": "官方未采用单一当前版本号",
+      "releaseDate": null,
+      "releaseDateStatus": "官方未披露统一发布日期"
+    },
+    {
+      "id": "yi",
+      "name": "Yi",
+      "company": "零一万物",
+      "region": "cn",
+      "category": "general",
+      "kind": "语言与多模态模型系列",
+      "summary": "覆盖语言、视觉理解与开放权重模型的模型系列。",
+      "versions": [],
+      "source": "https://github.com/01-ai",
+      "sourceLabel": "零一万物官方代码组织",
+      "access": [
+        "开放权重/可下载"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "系列/研究项目持续更新（官方未给出单一当前版本号）",
+      "currentVersionStatus": "官方未采用单一当前版本号",
+      "releaseDate": null,
+      "releaseDateStatus": "官方未披露统一发布日期"
+    },
+    {
+      "id": "joyai",
+      "name": "JoyAI",
+      "company": "京东",
+      "region": "cn",
+      "category": "general",
+      "kind": "企业模型体系",
+      "summary": "京东面向产业与零售场景建设的模型及智能应用体系。",
+      "versions": [],
+      "source": "https://github.com/jd-opensource",
+      "sourceLabel": "京东官方开源组织",
+      "pending": true,
+      "note": "系列命名与当前公开版本仍需继续核对，暂不推断最新版本。",
+      "access": [
+        "企业服务"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "系列/研究项目持续更新（官方未给出单一当前版本号）",
+      "currentVersionStatus": "官方未采用单一当前版本号",
+      "releaseDate": null,
+      "releaseDateStatus": "官方未披露统一发布日期"
+    },
+    {
+      "id": "360-zhinao",
+      "name": "360 智脑",
+      "company": "三六零",
+      "region": "cn",
+      "category": "general",
+      "kind": "模型与助手体系",
+      "summary": "覆盖对话、内容生成与企业知识服务的模型及产品体系。",
+      "versions": [],
+      "source": "https://ai.360.com/",
+      "sourceLabel": "360 AI 官方入口",
+      "pending": true,
+      "access": [
+        "网页/App/桌面产品"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "持续更新产品（无统一公开版本号）",
+      "currentVersionStatus": "官方产品持续更新",
+      "releaseDate": null,
+      "releaseDateStatus": "未采用统一模型发布日期"
+    },
+    {
+      "id": "bluelm",
+      "name": "BlueLM",
+      "company": "vivo",
+      "region": "cn",
+      "category": "general",
+      "kind": "端侧语言模型系列",
+      "summary": "面向手机端与系统智能能力的自研语言模型系列。",
+      "versions": [],
+      "source": "https://developers.vivo.com/product/ai/bluelm",
+      "sourceLabel": "vivo 开发者官方资料",
+      "pending": true,
+      "access": [
+        "官方公开资料入口；具体开放方式待核实"
+      ],
+      "accessStatus": "待专项核实",
+      "currentVersion": "系列/研究项目持续更新（官方未给出单一当前版本号）",
+      "currentVersionStatus": "官方未采用单一当前版本号",
+      "releaseDate": null,
+      "releaseDateStatus": "官方未披露统一发布日期"
+    },
+    {
+      "id": "llama",
+      "name": "Llama",
+      "company": "Meta",
+      "region": "global",
+      "category": "general",
+      "kind": "开放权重多模态模型系列",
+      "summary": "Meta 的开放权重模型系列，覆盖文本与视觉理解；许可证与开放源码概念需分开判断。",
+      "versions": [
+        [
+          "Llama 4 Maverick",
+          null,
+          "官方模型目录列出",
+          "https://ai.meta.com/llama/get-started/"
+        ],
+        [
+          "Llama 4 Scout",
+          null,
+          "官方模型目录列出",
+          "https://ai.meta.com/llama/get-started/"
+        ]
+      ],
+      "source": "https://ai.meta.com/llama/get-started/",
+      "sourceLabel": "Meta Llama 官方目录",
+      "access": [
+        "开放权重/可下载"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "Llama 4 Maverick",
+      "currentVersionStatus": "已确认版本摘录",
+      "releaseDate": null,
+      "releaseDateStatus": "官方发布日期待核实"
+    },
+    {
+      "id": "mistral",
+      "name": "Mistral",
+      "company": "Mistral AI",
+      "region": "global",
+      "category": "general",
+      "kind": "语言与多模态模型系列",
+      "summary": "覆盖开放权重与商业 API 的语言、多模态及代码模型系列。",
+      "versions": [
+        [
+          "Mistral Medium 3.5",
+          null,
+          "Mistral 官方模型目录列为当前 Featured",
+          "https://docs.mistral.ai/models"
+        ],
+        [
+          "Mistral Small 4",
+          null,
+          "Mistral 官方模型目录列出",
+          "https://docs.mistral.ai/models"
+        ]
+      ],
+      "source": "https://docs.mistral.ai/getting-started/models/models_overview/",
+      "sourceLabel": "Mistral 官方模型目录",
+      "access": [
+        "开放权重/可下载",
+        "API"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "Mistral Medium 3.5",
+      "currentVersionStatus": "已确认版本摘录",
+      "releaseDate": null,
+      "releaseDateStatus": "官方发布日期未披露或待核实"
+    },
+    {
+      "id": "grok",
+      "name": "Grok",
+      "company": "xAI",
+      "region": "global",
+      "category": "general",
+      "kind": "多模态模型与助手系列",
+      "summary": "xAI 的模型与助手系列，覆盖推理、视觉理解及工具使用。",
+      "versions": [
+        [
+          "Grok 4.20",
+          "2026-04-07",
+          "xAI 官方系统卡日期",
+          "https://data.x.ai/2026-04-07-grok-4-20-model-card.pdf"
+        ]
+      ],
+      "source": "https://docs.x.ai/docs/models",
+      "sourceLabel": "xAI 官方模型文档",
+      "access": [
+        "API"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "Grok 4.20",
+      "currentVersionStatus": "已确认版本摘录",
+      "releaseDate": "2026-04-07",
+      "releaseDateStatus": "已确认官方日期"
+    },
+    {
+      "id": "phi",
+      "name": "Phi",
+      "company": "Microsoft",
+      "region": "global",
+      "category": "general",
+      "kind": "小型语言与多模态模型系列",
+      "summary": "面向高效部署的小型模型系列，覆盖语言、视觉与推理变体。",
+      "versions": [
+        [
+          "Phi-4",
+          null
+        ]
+      ],
+      "source": "https://azure.microsoft.com/en-us/products/phi",
+      "sourceLabel": "Microsoft Phi 官方介绍",
+      "access": [
+        "开放权重/可下载",
+        "API"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "Phi-4",
+      "currentVersionStatus": "已确认版本摘录",
+      "releaseDate": null,
+      "releaseDateStatus": "官方发布日期待核实"
+    },
+    {
+      "id": "amazon-nova",
+      "name": "Amazon Nova",
+      "company": "Amazon",
+      "region": "global",
+      "category": "general",
+      "kind": "基础模型系列",
+      "summary": "Amazon Bedrock 上的自研基础模型系列，覆盖理解与创意生成方向。",
+      "versions": [
+        [
+          "Amazon Nova 2",
+          null,
+          "AWS 官方文档列为当前代际；发布日期待核实",
+          "https://docs.aws.amazon.com/nova/latest/userguide/what-is-nova.html"
+        ],
+        [
+          "Amazon Nova Premier",
+          null
+        ],
+        [
+          "Amazon Nova Pro",
+          null
+        ],
+        [
+          "Amazon Nova Lite",
+          null
+        ]
+      ],
+      "source": "https://docs.aws.amazon.com/nova/latest/userguide/what-is-nova.html",
+      "sourceLabel": "AWS Nova 官方开发文档",
+      "access": [
+        "API"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "Amazon Nova 2",
+      "currentVersionStatus": "已确认版本摘录",
+      "releaseDate": null,
+      "releaseDateStatus": "官方发布日期待核实"
+    },
+    {
+      "id": "nemotron",
+      "name": "Nemotron",
+      "company": "NVIDIA",
+      "region": "global",
+      "category": "general",
+      "kind": "推理与多模态模型系列",
+      "summary": "NVIDIA 面向 Agent 推理、工具调用与视觉推理的模型系列。",
+      "versions": [
+        [
+          "Nemotron 3 Ultra",
+          null,
+          "NVIDIA 官方系列页列出",
+          "https://research.nvidia.com/labs/nemotron/Nemotron-3-Ultra/"
+        ],
+        [
+          "Nemotron 3 Super",
+          null,
+          "NVIDIA 官方系列页列出",
+          "https://research.nvidia.com/labs/nemotron/Nemotron-3/"
+        ],
+        [
+          "Nemotron 3 Nano",
+          "2025-12-15",
+          "NVIDIA 官方系列发布日期",
+          "https://research.nvidia.com/labs/nemotron/Nemotron-3/"
+        ]
+      ],
+      "source": "https://www.nvidia.com/en-us/ai-data-science/foundation-models/llama-nemotron/",
+      "sourceLabel": "NVIDIA Nemotron 官方介绍",
+      "access": [
+        "开放权重/可下载",
+        "API"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "Nemotron 3 Ultra",
+      "currentVersionStatus": "已确认版本摘录",
+      "releaseDate": null,
+      "releaseDateStatus": "官方发布日期未披露或待核实"
+    },
+    {
+      "id": "stable-diffusion",
+      "name": "Stable Diffusion",
+      "company": "Stability AI",
+      "region": "global",
+      "category": "image",
+      "kind": "图像生成模型系列",
+      "summary": "覆盖开放部署与服务调用的图像生成模型系列，版本许可证需分别核对。",
+      "versions": [
+        [
+          "Stable Diffusion 3.5 Large",
+          null
+        ],
+        [
+          "Stable Diffusion 3.5 Medium",
+          null
+        ],
+        [
+          "SDXL Turbo",
+          null
+        ]
+      ],
+      "source": "https://stability.ai/core-models",
+      "sourceLabel": "Stability AI Core Models",
+      "access": [
+        "开放权重/可下载",
+        "API"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "Stable Diffusion 3.5 Large",
+      "currentVersionStatus": "已确认版本摘录",
+      "releaseDate": null,
+      "releaseDateStatus": "官方发布日期待核实"
+    },
+    {
+      "id": "flux",
+      "name": "FLUX",
+      "company": "Black Forest Labs",
+      "region": "global",
+      "category": "image",
+      "kind": "图像生成与编辑模型系列",
+      "summary": "覆盖文生图、图像编辑与上下文控制的生成模型系列。",
+      "versions": [
+        [
+          "FLUX.2 [pro]",
+          null
+        ],
+        [
+          "FLUX.1 Kontext [pro]",
+          null
+        ],
+        [
+          "FLUX1.1 [pro]",
+          null
+        ]
+      ],
+      "source": "https://bfl.ai/models",
+      "sourceLabel": "Black Forest Labs 官方模型目录",
+      "access": [
+        "API"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "FLUX.2 [pro]",
+      "currentVersionStatus": "已确认版本摘录",
+      "releaseDate": null,
+      "releaseDateStatus": "官方发布日期待核实"
+    },
+    {
+      "id": "firefly",
+      "name": "Adobe Firefly",
+      "company": "Adobe",
+      "region": "global",
+      "category": "image",
+      "kind": "创意生成模型与产品体系",
+      "summary": "Adobe 的图像、视频及设计生成模型与创意产品体系；合作方模型另行标注。",
+      "versions": [],
+      "source": "https://www.adobe.com/products/firefly.html",
+      "sourceLabel": "Adobe Firefly 官方介绍",
+      "access": [
+        "API"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "持续更新产品（无统一公开版本号）",
+      "currentVersionStatus": "官方产品持续更新",
+      "releaseDate": null,
+      "releaseDateStatus": "未采用统一模型发布日期"
+    },
+    {
+      "id": "midjourney",
+      "name": "Midjourney",
+      "company": "Midjourney",
+      "region": "global",
+      "category": "image",
+      "kind": "图像生成模型与产品",
+      "summary": "面向视觉创作的图像生成服务；网页产品版本与模型版本需分开记录。",
+      "versions": [],
+      "source": "https://docs.midjourney.com/",
+      "sourceLabel": "Midjourney 官方文档",
+      "access": [
+        "网页/App/桌面产品"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "持续更新产品（无统一公开版本号）",
+      "currentVersionStatus": "官方产品持续更新",
+      "releaseDate": null,
+      "releaseDateStatus": "未采用统一模型发布日期"
+    },
+    {
+      "id": "ideogram",
+      "name": "Ideogram",
+      "company": "Ideogram",
+      "region": "global",
+      "category": "image",
+      "kind": "图像生成模型与产品",
+      "summary": "强调文字排版与设计生成的图像模型及创作产品。",
+      "versions": [],
+      "source": "https://docs.ideogram.ai/",
+      "sourceLabel": "Ideogram 官方文档",
+      "access": [
+        "API"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "持续更新产品（无统一公开版本号）",
+      "currentVersionStatus": "官方产品持续更新",
+      "releaseDate": null,
+      "releaseDateStatus": "未采用统一模型发布日期"
+    },
+    {
+      "id": "recraft",
+      "name": "Recraft",
+      "company": "Recraft",
+      "region": "global",
+      "category": "image",
+      "kind": "设计图像与矢量生成产品",
+      "summary": "面向品牌设计、图像与矢量资产生成的模型及产品。",
+      "versions": [],
+      "source": "https://www.recraft.ai/docs",
+      "sourceLabel": "Recraft 官方文档",
+      "access": [
+        "API"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "持续更新产品（无统一公开版本号）",
+      "currentVersionStatus": "官方产品持续更新",
+      "releaseDate": null,
+      "releaseDateStatus": "未采用统一模型发布日期"
+    },
+    {
+      "id": "midjourney-video",
+      "name": "Midjourney Video",
+      "company": "Midjourney",
+      "region": "global",
+      "category": "video",
+      "kind": "视频生成产品线",
+      "summary": "Midjourney 的视频生成能力，与静态图像模型档案分开记录。",
+      "versions": [],
+      "source": "https://docs.midjourney.com/",
+      "sourceLabel": "Midjourney 官方文档",
+      "pending": true,
+      "access": [
+        "网页/App/桌面产品"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "持续更新产品（无统一公开版本号）",
+      "currentVersionStatus": "官方产品持续更新",
+      "releaseDate": null,
+      "releaseDateStatus": "未采用统一模型发布日期"
+    },
+    {
+      "id": "sora",
+      "name": "Sora",
+      "company": "OpenAI",
+      "region": "global",
+      "category": "video",
+      "kind": "视频生成模型与产品",
+      "summary": "面向视频生成、重混与故事板创作的模型及产品入口。",
+      "versions": [],
+      "source": "https://openai.com/sora/",
+      "sourceLabel": "OpenAI Sora 官方介绍",
+      "access": [
+        "API",
+        "网页/App/桌面产品"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "持续更新产品（无统一公开版本号）",
+      "currentVersionStatus": "官方产品持续更新",
+      "releaseDate": null,
+      "releaseDateStatus": "未采用统一模型发布日期"
+    },
+    {
+      "id": "runway",
+      "name": "Runway",
+      "company": "Runway",
+      "region": "global",
+      "category": "video",
+      "kind": "视频生成模型与创作平台",
+      "summary": "覆盖视频生成、编辑与多镜头创作的模型系列和工作台。",
+      "versions": [],
+      "source": "https://runwayml.com/research",
+      "sourceLabel": "Runway 官方研究与模型目录",
+      "access": [
+        "API",
+        "网页/App/桌面产品"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "持续更新产品（无统一公开版本号）",
+      "currentVersionStatus": "官方产品持续更新",
+      "releaseDate": null,
+      "releaseDateStatus": "未采用统一模型发布日期"
+    },
+    {
+      "id": "luma-ray",
+      "name": "Ray",
+      "company": "Luma AI",
+      "region": "global",
+      "category": "video",
+      "kind": "视频生成模型系列",
+      "summary": "Luma AI 的视频生成模型线，服务入口与模型版本分别记录。",
+      "versions": [
+        [
+          "Ray2",
+          null,
+          "Adobe 官方合作模型清单与 Luma 产品入口列出",
+          "https://lumalabs.ai/dream-machine"
+        ]
+      ],
+      "source": "https://lumalabs.ai/dream-machine",
+      "sourceLabel": "Luma Dream Machine 官方介绍",
+      "access": [
+        "API",
+        "网页/App/桌面产品"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "Ray2",
+      "currentVersionStatus": "已确认版本摘录",
+      "releaseDate": null,
+      "releaseDateStatus": "官方发布日期未披露或待核实"
+    },
+    {
+      "id": "pika",
+      "name": "Pika",
+      "company": "Pika",
+      "region": "global",
+      "category": "video",
+      "kind": "视频生成模型与产品",
+      "summary": "面向消费级创作的视频生成与特效产品。",
+      "versions": [],
+      "source": "https://pika.art/",
+      "sourceLabel": "Pika 官方产品入口",
+      "access": [
+        "API",
+        "网页/App/桌面产品"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "持续更新产品（无统一公开版本号）",
+      "currentVersionStatus": "官方产品持续更新",
+      "releaseDate": null,
+      "releaseDateStatus": "未采用统一模型发布日期"
+    },
+    {
+      "id": "firefly-video",
+      "name": "Firefly Video",
+      "company": "Adobe",
+      "region": "global",
+      "category": "video",
+      "kind": "视频生成模型系列",
+      "summary": "Adobe Firefly 体系中的视频生成模型能力。",
+      "versions": [
+        [
+          "Firefly Video Model",
+          "2025-02-12",
+          "Adobe 官方公测发布资料",
+          "https://news.adobe.com/news/downloads/pdfs/2025/02/021225-firefly-relaunch.pdf"
+        ]
+      ],
+      "source": "https://www.adobe.com/products/firefly/features/ai-video-generator.html",
+      "sourceLabel": "Adobe Firefly 视频官方介绍",
+      "access": [
+        "API"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "Firefly Video Model",
+      "currentVersionStatus": "已确认版本摘录",
+      "releaseDate": "2025-02-12",
+      "releaseDateStatus": "已确认官方日期"
+    },
+    {
+      "id": "stable-video",
+      "name": "Stable Video Diffusion",
+      "company": "Stability AI",
+      "region": "global",
+      "category": "video",
+      "kind": "视频生成模型系列",
+      "summary": "Stability AI 的视频生成模型系列；不同版本的授权和可用性需单独核对。",
+      "versions": [
+        [
+          "Stable Video Diffusion 1.1",
+          null
+        ]
+      ],
+      "source": "https://stability.ai/core-models",
+      "sourceLabel": "Stability AI Core Models",
+      "access": [
+        "开放权重/可下载",
+        "API"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "Stable Video Diffusion 1.1",
+      "currentVersionStatus": "已确认版本摘录",
+      "releaseDate": null,
+      "releaseDateStatus": "官方发布日期待核实"
+    },
+    {
+      "id": "cosmos",
+      "name": "Cosmos",
+      "company": "NVIDIA",
+      "region": "global",
+      "category": "world",
+      "kind": "世界基础模型平台",
+      "summary": "面向机器人与自动驾驶等物理 AI 的世界基础模型及开发平台。",
+      "versions": [],
+      "source": "https://www.nvidia.com/en-us/ai/cosmos/",
+      "sourceLabel": "NVIDIA Cosmos 官方介绍",
+      "access": [
+        "开放权重/可下载",
+        "API"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "持续更新产品（无统一公开版本号）",
+      "currentVersionStatus": "官方产品持续更新",
+      "releaseDate": null,
+      "releaseDateStatus": "未采用统一模型发布日期"
+    },
+    {
+      "id": "world-labs",
+      "name": "Marble",
+      "company": "World Labs",
+      "region": "global",
+      "category": "world",
+      "kind": "空间智能世界模型产品",
+      "summary": "面向可探索三维世界生成与空间智能的模型产品。",
+      "versions": [],
+      "source": "https://www.worldlabs.ai/",
+      "sourceLabel": "World Labs 官方网站",
+      "access": [
+        "网页/App/桌面产品"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "持续更新产品（无统一公开版本号）",
+      "currentVersionStatus": "官方产品持续更新",
+      "releaseDate": null,
+      "releaseDateStatus": "未采用统一模型发布日期"
+    },
+    {
+      "id": "odyssey",
+      "name": "Odyssey",
+      "company": "Odyssey",
+      "region": "global",
+      "category": "world",
+      "kind": "交互式世界模型产品",
+      "summary": "探索实时、可交互世界生成的模型与体验产品。",
+      "versions": [],
+      "source": "https://odyssey.systems/",
+      "sourceLabel": "Odyssey 官方网站",
+      "access": [
+        "网页/App/桌面产品"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "持续更新产品（无统一公开版本号）",
+      "currentVersionStatus": "官方产品持续更新",
+      "releaseDate": null,
+      "releaseDateStatus": "未采用统一模型发布日期"
+    },
+    {
+      "id": "decart",
+      "name": "Decart World Models",
+      "company": "Decart",
+      "region": "global",
+      "category": "world",
+      "kind": "实时世界模型系列",
+      "summary": "探索可实时交互的生成世界与视频模型。",
+      "versions": [],
+      "source": "https://www.decart.ai/",
+      "sourceLabel": "Decart 官方网站",
+      "access": [
+        "网页/App/桌面产品"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "系列/研究项目持续更新（官方未给出单一当前版本号）",
+      "currentVersionStatus": "官方未采用单一当前版本号",
+      "releaseDate": null,
+      "releaseDateStatus": "官方未披露统一发布日期"
+    },
+    {
+      "id": "v-jepa",
+      "name": "V-JEPA",
+      "company": "Meta",
+      "region": "global",
+      "category": "world",
+      "kind": "视频表征与世界建模研究系列",
+      "summary": "通过预测视频表征学习物理世界结构的研究模型系列。",
+      "versions": [
+        [
+          "V-JEPA 2",
+          null,
+          "Meta 官方研究系列",
+          "https://ai.meta.com/vjepa/"
+        ]
+      ],
+      "source": "https://ai.meta.com/vjepa/",
+      "sourceLabel": "Meta V-JEPA 官方研究介绍",
+      "access": [
+        "开放权重/可下载",
+        "研究预览"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "V-JEPA 2",
+      "currentVersionStatus": "已确认版本摘录",
+      "releaseDate": null,
+      "releaseDateStatus": "官方发布日期未披露或待核实"
+    },
+    {
+      "id": "tripo",
+      "name": "Tripo",
+      "company": "VAST",
+      "region": "cn",
+      "category": "world",
+      "kind": "3D 生成模型与产品",
+      "summary": "由文字或图像生成三维资产的模型与创作服务。",
+      "versions": [],
+      "source": "https://www.tripo3d.ai/",
+      "sourceLabel": "Tripo 官方网站",
+      "access": [
+        "API",
+        "网页/App/桌面产品"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "持续更新产品（无统一公开版本号）",
+      "currentVersionStatus": "官方产品持续更新",
+      "releaseDate": null,
+      "releaseDateStatus": "未采用统一模型发布日期"
+    },
+    {
+      "id": "meshy",
+      "name": "Meshy",
+      "company": "Meshy",
+      "region": "global",
+      "category": "world",
+      "kind": "3D 生成模型与产品",
+      "summary": "面向游戏与设计资产的文字/图像生成 3D 产品。",
+      "versions": [],
+      "source": "https://www.meshy.ai/",
+      "sourceLabel": "Meshy 官方网站",
+      "access": [
+        "API",
+        "网页/App/桌面产品"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "持续更新产品（无统一公开版本号）",
+      "currentVersionStatus": "官方产品持续更新",
+      "releaseDate": null,
+      "releaseDateStatus": "未采用统一模型发布日期"
+    },
+    {
+      "id": "copilot",
+      "name": "GitHub Copilot",
+      "company": "GitHub / Microsoft",
+      "region": "global",
+      "category": "coding",
+      "kind": "编程助手与 Agent 产品",
+      "summary": "覆盖代码补全、对话、代码审查与 Agent 工作流的开发产品。",
+      "versions": [],
+      "source": "https://docs.github.com/en/copilot",
+      "sourceLabel": "GitHub Copilot 官方文档",
+      "access": [
+        "网页/App/桌面产品"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "持续更新产品（无统一公开版本号）",
+      "currentVersionStatus": "官方产品持续更新",
+      "releaseDate": null,
+      "releaseDateStatus": "未采用统一模型发布日期"
+    },
+    {
+      "id": "cursor",
+      "name": "Cursor",
+      "company": "Anysphere",
+      "region": "global",
+      "category": "coding",
+      "kind": "AI 代码编辑器",
+      "summary": "集成多模型、代码库理解与 Agent 执行的开发环境。",
+      "versions": [],
+      "source": "https://docs.cursor.com/",
+      "sourceLabel": "Cursor 官方文档",
+      "access": [
+        "网页/App/桌面产品"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "系列/研究项目持续更新（官方未给出单一当前版本号）",
+      "currentVersionStatus": "官方未采用单一当前版本号",
+      "releaseDate": null,
+      "releaseDateStatus": "官方未披露统一发布日期"
+    },
+    {
+      "id": "windsurf",
+      "name": "Windsurf",
+      "company": "Windsurf",
+      "region": "global",
+      "category": "coding",
+      "kind": "AI 代码编辑器",
+      "summary": "提供代码库理解、生成与 Agent 工作流的开发环境。",
+      "versions": [],
+      "source": "https://docs.windsurf.com/",
+      "sourceLabel": "Windsurf 官方文档",
+      "access": [
+        "网页/App/桌面产品"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "系列/研究项目持续更新（官方未给出单一当前版本号）",
+      "currentVersionStatus": "官方未采用单一当前版本号",
+      "releaseDate": null,
+      "releaseDateStatus": "官方未披露统一发布日期"
+    },
+    {
+      "id": "devin",
+      "name": "Devin",
+      "company": "Cognition",
+      "region": "global",
+      "category": "coding",
+      "kind": "软件工程 Agent 产品",
+      "summary": "面向端到端软件工程任务执行的 Agent 产品。",
+      "versions": [],
+      "source": "https://docs.devin.ai/",
+      "sourceLabel": "Devin 官方文档",
+      "access": [
+        "网页/App/桌面产品"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "持续更新产品（无统一公开版本号）",
+      "currentVersionStatus": "官方产品持续更新",
+      "releaseDate": null,
+      "releaseDateStatus": "未采用统一模型发布日期"
+    },
+    {
+      "id": "copilot-work",
+      "name": "Microsoft 365 Copilot",
+      "company": "Microsoft",
+      "region": "global",
+      "category": "work",
+      "kind": "企业工作助手产品",
+      "summary": "嵌入 Microsoft 365 应用的企业工作助手和 Agent 平台。",
+      "versions": [],
+      "source": "https://learn.microsoft.com/en-us/copilot/microsoft-365/",
+      "sourceLabel": "Microsoft 365 Copilot 官方文档",
+      "access": [
+        "网页/App/桌面产品",
+        "企业服务"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "持续更新产品（无统一公开版本号）",
+      "currentVersionStatus": "官方产品持续更新",
+      "releaseDate": null,
+      "releaseDateStatus": "未采用统一模型发布日期"
+    },
+    {
+      "id": "gemini-workspace",
+      "name": "Gemini for Workspace",
+      "company": "Google",
+      "region": "global",
+      "category": "work",
+      "kind": "企业工作助手产品",
+      "summary": "嵌入 Gmail、Docs、Sheets、Meet 等 Workspace 场景的生成式 AI 能力。",
+      "versions": [],
+      "source": "https://workspace.google.com/solutions/ai/",
+      "sourceLabel": "Google Workspace AI 官方介绍",
+      "access": [
+        "网页/App/桌面产品",
+        "企业服务"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "持续更新产品（无统一公开版本号）",
+      "currentVersionStatus": "官方产品持续更新",
+      "releaseDate": null,
+      "releaseDateStatus": "未采用统一模型发布日期"
+    },
+    {
+      "id": "notion-ai",
+      "name": "Notion AI",
+      "company": "Notion",
+      "region": "global",
+      "category": "work",
+      "kind": "知识与工作助手产品",
+      "summary": "连接工作空间内容进行搜索、写作、总结与任务辅助。",
+      "versions": [],
+      "source": "https://www.notion.com/help/guides/category/ai",
+      "sourceLabel": "Notion AI 官方指南",
+      "access": [
+        "网页/App/桌面产品"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "持续更新产品（无统一公开版本号）",
+      "currentVersionStatus": "官方产品持续更新",
+      "releaseDate": null,
+      "releaseDateStatus": "未采用统一模型发布日期"
+    },
+    {
+      "id": "perplexity",
+      "name": "Perplexity",
+      "company": "Perplexity",
+      "region": "global",
+      "category": "work",
+      "kind": "检索与研究助手产品",
+      "summary": "以联网检索、来源引用和研究工作流为核心的助手产品。",
+      "versions": [],
+      "source": "https://www.perplexity.ai/help-center",
+      "sourceLabel": "Perplexity 官方帮助中心",
+      "access": [
+        "API",
+        "网页/App/桌面产品"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "持续更新产品（无统一公开版本号）",
+      "currentVersionStatus": "官方产品持续更新",
+      "releaseDate": null,
+      "releaseDateStatus": "未采用统一模型发布日期"
+    },
+    {
+      "id": "manus",
+      "name": "Manus",
+      "company": "Manus",
+      "region": "global",
+      "category": "work",
+      "kind": "通用 Agent 产品",
+      "summary": "面向研究、分析与交付物生成的通用任务 Agent 产品。",
+      "versions": [],
+      "source": "https://manus.im/",
+      "sourceLabel": "Manus 官方网站",
+      "access": [
+        "网页/App/桌面产品"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "持续更新产品（无统一公开版本号）",
+      "currentVersionStatus": "官方产品持续更新",
+      "releaseDate": null,
+      "releaseDateStatus": "未采用统一模型发布日期"
+    },
+    {
+      "id": "amazon-q",
+      "name": "Amazon Q",
+      "company": "Amazon",
+      "region": "global",
+      "category": "work",
+      "kind": "企业与开发助手产品",
+      "summary": "面向企业知识、AWS 操作与软件开发任务的助手产品系列。",
+      "versions": [],
+      "source": "https://aws.amazon.com/q/",
+      "sourceLabel": "AWS Amazon Q 官方介绍",
+      "access": [
+        "API",
+        "网页/App/桌面产品",
+        "企业服务"
+      ],
+      "accessStatus": "已按官方产品/模型入口核对",
+      "currentVersion": "持续更新产品（无统一公开版本号）",
+      "currentVersionStatus": "官方产品持续更新",
+      "releaseDate": null,
+      "releaseDateStatus": "未采用统一模型发布日期"
+    }
+  ],
+  "news": [
+    {
+      "id": "veriscene",
+      "date": "2026-09-08",
+      "label": "行业信号 · 世界模型",
+      "title": "VeriScene：用世界模型代理探索场景重建",
+      "summary": "论文探索从证据到场景的重建方法。研究能力与实际可靠性需要分开判断。",
+      "source": "https://arxiv.org/abs/2609.08342",
+      "provenance": "项目 09.10 快照；本次未重新复核论文全文。"
+    },
+    {
+      "id": "openwam",
+      "date": "2026-09-07",
+      "label": "行业信号 · 世界与动作",
+      "title": "OpenWAM：模块化世界-动作模型的预训练探索",
+      "summary": "将世界-动作模型设计拆成可组合模块，探索统一的训练、推理与评估。",
+      "source": "https://arxiv.org/abs/2609.07398",
+      "provenance": "项目 09.10 快照；作者报告，不代表独立复现。"
+    },
+    {
+      "id": "cosmos",
+      "date": "2026-09-07",
+      "label": "行业信号 · 具身智能",
+      "title": "机器人策略中的语言迁移，如何测量？",
+      "summary": "围绕 Cosmos3 视觉-语言-动作策略，研究引入希腊语后的语言迁移问题。",
+      "source": "https://arxiv.org/abs/2609.07470",
+      "provenance": "项目 09.10 快照；本次未重新复核实验指标。"
+    }
+  ]
+}
