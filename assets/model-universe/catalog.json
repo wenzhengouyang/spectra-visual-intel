@@ -77,7 +77,8 @@
       "currentVersion": "happyhorse-1.1-t2v",
       "currentVersionStatus": "已确认版本摘录",
       "releaseDate": null,
-      "releaseDateStatus": "官方发布日期待核实"
+      "releaseDateStatus": "官方发布日期待核实",
+      "newsIds": []
     },
     {
       "id": "happyoyster",
@@ -97,7 +98,8 @@
       "currentVersion": "系列/研究项目持续更新（官方未给出单一当前版本号）",
       "currentVersionStatus": "官方未采用单一当前版本号",
       "releaseDate": null,
-      "releaseDateStatus": "官方未披露统一发布日期"
+      "releaseDateStatus": "官方未披露统一发布日期",
+      "newsIds": []
     },
     {
       "id": "qwen-vl",
@@ -125,7 +127,8 @@
       "currentVersion": "Qwen-VL（系列）",
       "currentVersionStatus": "已确认版本摘录",
       "releaseDate": null,
-      "releaseDateStatus": "官方发布日期未披露或待核实"
+      "releaseDateStatus": "官方发布日期未披露或待核实",
+      "newsIds": []
     },
     {
       "id": "qwen-coder",
@@ -153,7 +156,8 @@
       "currentVersion": "Qwen3-Coder-Next",
       "currentVersionStatus": "已确认版本摘录",
       "releaseDate": null,
-      "releaseDateStatus": "官方发布日期未披露或待核实"
+      "releaseDateStatus": "官方发布日期未披露或待核实",
+      "newsIds": []
     },
     {
       "id": "z-image",
@@ -179,7 +183,8 @@
       "currentVersion": "z-image-turbo",
       "currentVersionStatus": "已确认版本摘录",
       "releaseDate": null,
-      "releaseDateStatus": "官方发布日期未披露或待核实"
+      "releaseDateStatus": "官方发布日期未披露或待核实",
+      "newsIds": []
     },
     {
       "id": "lingma",
@@ -198,7 +203,8 @@
       "currentVersion": "持续更新产品（无统一公开版本号）",
       "currentVersionStatus": "官方产品持续更新",
       "releaseDate": null,
-      "releaseDateStatus": "未采用统一模型发布日期"
+      "releaseDateStatus": "未采用统一模型发布日期",
+      "newsIds": []
     },
     {
       "id": "tingwu",
@@ -217,7 +223,8 @@
       "currentVersion": "持续更新产品（无统一公开版本号）",
       "currentVersionStatus": "官方产品持续更新",
       "releaseDate": null,
-      "releaseDateStatus": "未采用统一模型发布日期"
+      "releaseDateStatus": "未采用统一模型发布日期",
+      "newsIds": []
     },
     {
       "id": "dingtalk-ai",
@@ -238,7 +245,8 @@
       "currentVersion": "持续更新产品（无统一公开版本号）",
       "currentVersionStatus": "官方产品持续更新",
       "releaseDate": null,
-      "releaseDateStatus": "未采用统一模型发布日期"
+      "releaseDateStatus": "未采用统一模型发布日期",
+      "newsIds": []
     },
     {
       "id": "jimeng",
@@ -259,7 +267,8 @@
       "currentVersion": "持续更新产品（无统一公开版本号）",
       "currentVersionStatus": "官方产品持续更新",
       "releaseDate": null,
-      "releaseDateStatus": "未采用统一模型发布日期"
+      "releaseDateStatus": "未采用统一模型发布日期",
+      "newsIds": []
     },
     {
       "id": "trae",
@@ -280,7 +289,8 @@
       "currentVersion": "持续更新产品（无统一公开版本号）",
       "currentVersionStatus": "官方产品持续更新",
       "releaseDate": null,
-      "releaseDateStatus": "未采用统一模型发布日期"
+      "releaseDateStatus": "未采用统一模型发布日期",
+      "newsIds": []
     },
     {
       "id": "hy-video",
@@ -304,7 +314,8 @@
       "currentVersion": "HunyuanVideo-1.5",
       "currentVersionStatus": "已确认版本摘录",
       "releaseDate": null,
-      "releaseDateStatus": "官方发布日期待核实"
+      "releaseDateStatus": "官方发布日期待核实",
+      "newsIds": []
     },
     {
       "id": "cogview",
@@ -329,7 +340,8 @@
       "currentVersion": "CogView-4",
       "currentVersionStatus": "已确认版本摘录",
       "releaseDate": null,
-      "releaseDateStatus": "官方发布日期待核实"
+      "releaseDateStatus": "官方发布日期待核实",
+      "newsIds": []
     },
     {
       "id": "cogvideox",
@@ -354,7 +366,8 @@
       "currentVersion": "CogVideoX-3",
       "currentVersionStatus": "已确认版本摘录",
       "releaseDate": null,
-      "releaseDateStatus": "官方发布日期待核实"
+      "releaseDateStatus": "官方发布日期待核实",
+      "newsIds": []
     },
     {
       "id": "vidu",
@@ -399,7 +412,8 @@
       "currentVersion": "Vidu Q3",
       "currentVersionStatus": "已确认版本摘录",
       "releaseDate": null,
-      "releaseDateStatus": "官方发布日期待核实"
+      "releaseDateStatus": "官方发布日期待核实",
+      "newsIds": []
     },
     {
       "id": "pangu",
@@ -418,7 +432,8 @@
       "currentVersion": "系列/研究项目持续更新（官方未给出单一当前版本号）",
       "currentVersionStatus": "官方未采用单一当前版本号",
       "releaseDate": null,
-      "releaseDateStatus": "官方未披露统一发布日期"
+      "releaseDateStatus": "官方未披露统一发布日期",
+      "newsIds": []
     },
     {
       "id": "sensenova",
@@ -438,7 +453,8 @@
       "currentVersion": "系列/研究项目持续更新（官方未给出单一当前版本号）",
       "currentVersionStatus": "官方未采用单一当前版本号",
       "releaseDate": null,
-      "releaseDateStatus": "官方未披露统一发布日期"
+      "releaseDateStatus": "官方未披露统一发布日期",
+      "newsIds": []
     },
     {
       "id": "sensenova-si",
@@ -458,7 +474,8 @@
       "currentVersion": "系列/研究项目持续更新（官方未给出单一当前版本号）",
       "currentVersionStatus": "官方未采用单一当前版本号",
       "releaseDate": null,
-      "releaseDateStatus": "官方未披露统一发布日期"
+      "releaseDateStatus": "官方未披露统一发布日期",
+      "newsIds": []
     },
     {
       "id": "spark",
@@ -482,7 +499,8 @@
       "currentVersion": "Spark X1",
       "currentVersionStatus": "已确认版本摘录",
       "releaseDate": null,
-      "releaseDateStatus": "官方发布日期待核实"
+      "releaseDateStatus": "官方发布日期待核实",
+      "newsIds": []
     },
     {
       "id": "step",
@@ -510,7 +528,8 @@
       "currentVersion": "Step 3.7 Flash",
       "currentVersionStatus": "已确认版本摘录",
       "releaseDate": null,
-      "releaseDateStatus": "官方发布日期待核实"
+      "releaseDateStatus": "官方发布日期待核实",
+      "newsIds": []
     },
     {
       "id": "step-assistant",
@@ -529,7 +548,8 @@
       "currentVersion": "持续更新产品（无统一公开版本号）",
       "currentVersionStatus": "官方产品持续更新",
       "releaseDate": null,
-      "releaseDateStatus": "未采用统一模型发布日期"
+      "releaseDateStatus": "未采用统一模型发布日期",
+      "newsIds": []
     },
     {
       "id": "gpt",
@@ -558,7 +578,8 @@
       "currentVersion": "GPT-6 Astra",
       "currentVersionStatus": "已确认版本摘录",
       "releaseDate": null,
-      "releaseDateStatus": "官方发布日期待核实"
+      "releaseDateStatus": "官方发布日期待核实",
+      "newsIds": []
     },
     {
       "id": "qwen-code",
@@ -577,7 +598,8 @@
       "currentVersion": "持续更新产品（无统一公开版本号）",
       "currentVersionStatus": "官方产品持续更新",
       "releaseDate": null,
-      "releaseDateStatus": "未采用统一模型发布日期"
+      "releaseDateStatus": "未采用统一模型发布日期",
+      "newsIds": []
     },
     {
       "id": "qwen",
@@ -628,7 +650,8 @@
       "currentVersion": "Qwen3.8-Max-0902",
       "currentVersionStatus": "已确认版本摘录",
       "releaseDate": "2026-09-02",
-      "releaseDateStatus": "已确认官方日期"
+      "releaseDateStatus": "已确认官方日期",
+      "newsIds": []
     },
     {
       "id": "seed",
@@ -657,7 +680,8 @@
       "currentVersion": "Doubao-Seed-2.1-Turbo",
       "currentVersionStatus": "已确认版本摘录",
       "releaseDate": null,
-      "releaseDateStatus": "官方发布日期待核实"
+      "releaseDateStatus": "官方发布日期待核实",
+      "newsIds": []
     },
     {
       "id": "deepseek",
@@ -698,7 +722,8 @@
       "currentVersion": "DeepSeek-V4-Pro",
       "currentVersionStatus": "已确认版本摘录",
       "releaseDate": null,
-      "releaseDateStatus": "官方发布日期待核实"
+      "releaseDateStatus": "官方发布日期待核实",
+      "newsIds": []
     },
     {
       "id": "kimi",
@@ -727,7 +752,8 @@
       "currentVersion": "Kimi K3",
       "currentVersionStatus": "已确认版本摘录",
       "releaseDate": "2026-07-16",
-      "releaseDateStatus": "已确认官方日期"
+      "releaseDateStatus": "已确认官方日期",
+      "newsIds": []
     },
     {
       "id": "hunyuan",
@@ -749,7 +775,8 @@
       "currentVersion": "系列/研究项目持续更新（官方未给出单一当前版本号）",
       "currentVersionStatus": "官方未采用单一当前版本号",
       "releaseDate": null,
-      "releaseDateStatus": "官方未披露统一发布日期"
+      "releaseDateStatus": "官方未披露统一发布日期",
+      "newsIds": []
     },
     {
       "id": "ernie",
@@ -777,7 +804,8 @@
       "currentVersion": "ERNIE 5.1",
       "currentVersionStatus": "已确认版本摘录",
       "releaseDate": null,
-      "releaseDateStatus": "官方发布日期待核实"
+      "releaseDateStatus": "官方发布日期待核实",
+      "newsIds": []
     },
     {
       "id": "glm",
@@ -856,7 +884,8 @@
       "currentVersion": "GLM-5.2",
       "currentVersionStatus": "已确认版本摘录",
       "releaseDate": null,
-      "releaseDateStatus": "官方发布日期待核实"
+      "releaseDateStatus": "官方发布日期待核实",
+      "newsIds": []
     },
     {
       "id": "minimax",
@@ -893,7 +922,8 @@
       "currentVersion": "MiniMax H3",
       "currentVersionStatus": "已确认版本摘录",
       "releaseDate": null,
-      "releaseDateStatus": "官方发布日期待核实"
+      "releaseDateStatus": "官方发布日期待核实",
+      "newsIds": []
     },
     {
       "id": "claude",
@@ -926,7 +956,8 @@
       "currentVersion": "Claude Opus 5",
       "currentVersionStatus": "已确认版本摘录",
       "releaseDate": "2026-07-24",
-      "releaseDateStatus": "已确认官方日期"
+      "releaseDateStatus": "已确认官方日期",
+      "newsIds": []
     },
     {
       "id": "gemini",
@@ -965,7 +996,8 @@
       "currentVersion": "Gemini 3.8 Flash",
       "currentVersionStatus": "已确认版本摘录",
       "releaseDate": "2026-09-02",
-      "releaseDateStatus": "已确认官方日期"
+      "releaseDateStatus": "已确认官方日期",
+      "newsIds": []
     },
     {
       "id": "qwen-image",
@@ -1001,7 +1033,8 @@
       "currentVersion": "Qwen-Image-3.0",
       "currentVersionStatus": "已确认版本摘录",
       "releaseDate": "2026-07-21",
-      "releaseDateStatus": "已确认官方日期"
+      "releaseDateStatus": "已确认官方日期",
+      "newsIds": []
     },
     {
       "id": "seedream",
@@ -1038,7 +1071,8 @@
       "currentVersion": "Doubao-Seedream-4.5",
       "currentVersionStatus": "已确认版本摘录",
       "releaseDate": null,
-      "releaseDateStatus": "官方发布日期待核实"
+      "releaseDateStatus": "官方发布日期待核实",
+      "newsIds": []
     },
     {
       "id": "hy-image",
@@ -1063,7 +1097,8 @@
       "currentVersion": "HY-Image-3.0",
       "currentVersionStatus": "已确认版本摘录",
       "releaseDate": null,
-      "releaseDateStatus": "官方发布日期待核实"
+      "releaseDateStatus": "官方发布日期待核实",
+      "newsIds": []
     },
     {
       "id": "gpt-image",
@@ -1084,7 +1119,8 @@
       "currentVersion": "系列/研究项目持续更新（官方未给出单一当前版本号）",
       "currentVersionStatus": "官方未采用单一当前版本号",
       "releaseDate": null,
-      "releaseDateStatus": "官方未披露统一发布日期"
+      "releaseDateStatus": "官方未披露统一发布日期",
+      "newsIds": []
     },
     {
       "id": "wan",
@@ -1117,7 +1153,8 @@
       "currentVersion": "wan3.0-video",
       "currentVersionStatus": "已确认版本摘录",
       "releaseDate": null,
-      "releaseDateStatus": "官方发布日期待核实"
+      "releaseDateStatus": "官方发布日期待核实",
+      "newsIds": []
     },
     {
       "id": "seedance",
@@ -1155,7 +1192,8 @@
       "currentVersion": "Doubao-Seedance-2.0",
       "currentVersionStatus": "已确认版本摘录",
       "releaseDate": null,
-      "releaseDateStatus": "官方发布日期待核实"
+      "releaseDateStatus": "官方发布日期待核实",
+      "newsIds": []
     },
     {
       "id": "kling",
@@ -1175,7 +1213,8 @@
       "currentVersion": "持续更新产品（无统一公开版本号）",
       "currentVersionStatus": "官方产品持续更新",
       "releaseDate": null,
-      "releaseDateStatus": "未采用统一模型发布日期"
+      "releaseDateStatus": "未采用统一模型发布日期",
+      "newsIds": []
     },
     {
       "id": "hailuo",
@@ -1194,7 +1233,8 @@
       "currentVersion": "持续更新产品（无统一公开版本号）",
       "currentVersionStatus": "官方产品持续更新",
       "releaseDate": null,
-      "releaseDateStatus": "未采用统一模型发布日期"
+      "releaseDateStatus": "未采用统一模型发布日期",
+      "newsIds": []
     },
     {
       "id": "veo",
@@ -1227,7 +1267,8 @@
       "currentVersion": "Veo 3.1 Lite",
       "currentVersionStatus": "已确认版本摘录",
       "releaseDate": "2026-04-08",
-      "releaseDateStatus": "已确认官方日期"
+      "releaseDateStatus": "已确认官方日期",
+      "newsIds": []
     },
     {
       "id": "hunyuanworld",
@@ -1252,7 +1293,8 @@
       "currentVersion": "HunyuanWorld-1.0",
       "currentVersionStatus": "已确认版本摘录",
       "releaseDate": null,
-      "releaseDateStatus": "官方发布日期待核实"
+      "releaseDateStatus": "官方发布日期待核实",
+      "newsIds": []
     },
     {
       "id": "hy3d",
@@ -1276,7 +1318,8 @@
       "currentVersion": "HY-3D-3.1",
       "currentVersionStatus": "已确认版本摘录",
       "releaseDate": null,
-      "releaseDateStatus": "官方发布日期待核实"
+      "releaseDateStatus": "官方发布日期待核实",
+      "newsIds": []
     },
     {
       "id": "genie",
@@ -1302,7 +1345,8 @@
       "currentVersion": "Genie 3",
       "currentVersionStatus": "已确认版本摘录",
       "releaseDate": null,
-      "releaseDateStatus": "官方发布日期待核实"
+      "releaseDateStatus": "官方发布日期待核实",
+      "newsIds": []
     },
     {
       "id": "openwam",
@@ -1322,9 +1366,7 @@
       ],
       "source": "https://arxiv.org/abs/2609.07398",
       "sourceLabel": "作者论文 · 项目快照收录",
-      "newsIds": [
-        "openwam"
-      ],
+      "newsIds": [],
       "note": "论文条目沿用项目 09.10 快照，本次未重新复核全文与实验。",
       "access": [
         "开放权重/可下载",
@@ -1366,7 +1408,8 @@
       "currentVersion": "CLI v0.41.0",
       "currentVersionStatus": "已确认版本摘录",
       "releaseDate": "2026-09-04",
-      "releaseDateStatus": "已确认官方日期"
+      "releaseDateStatus": "已确认官方日期",
+      "newsIds": []
     },
     {
       "id": "codebuddy",
@@ -1385,7 +1428,8 @@
       "currentVersion": "持续更新产品（无统一公开版本号）",
       "currentVersionStatus": "官方产品持续更新",
       "releaseDate": null,
-      "releaseDateStatus": "未采用统一模型发布日期"
+      "releaseDateStatus": "未采用统一模型发布日期",
+      "newsIds": []
     },
     {
       "id": "codex",
@@ -1406,7 +1450,8 @@
       "currentVersion": "持续更新产品（无统一公开版本号）",
       "currentVersionStatus": "官方产品持续更新",
       "releaseDate": null,
-      "releaseDateStatus": "未采用统一模型发布日期"
+      "releaseDateStatus": "未采用统一模型发布日期",
+      "newsIds": []
     },
     {
       "id": "claude-code",
@@ -1433,7 +1478,8 @@
       "currentVersion": "Claude Code research preview",
       "currentVersionStatus": "已确认版本摘录",
       "releaseDate": "2025-02-24",
-      "releaseDateStatus": "已确认官方日期"
+      "releaseDateStatus": "已确认官方日期",
+      "newsIds": []
     },
     {
       "id": "wps",
@@ -1452,7 +1498,8 @@
       "currentVersion": "持续更新产品（无统一公开版本号）",
       "currentVersionStatus": "官方产品持续更新",
       "releaseDate": null,
-      "releaseDateStatus": "未采用统一模型发布日期"
+      "releaseDateStatus": "未采用统一模型发布日期",
+      "newsIds": []
     },
     {
       "id": "ima",
@@ -1471,7 +1518,8 @@
       "currentVersion": "持续更新产品（无统一公开版本号）",
       "currentVersionStatus": "官方产品持续更新",
       "releaseDate": null,
-      "releaseDateStatus": "未采用统一模型发布日期"
+      "releaseDateStatus": "未采用统一模型发布日期",
+      "newsIds": []
     },
     {
       "id": "feishu",
@@ -1490,7 +1538,8 @@
       "currentVersion": "持续更新产品（无统一公开版本号）",
       "currentVersionStatus": "官方产品持续更新",
       "releaseDate": null,
-      "releaseDateStatus": "未采用统一模型发布日期"
+      "releaseDateStatus": "未采用统一模型发布日期",
+      "newsIds": []
     },
     {
       "id": "coze",
@@ -1509,7 +1558,8 @@
       "currentVersion": "持续更新产品（无统一公开版本号）",
       "currentVersionStatus": "官方产品持续更新",
       "releaseDate": null,
-      "releaseDateStatus": "未采用统一模型发布日期"
+      "releaseDateStatus": "未采用统一模型发布日期",
+      "newsIds": []
     },
     {
       "id": "kimi-work",
@@ -1528,7 +1578,8 @@
       "currentVersion": "持续更新产品（无统一公开版本号）",
       "currentVersionStatus": "官方产品持续更新",
       "releaseDate": null,
-      "releaseDateStatus": "未采用统一模型发布日期"
+      "releaseDateStatus": "未采用统一模型发布日期",
+      "newsIds": []
     },
     {
       "id": "workbuddy",
@@ -1547,7 +1598,8 @@
       "currentVersion": "持续更新产品（无统一公开版本号）",
       "currentVersionStatus": "官方产品持续更新",
       "releaseDate": null,
-      "releaseDateStatus": "未采用统一模型发布日期"
+      "releaseDateStatus": "未采用统一模型发布日期",
+      "newsIds": []
     },
     {
       "id": "minimax-agent",
@@ -1566,7 +1618,8 @@
       "currentVersion": "持续更新产品（无统一公开版本号）",
       "currentVersionStatus": "官方产品持续更新",
       "releaseDate": null,
-      "releaseDateStatus": "未采用统一模型发布日期"
+      "releaseDateStatus": "未采用统一模型发布日期",
+      "newsIds": []
     },
     {
       "id": "mimo",
@@ -1594,7 +1647,8 @@
       "currentVersion": "MiMo-V2-Flash",
       "currentVersionStatus": "已确认版本摘录",
       "releaseDate": null,
-      "releaseDateStatus": "官方发布日期未披露或待核实"
+      "releaseDateStatus": "官方发布日期未披露或待核实",
+      "newsIds": []
     },
     {
       "id": "ling-model",
@@ -1627,7 +1681,8 @@
       "currentVersion": "Ling-mini-2.0",
       "currentVersionStatus": "已确认版本摘录",
       "releaseDate": null,
-      "releaseDateStatus": "官方发布日期未披露或待核实"
+      "releaseDateStatus": "官方发布日期未披露或待核实",
+      "newsIds": []
     },
     {
       "id": "baichuan",
@@ -1647,7 +1702,8 @@
       "currentVersion": "系列/研究项目持续更新（官方未给出单一当前版本号）",
       "currentVersionStatus": "官方未采用单一当前版本号",
       "releaseDate": null,
-      "releaseDateStatus": "官方未披露统一发布日期"
+      "releaseDateStatus": "官方未披露统一发布日期",
+      "newsIds": []
     },
     {
       "id": "yi",
@@ -1667,7 +1723,8 @@
       "currentVersion": "系列/研究项目持续更新（官方未给出单一当前版本号）",
       "currentVersionStatus": "官方未采用单一当前版本号",
       "releaseDate": null,
-      "releaseDateStatus": "官方未披露统一发布日期"
+      "releaseDateStatus": "官方未披露统一发布日期",
+      "newsIds": []
     },
     {
       "id": "joyai",
@@ -1689,7 +1746,8 @@
       "currentVersion": "系列/研究项目持续更新（官方未给出单一当前版本号）",
       "currentVersionStatus": "官方未采用单一当前版本号",
       "releaseDate": null,
-      "releaseDateStatus": "官方未披露统一发布日期"
+      "releaseDateStatus": "官方未披露统一发布日期",
+      "newsIds": []
     },
     {
       "id": "360-zhinao",
@@ -1710,7 +1768,8 @@
       "currentVersion": "持续更新产品（无统一公开版本号）",
       "currentVersionStatus": "官方产品持续更新",
       "releaseDate": null,
-      "releaseDateStatus": "未采用统一模型发布日期"
+      "releaseDateStatus": "未采用统一模型发布日期",
+      "newsIds": []
     },
     {
       "id": "bluelm",
@@ -1731,7 +1790,8 @@
       "currentVersion": "系列/研究项目持续更新（官方未给出单一当前版本号）",
       "currentVersionStatus": "官方未采用单一当前版本号",
       "releaseDate": null,
-      "releaseDateStatus": "官方未披露统一发布日期"
+      "releaseDateStatus": "官方未披露统一发布日期",
+      "newsIds": []
     },
     {
       "id": "llama",
@@ -1764,7 +1824,8 @@
       "currentVersion": "Llama 4 Maverick",
       "currentVersionStatus": "已确认版本摘录",
       "releaseDate": null,
-      "releaseDateStatus": "官方发布日期待核实"
+      "releaseDateStatus": "官方发布日期待核实",
+      "newsIds": []
     },
     {
       "id": "mistral",
@@ -1798,7 +1859,8 @@
       "currentVersion": "Mistral Medium 3.5",
       "currentVersionStatus": "已确认版本摘录",
       "releaseDate": null,
-      "releaseDateStatus": "官方发布日期未披露或待核实"
+      "releaseDateStatus": "官方发布日期未披露或待核实",
+      "newsIds": []
     },
     {
       "id": "grok",
@@ -1825,7 +1887,8 @@
       "currentVersion": "Grok 4.20",
       "currentVersionStatus": "已确认版本摘录",
       "releaseDate": "2026-04-07",
-      "releaseDateStatus": "已确认官方日期"
+      "releaseDateStatus": "已确认官方日期",
+      "newsIds": []
     },
     {
       "id": "phi",
@@ -1851,7 +1914,8 @@
       "currentVersion": "Phi-4",
       "currentVersionStatus": "已确认版本摘录",
       "releaseDate": null,
-      "releaseDateStatus": "官方发布日期待核实"
+      "releaseDateStatus": "官方发布日期待核实",
+      "newsIds": []
     },
     {
       "id": "amazon-nova",
@@ -1890,7 +1954,8 @@
       "currentVersion": "Amazon Nova 2",
       "currentVersionStatus": "已确认版本摘录",
       "releaseDate": null,
-      "releaseDateStatus": "官方发布日期待核实"
+      "releaseDateStatus": "官方发布日期待核实",
+      "newsIds": []
     },
     {
       "id": "nemotron",
@@ -1930,7 +1995,8 @@
       "currentVersion": "Nemotron 3 Ultra",
       "currentVersionStatus": "已确认版本摘录",
       "releaseDate": null,
-      "releaseDateStatus": "官方发布日期未披露或待核实"
+      "releaseDateStatus": "官方发布日期未披露或待核实",
+      "newsIds": []
     },
     {
       "id": "stable-diffusion",
@@ -1964,7 +2030,8 @@
       "currentVersion": "Stable Diffusion 3.5 Large",
       "currentVersionStatus": "已确认版本摘录",
       "releaseDate": null,
-      "releaseDateStatus": "官方发布日期待核实"
+      "releaseDateStatus": "官方发布日期待核实",
+      "newsIds": []
     },
     {
       "id": "flux",
@@ -1997,7 +2064,8 @@
       "currentVersion": "FLUX.2 [pro]",
       "currentVersionStatus": "已确认版本摘录",
       "releaseDate": null,
-      "releaseDateStatus": "官方发布日期待核实"
+      "releaseDateStatus": "官方发布日期待核实",
+      "newsIds": []
     },
     {
       "id": "firefly",
@@ -2017,7 +2085,8 @@
       "currentVersion": "持续更新产品（无统一公开版本号）",
       "currentVersionStatus": "官方产品持续更新",
       "releaseDate": null,
-      "releaseDateStatus": "未采用统一模型发布日期"
+      "releaseDateStatus": "未采用统一模型发布日期",
+      "newsIds": []
     },
     {
       "id": "midjourney",
@@ -2037,7 +2106,8 @@
       "currentVersion": "持续更新产品（无统一公开版本号）",
       "currentVersionStatus": "官方产品持续更新",
       "releaseDate": null,
-      "releaseDateStatus": "未采用统一模型发布日期"
+      "releaseDateStatus": "未采用统一模型发布日期",
+      "newsIds": []
     },
     {
       "id": "ideogram",
@@ -2057,7 +2127,8 @@
       "currentVersion": "持续更新产品（无统一公开版本号）",
       "currentVersionStatus": "官方产品持续更新",
       "releaseDate": null,
-      "releaseDateStatus": "未采用统一模型发布日期"
+      "releaseDateStatus": "未采用统一模型发布日期",
+      "newsIds": []
     },
     {
       "id": "recraft",
@@ -2077,7 +2148,8 @@
       "currentVersion": "持续更新产品（无统一公开版本号）",
       "currentVersionStatus": "官方产品持续更新",
       "releaseDate": null,
-      "releaseDateStatus": "未采用统一模型发布日期"
+      "releaseDateStatus": "未采用统一模型发布日期",
+      "newsIds": []
     },
     {
       "id": "midjourney-video",
@@ -2098,7 +2170,8 @@
       "currentVersion": "持续更新产品（无统一公开版本号）",
       "currentVersionStatus": "官方产品持续更新",
       "releaseDate": null,
-      "releaseDateStatus": "未采用统一模型发布日期"
+      "releaseDateStatus": "未采用统一模型发布日期",
+      "newsIds": []
     },
     {
       "id": "sora",
@@ -2119,7 +2192,8 @@
       "currentVersion": "持续更新产品（无统一公开版本号）",
       "currentVersionStatus": "官方产品持续更新",
       "releaseDate": null,
-      "releaseDateStatus": "未采用统一模型发布日期"
+      "releaseDateStatus": "未采用统一模型发布日期",
+      "newsIds": []
     },
     {
       "id": "runway",
@@ -2140,7 +2214,8 @@
       "currentVersion": "持续更新产品（无统一公开版本号）",
       "currentVersionStatus": "官方产品持续更新",
       "releaseDate": null,
-      "releaseDateStatus": "未采用统一模型发布日期"
+      "releaseDateStatus": "未采用统一模型发布日期",
+      "newsIds": []
     },
     {
       "id": "luma-ray",
@@ -2168,7 +2243,8 @@
       "currentVersion": "Ray2",
       "currentVersionStatus": "已确认版本摘录",
       "releaseDate": null,
-      "releaseDateStatus": "官方发布日期未披露或待核实"
+      "releaseDateStatus": "官方发布日期未披露或待核实",
+      "newsIds": []
     },
     {
       "id": "pika",
@@ -2189,7 +2265,8 @@
       "currentVersion": "持续更新产品（无统一公开版本号）",
       "currentVersionStatus": "官方产品持续更新",
       "releaseDate": null,
-      "releaseDateStatus": "未采用统一模型发布日期"
+      "releaseDateStatus": "未采用统一模型发布日期",
+      "newsIds": []
     },
     {
       "id": "firefly-video",
@@ -2216,7 +2293,8 @@
       "currentVersion": "Firefly Video Model",
       "currentVersionStatus": "已确认版本摘录",
       "releaseDate": "2025-02-12",
-      "releaseDateStatus": "已确认官方日期"
+      "releaseDateStatus": "已确认官方日期",
+      "newsIds": []
     },
     {
       "id": "stable-video",
@@ -2242,7 +2320,8 @@
       "currentVersion": "Stable Video Diffusion 1.1",
       "currentVersionStatus": "已确认版本摘录",
       "releaseDate": null,
-      "releaseDateStatus": "官方发布日期待核实"
+      "releaseDateStatus": "官方发布日期待核实",
+      "newsIds": []
     },
     {
       "id": "cosmos",
@@ -2263,7 +2342,8 @@
       "currentVersion": "持续更新产品（无统一公开版本号）",
       "currentVersionStatus": "官方产品持续更新",
       "releaseDate": null,
-      "releaseDateStatus": "未采用统一模型发布日期"
+      "releaseDateStatus": "未采用统一模型发布日期",
+      "newsIds": []
     },
     {
       "id": "world-labs",
@@ -2283,7 +2363,8 @@
       "currentVersion": "持续更新产品（无统一公开版本号）",
       "currentVersionStatus": "官方产品持续更新",
       "releaseDate": null,
-      "releaseDateStatus": "未采用统一模型发布日期"
+      "releaseDateStatus": "未采用统一模型发布日期",
+      "newsIds": []
     },
     {
       "id": "odyssey",
@@ -2303,7 +2384,8 @@
       "currentVersion": "持续更新产品（无统一公开版本号）",
       "currentVersionStatus": "官方产品持续更新",
       "releaseDate": null,
-      "releaseDateStatus": "未采用统一模型发布日期"
+      "releaseDateStatus": "未采用统一模型发布日期",
+      "newsIds": []
     },
     {
       "id": "decart",
@@ -2323,7 +2405,8 @@
       "currentVersion": "系列/研究项目持续更新（官方未给出单一当前版本号）",
       "currentVersionStatus": "官方未采用单一当前版本号",
       "releaseDate": null,
-      "releaseDateStatus": "官方未披露统一发布日期"
+      "releaseDateStatus": "官方未披露统一发布日期",
+      "newsIds": []
     },
     {
       "id": "v-jepa",
@@ -2351,7 +2434,8 @@
       "currentVersion": "V-JEPA 2",
       "currentVersionStatus": "已确认版本摘录",
       "releaseDate": null,
-      "releaseDateStatus": "官方发布日期未披露或待核实"
+      "releaseDateStatus": "官方发布日期未披露或待核实",
+      "newsIds": []
     },
     {
       "id": "tripo",
@@ -2372,7 +2456,8 @@
       "currentVersion": "持续更新产品（无统一公开版本号）",
       "currentVersionStatus": "官方产品持续更新",
       "releaseDate": null,
-      "releaseDateStatus": "未采用统一模型发布日期"
+      "releaseDateStatus": "未采用统一模型发布日期",
+      "newsIds": []
     },
     {
       "id": "meshy",
@@ -2393,7 +2478,8 @@
       "currentVersion": "持续更新产品（无统一公开版本号）",
       "currentVersionStatus": "官方产品持续更新",
       "releaseDate": null,
-      "releaseDateStatus": "未采用统一模型发布日期"
+      "releaseDateStatus": "未采用统一模型发布日期",
+      "newsIds": []
     },
     {
       "id": "copilot",
@@ -2413,7 +2499,8 @@
       "currentVersion": "持续更新产品（无统一公开版本号）",
       "currentVersionStatus": "官方产品持续更新",
       "releaseDate": null,
-      "releaseDateStatus": "未采用统一模型发布日期"
+      "releaseDateStatus": "未采用统一模型发布日期",
+      "newsIds": []
     },
     {
       "id": "cursor",
@@ -2433,7 +2520,8 @@
       "currentVersion": "系列/研究项目持续更新（官方未给出单一当前版本号）",
       "currentVersionStatus": "官方未采用单一当前版本号",
       "releaseDate": null,
-      "releaseDateStatus": "官方未披露统一发布日期"
+      "releaseDateStatus": "官方未披露统一发布日期",
+      "newsIds": []
     },
     {
       "id": "windsurf",
@@ -2453,7 +2541,8 @@
       "currentVersion": "系列/研究项目持续更新（官方未给出单一当前版本号）",
       "currentVersionStatus": "官方未采用单一当前版本号",
       "releaseDate": null,
-      "releaseDateStatus": "官方未披露统一发布日期"
+      "releaseDateStatus": "官方未披露统一发布日期",
+      "newsIds": []
     },
     {
       "id": "devin",
@@ -2473,7 +2562,8 @@
       "currentVersion": "持续更新产品（无统一公开版本号）",
       "currentVersionStatus": "官方产品持续更新",
       "releaseDate": null,
-      "releaseDateStatus": "未采用统一模型发布日期"
+      "releaseDateStatus": "未采用统一模型发布日期",
+      "newsIds": []
     },
     {
       "id": "copilot-work",
@@ -2494,7 +2584,8 @@
       "currentVersion": "持续更新产品（无统一公开版本号）",
       "currentVersionStatus": "官方产品持续更新",
       "releaseDate": null,
-      "releaseDateStatus": "未采用统一模型发布日期"
+      "releaseDateStatus": "未采用统一模型发布日期",
+      "newsIds": []
     },
     {
       "id": "gemini-workspace",
@@ -2515,7 +2606,8 @@
       "currentVersion": "持续更新产品（无统一公开版本号）",
       "currentVersionStatus": "官方产品持续更新",
       "releaseDate": null,
-      "releaseDateStatus": "未采用统一模型发布日期"
+      "releaseDateStatus": "未采用统一模型发布日期",
+      "newsIds": []
     },
     {
       "id": "notion-ai",
@@ -2535,7 +2627,8 @@
       "currentVersion": "持续更新产品（无统一公开版本号）",
       "currentVersionStatus": "官方产品持续更新",
       "releaseDate": null,
-      "releaseDateStatus": "未采用统一模型发布日期"
+      "releaseDateStatus": "未采用统一模型发布日期",
+      "newsIds": []
     },
     {
       "id": "perplexity",
@@ -2556,7 +2649,8 @@
       "currentVersion": "持续更新产品（无统一公开版本号）",
       "currentVersionStatus": "官方产品持续更新",
       "releaseDate": null,
-      "releaseDateStatus": "未采用统一模型发布日期"
+      "releaseDateStatus": "未采用统一模型发布日期",
+      "newsIds": []
     },
     {
       "id": "manus",
@@ -2576,7 +2670,8 @@
       "currentVersion": "持续更新产品（无统一公开版本号）",
       "currentVersionStatus": "官方产品持续更新",
       "releaseDate": null,
-      "releaseDateStatus": "未采用统一模型发布日期"
+      "releaseDateStatus": "未采用统一模型发布日期",
+      "newsIds": []
     },
     {
       "id": "amazon-q",
@@ -2598,36 +2693,9 @@
       "currentVersion": "持续更新产品（无统一公开版本号）",
       "currentVersionStatus": "官方产品持续更新",
       "releaseDate": null,
-      "releaseDateStatus": "未采用统一模型发布日期"
+      "releaseDateStatus": "未采用统一模型发布日期",
+      "newsIds": []
     }
   ],
-  "news": [
-    {
-      "id": "veriscene",
-      "date": "2026-09-08",
-      "label": "行业信号 · 世界模型",
-      "title": "VeriScene：用世界模型代理探索场景重建",
-      "summary": "论文探索从证据到场景的重建方法。研究能力与实际可靠性需要分开判断。",
-      "source": "https://arxiv.org/abs/2609.08342",
-      "provenance": "项目 09.10 快照；本次未重新复核论文全文。"
-    },
-    {
-      "id": "openwam",
-      "date": "2026-09-07",
-      "label": "行业信号 · 世界与动作",
-      "title": "OpenWAM：模块化世界-动作模型的预训练探索",
-      "summary": "将世界-动作模型设计拆成可组合模块，探索统一的训练、推理与评估。",
-      "source": "https://arxiv.org/abs/2609.07398",
-      "provenance": "项目 09.10 快照；作者报告，不代表独立复现。"
-    },
-    {
-      "id": "cosmos",
-      "date": "2026-09-07",
-      "label": "行业信号 · 具身智能",
-      "title": "机器人策略中的语言迁移，如何测量？",
-      "summary": "围绕 Cosmos3 视觉-语言-动作策略，研究引入希腊语后的语言迁移问题。",
-      "source": "https://arxiv.org/abs/2609.07470",
-      "provenance": "项目 09.10 快照；本次未重新复核实验指标。"
-    }
-  ]
+  "news": []
 }
