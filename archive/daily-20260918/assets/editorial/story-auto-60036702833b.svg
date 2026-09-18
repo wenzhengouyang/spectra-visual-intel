@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+<title id="title">新增了两个模型ID：gpt-image-2.5-sunburst和gpt-image-2.5-flare</title><desc id="desc">SPECTRA根据文章主题生成的编辑示意图</desc>
+<style>.bg{fill:#0c1118}.grid{stroke:#26303c;stroke-width:1}.shape{fill:none;stroke:#94a3b8;stroke-width:5}.line{fill:none;stroke:#94a3b8;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}.strong{stroke-width:9}.node{fill:#0c1118;stroke:#94a3b8;stroke-width:7}.nodes{fill:#94a3b8}</style>
+<rect width="1600" height="900" class="bg"/><path d="M0 150h1600M0 300h1600M0 450h1600M0 600h1600M0 750h1600M200 0v900M400 0v900M600 0v900M800 0v900M1000 0v900M1200 0v900M1400 0v900" class="grid"/>
+<path d="M990 560l90-210 95 90 165-250" class="line strong"/><circle cx="1080" cy="350" r="28" class="node"/><circle cx="1175" cy="440" r="28" class="node"/><circle cx="1340" cy="190" r="28" class="node"/>
+</svg>
