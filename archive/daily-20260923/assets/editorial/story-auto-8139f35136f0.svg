@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+<title id="title">When agents act on their own, governance has to live in the data layer</title><desc id="desc">SPECTRA根据文章主题生成的编辑示意图</desc>
+<style>.bg{fill:#0c1118}.grid{stroke:#26303c;stroke-width:1}.shape{fill:none;stroke:#72c1bd;stroke-width:5}.line{fill:none;stroke:#72c1bd;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}.strong{stroke-width:9}.node{fill:#0c1118;stroke:#72c1bd;stroke-width:7}.nodes{fill:#72c1bd}.kicker{fill:#72c1bd;font:700 25px system-ui,sans-serif;letter-spacing:4px}.title{fill:#eef2f7;font:700 57px system-ui,sans-serif}.credit{fill:#7f8b9a;font:500 22px system-ui,sans-serif}</style>
+<rect width="1600" height="900" class="bg"/><path d="M0 150h1600M0 300h1600M0 450h1600M0 600h1600M0 750h1600M200 0v900M400 0v900M600 0v900M800 0v900M1000 0v900M1200 0v900M1400 0v900" class="grid"/>
+<text x="112" y="118" class="kicker">评测与标准 / VERIFIED INTELLIGENCE</text><text x="112" y="430" class="title">When agents act on</text><text x="112" y="512" class="title">their own,</text><text x="112" y="594" class="title">governance has to</text>
+<text x="112" y="790" class="credit">来源：查看来源 · SPECTRA 编辑示意</text><path d="M970 250l190-100 190 100-190 100zM970 390l190-100 190 100-190 100zM970 530l190-100 190 100-190 100z" class="shape"/><circle cx="1160" cy="390" r="34" class="node"/>
+</svg>
