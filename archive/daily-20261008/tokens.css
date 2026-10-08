@@ -1,0 +1,69 @@
+/* Hallmark · macrostructure: Dark Editorial Desk · theme: studied-DNA (source: deeplearning.ai/the-batch) · tone: serious newsroom · anchor hue: steel blue */
+/* Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V5 */
+:root {
+  --color-paper: oklch(13.5% 0.018 255);
+  --color-paper-2: oklch(17.5% 0.021 254);
+  --color-paper-3: oklch(22% 0.024 253);
+  --color-paper-raised: oklch(18.8% 0.021 254);
+  --color-ink: oklch(94% 0.012 250);
+  --color-ink-2: oklch(79% 0.02 250);
+  --color-muted: oklch(67% 0.023 250);
+  --color-faint: oklch(53% 0.022 250);
+  --color-rule: oklch(28% 0.025 253);
+  --color-rule-strong: oklch(38% 0.03 252);
+  --color-accent: oklch(70% 0.095 225);
+  --color-accent-soft: oklch(24% 0.043 226);
+  --color-accent-ink: oklch(91% 0.025 225);
+  --color-violet: oklch(67% 0.07 287);
+  --color-violet-soft: oklch(24% 0.034 287);
+  --color-violet-ink: oklch(91% 0.024 287);
+  --color-blue: oklch(68% 0.082 252);
+  --color-cyan: oklch(72% 0.075 210);
+  --color-orange: oklch(72% 0.09 60);
+  --color-pink: oklch(71% 0.08 345);
+  --color-green: oklch(70% 0.08 157);
+  --color-positive: oklch(67% 0.16 27);
+  --color-negative: oklch(67% 0.11 157);
+  --color-focus: oklch(75% 0.105 225);
+  --color-article-paper: oklch(16% 0.018 255);
+  --color-hero-paper: oklch(18% 0.028 250);
+  --color-hero-panel: oklch(15.5% 0.022 251);
+  --color-hero-ink: oklch(94% 0.014 250);
+  --color-hero-muted: oklch(72% 0.026 250);
+  --color-hero-rule: oklch(32% 0.03 250);
+  --color-sage-paper: oklch(18.5% 0.025 180);
+  --color-mauve-paper: oklch(20% 0.03 302);
+  --color-sand-paper: oklch(20% 0.028 65);
+
+  --font-display: "Avenir Next", "Poppins", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-label: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+
+  --space-3xs: 0.25rem;
+  --space-2xs: 0.5rem;
+  --space-xs: 0.75rem;
+  --space-sm: 1rem;
+  --space-md: 1.5rem;
+  --space-lg: 2rem;
+  --space-xl: 3rem;
+  --space-2xl: 4.5rem;
+  --space-3xl: 7rem;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.625rem;
+  --text-2xl: 2.25rem;
+  --text-display: clamp(2.25rem, 4vw, 3rem);
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-short: 160ms;
+  --dur-medium: 240ms;
+  --radius-card: 0.625rem;
+  --radius-control: 0.5rem;
+  --radius-pill: 999px;
+  --rule-hairline: 1px solid var(--color-rule);
+}
