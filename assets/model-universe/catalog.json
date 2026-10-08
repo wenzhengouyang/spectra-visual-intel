@@ -1622,6 +1622,26 @@
       "newsIds": []
     },
     {
+      "id": "minimax-design",
+      "name": "MiniMax Design",
+      "company": "MiniMax",
+      "category": "work",
+      "kind": "创意生产 Agent 产品",
+      "summary": "面向图像、视频与文本素材编排的创意生产 Agent；与 MiniMax 底层模型、海螺 AI 和 MiniMax Agent 分别建档。",
+      "versions": [],
+      "source": "https://design.minimax.cn/",
+      "sourceLabel": "MiniMax Design 官方产品入口",
+      "access": [
+        "网页/App/桌面产品"
+      ],
+      "accessStatus": "已按官方产品入口核对",
+      "currentVersion": "持续更新产品（无统一公开版本号）",
+      "currentVersionStatus": "官方产品持续更新",
+      "releaseDate": null,
+      "releaseDateStatus": "未采用统一模型发布日期",
+      "newsIds": []
+    },
+    {
       "id": "mimo",
       "name": "MiMo",
       "company": "小米",
