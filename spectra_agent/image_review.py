@@ -10,7 +10,7 @@ import re
 from datetime import datetime, timezone
 from pathlib import Path
 
-from spectra_agent.publication_quality import expected_cover_motif
+from spectra_agent.publication_quality import expected_cover_motif, requires_cover
 from spectra_agent.compat import canonical_artifact
 
 
@@ -39,10 +39,12 @@ def embed_issue(path: Path, issue: dict) -> None:
 def pending_covers(issue: dict) -> list[dict]:
     pending = []
     for story in issue.get("editorial_stories") or []:
-        if story.get("article_type", "core_event") != "core_event":
+        if not requires_cover(story):
             continue
         cover = story.get("cover_image") or {}
-        if cover.get("kind") not in {"editorial_diagram", "generated"}:
+        if cover.get("provisional") or cover.get("kind") == "editorial_diagram":
+            continue
+        if cover.get("kind") not in {"editorial_diagram", "generated", "source", "official"}:
             continue
         if cover.get("review_status") == "approved":
             continue
@@ -56,7 +58,9 @@ def pending_covers(issue: dict) -> list[dict]:
 
 
 def asset_fingerprint(run_dir: Path, url: str) -> str:
-    path = run_dir / url
+    path = (run_dir / url).resolve()
+    if not path.is_relative_to((run_dir / "assets").resolve()):
+        raise ValueError("cover asset must stay inside run assets")
     if not path.is_file():
         raise ValueError(f'cover asset is missing: {path}')
     return hashlib.sha256(path.read_bytes()).hexdigest()
@@ -70,6 +74,7 @@ def main() -> int:
     decision.add_argument("--reject", help="comma-separated story IDs, or all")
     parser.add_argument("--reason", help="required when rejecting covers")
     parser.add_argument("--reviewer")
+    parser.add_argument("--actor-type", choices=["human", "agent", "unspecified"], default="unspecified")
     args = parser.parse_args()
     run_dir = Path(args.run_dir).resolve()
     issue_path = run_dir / "editorial-issue.json"
@@ -108,23 +113,45 @@ def main() -> int:
     write_json(issue_path, issue)
     if html_path.exists():
         embed_issue(html_path, issue)
-    report = {
-        "schema_version": "1.0",
-        "reviewed_at": reviewed_at,
-        "reviewed_by": args.reviewer,
-        "approved_story_ids": [] if args.reject else sorted(selected),
-        "rejected_story_ids": sorted(selected) if args.reject else [],
-        "rejection_reason": args.reason if args.reject else None,
-        "approved_covers": [{"story_id": story["story_id"],
+    report_path = run_dir / "image-review.json"
+    prior_report = json.loads(report_path.read_text(encoding="utf-8")) if report_path.exists() else {}
+    prior_approved = {
+        item["story_id"]: item for item in prior_report.get("approved_covers", [])
+        if item.get("story_id") not in selected
+    }
+    current_approved = {story["story_id"]: {
+            "story_id": story["story_id"],
             "url": story["cover_image"].get("url"),
             "kind": story["cover_image"].get("kind"),
             "semantic_motif": story["cover_image"].get("semantic_motif"),
             "semantic_match": story["cover_image"].get("semantic_match"),
             "asset_fingerprint": asset_fingerprint(run_dir, story["cover_image"]["url"])}
-            for story in issue.get("editorial_stories", []) if story.get("story_id") in selected and not args.reject],
+        for story in issue.get("editorial_stories", [])
+        if story.get("story_id") in selected and not args.reject}
+    approved_ids = (set(prior_report.get("approved_story_ids", [])) - selected) | set(current_approved)
+    rejected_ids = set(prior_report.get("rejected_story_ids", [])) - selected
+    if args.reject:
+        rejected_ids |= selected
+    report = {
+        "schema_version": "1.0",
+        "reviewed_at": reviewed_at,
+        "reviewed_by": args.reviewer,
+        "approved_story_ids": sorted(approved_ids),
+        "rejected_story_ids": sorted(rejected_ids),
+        "rejection_reason": args.reason if args.reject else None,
+        "approved_covers": list({**prior_approved, **current_approved}.values()),
         "pending": pending_covers(issue),
     }
-    write_json(run_dir / "image-review.json", report)
+    write_json(report_path, report)
+    from spectra_agent.review_samples import record_sample
+    for story in issue.get("editorial_stories", []):
+        if story.get("story_id") in selected:
+            cover = story["cover_image"]
+            record_sample(run_dir, kind="image", item_id=story["story_id"],
+                          before={"headline": story.get("headline"), "url": cover.get("url"),
+                                  "asset_fingerprint": asset_fingerprint(run_dir, str(cover.get("url") or ""))},
+                          after={"review_status": cover["review_status"]}, reviewer=args.reviewer,
+                          actor_type=args.actor_type, reason=args.reason)
     print(json.dumps(report, ensure_ascii=False, indent=2))
     return 0 if not report["pending"] else 2
 

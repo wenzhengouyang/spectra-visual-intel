@@ -18,7 +18,7 @@ from typing import Any
 
 NUMBER_RE = re.compile(
     r"(?:[$¥￥]\s*)?\d+(?:\.\d+)?\s*(?:trillion|billion|million|thousand|[KMBT](?![A-Za-z])|万亿|亿|万|千|百)?"
-    r"[-\s]*(?:美元|人民币|元|%|％|hours?|minutes?|days?|years?|件|人|小时|分钟|个|条|次|台|家|国|地区|支|所|块|步|年|月|日)?",
+    r"[-\s]*(?:美元|人民币|元|%|％|hours?|minutes?|days?|months?|years?|件|人|小时|分钟|个月|份|个|条|次|台|家|国|地区|支|所|块|步|年|月|日)?",
     re.IGNORECASE,
 )
 ATTRIBUTION_MARKERS = (
@@ -130,7 +130,7 @@ def normalized_numbers(value: str) -> list[dict[str, Any]]:
             kind = "usd"
         elif any(marker in raw for marker in ("¥", "￥", "人民币", "元")):
             kind = "cny"
-        elif any(marker in lowered for marker in ("年", "月", "日", "year", "day")):
+        elif any(marker in lowered for marker in ("年", "月", "日", "year", "month", "day")):
             kind = "date"
         elif any(marker in lowered for marker in ("小时", "分钟", "hour", "minute")):
             kind = "duration"

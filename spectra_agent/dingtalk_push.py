@@ -8,6 +8,8 @@ unconfigured run is never presented as a successful notification.
 from __future__ import annotations
 
 import argparse
+import fcntl
+import sys
 import base64
 import hashlib
 import hmac
@@ -64,14 +66,90 @@ def _compact(value: object, limit: int = 140) -> str:
     return text[: limit - 1].rstrip("，。；、 ") + "…"
 
 
-def _top_stories(issue: dict, meta: dict, limit: int = 3) -> list[dict]:
-    stories = issue.get("editorial_stories") or []
+def _alert_text(value: object, *, limit: int = 220) -> str:
+    """Keep DingTalk copy complete: never silently cut a sentence for layout."""
+    text = " ".join(_field_text(value).split())
+    for source in ("$\\mathcal{L}_{motion}$", "\\mathcal{L}_{motion}", "$L_{motion}$", "L_{motion}"):
+        text = text.replace(source, "L_motion")
+    if not text or "…" in text or "..." in text or len(text) > limit:
+        return ""
+    return text
+
+
+def _materially_repeats(left: str, right: str) -> bool:
+    normalize = lambda value: re.sub(r"[^0-9a-z\u3400-\u9fff]+", "", value).casefold()
+    first, second = normalize(left), normalize(right)
+    if not first or not second:
+        return False
+    shorter, longer = sorted((first, second), key=len)
+    if len(shorter) < 8:
+        return False
+    return shorter in longer
+
+
+def _alert_summary(story: dict) -> str:
+    headline = _alert_text(story.get("headline"), limit=160)
+    for candidate in (story.get("dek"), story.get("one_line_takeaway")):
+        summary = _alert_text(candidate)
+        if summary and not _materially_repeats(headline, summary):
+            return summary if summary.endswith(("。", "！", "？", ".", "!", "?")) else summary + "。"
+    return ""
+
+
+def _story_identity(story: dict) -> str:
+    source_url = next((str(source.get("url") or "").strip() for source in story.get("source_links") or []
+                       if str(source.get("url") or "").strip()), "")
+    return source_url or _field_text(story.get("headline")).casefold()
+
+
+def _publishable_alert_story(story: dict) -> bool:
+    headline = _alert_text(story.get("headline"), limit=160)
+    summary = _alert_summary(story)
+    copy = " ".join((headline, summary))
+    blocked_placeholders = (
+        "来源标题提及上述动态",
+        "具体口径与背景尚待原文核验",
+        "尚待原文核验",
+        "打开工作台查看详情",
+    )
+    return bool(headline and summary) and not any(placeholder in copy for placeholder in blocked_placeholders)
+
+
+def _top_stories(issue: dict, meta: dict, limit: int = 3,
+                 excluded_identities: set[str] | None = None) -> list[dict]:
+    stories = [story for story in [*(issue.get("editorial_stories") or []), *(issue.get("news_briefs") or [])]
+               if _publishable_alert_story(story)]
     by_id = {str(story.get("story_id")): story for story in stories}
     ranked = [by_id[story_id] for story_id in meta.get("top_story_ids") or [] if story_id in by_id]
-    if len(ranked) < limit:
-        remaining = [story for story in stories if story not in ranked]
-        ranked.extend(sorted(remaining, key=lambda story: float(story.get("editorial_score") or 0), reverse=True))
-    return ranked[:limit]
+    remaining = [story for story in stories if story not in ranked]
+    remaining.sort(key=lambda story: (
+        str(story.get("published_at") or ""),
+        float(story.get("editorial_score") or 0),
+    ), reverse=True)
+    ranked.extend(remaining)
+    excluded = excluded_identities or set()
+    fresh = [story for story in ranked if _story_identity(story) not in excluded]
+    # A daily alert is an incremental notification, not a second rendering of
+    # the rolling page. Once a previous delivery exists, never fill empty slots
+    # with stories the group has already received.
+    return (fresh if excluded else ranked)[:limit]
+
+
+def previous_delivery_identities(run_dir: Path) -> set[str]:
+    """Return story identities from the most recent earlier issue actually sent."""
+    for candidate in sorted(run_dir.parent.glob("daily-*"), reverse=True):
+        if candidate.name >= run_dir.name:
+            continue
+        marker = candidate / "dingtalk-push.json"
+        issue_path = candidate / "editorial-issue.json"
+        if not marker.exists() or not issue_path.exists():
+            continue
+        if read_json(marker).get("status") != "sent":
+            continue
+        issue = read_json(issue_path)
+        delivered = [*(issue.get("editorial_stories") or []), *(issue.get("news_briefs") or [])]
+        return {_story_identity(story) for story in delivered if _story_identity(story)}
+    return set()
 
 
 def _bold_data(text: str) -> str:
@@ -79,34 +157,34 @@ def _bold_data(text: str) -> str:
     return re.sub(pattern, r"**\1**", text)
 
 
-def notification_payload(issue: dict, public_url: str, header_image_url: str = "") -> dict:
+def notification_payload(issue: dict, public_url: str, header_image_url: str = "",
+                         excluded_identities: set[str] | None = None,
+                         include_rolling_thesis: bool = False) -> dict:
     meta = issue.get("issue") or {}
     report_date = str(meta.get("report_date") or meta.get("period_end") or "")
     date_label = f"{report_date[5:7]}月{report_date[8:10]}日" if len(report_date) >= 10 else "今日"
     title = f"SPECTRA · {date_label}"
-    thesis = _compact(rolling_thesis(meta, "今日情报已完成更新。"), 100)
     items = []
-    for index, story in enumerate(_top_stories(issue, meta), start=1):
-        headline = _compact(story.get("headline") or "今日重点情报", 72)
-        summary = _bold_data(_compact(story.get("one_line_takeaway") or story.get("dek"), 82))
+    for index, story in enumerate(_top_stories(issue, meta, excluded_identities=excluded_identities), start=1):
+        headline = _alert_text(story.get("headline"), limit=160)
+        headline = re.sub(r"([\\\[\]*_`])", r"\\\1", headline)
+        source_url = next((str(source.get("url") or "") for source in story.get("source_links") or []
+                           if urllib.parse.urlsplit(str(source.get("url") or "")).scheme == "https"), "")
+        headline_link = f"[{headline}]({source_url.replace('(', '%28').replace(')', '%29')})" if source_url else headline
+        summary = _bold_data(_alert_summary(story))
         items.append(
-            f"**{index:02d} · {headline}**\n\n"
+            f"**🔹 {index:02d}｜{headline_link}**\n\n"
             f"{summary or '打开工作台查看详情'}"
         )
     top_three = "\n\n".join(items) or "今日暂无达到发布标准的焦点事件"
     blocks = []
     if header_image_url:
         blocks.append(f"![SPECTRA 今日视觉情报]({header_image_url})")
-    blocks.extend((
-        f"### {title}\n\n视频 · 图像 · 世界模型",
-        "**30 秒结论**",
-        f"> {thesis}",
-        "---",
-        "### 今日 Top 3 焦点",
-        top_three,
-        "---",
-        f"[打开 SPECTRA 网页工作台 →]({public_url})",
-    ))
+    blocks.append(f"{date_label} · 近7日视觉情报")
+    thesis = _alert_text(rolling_thesis(meta, ""), limit=180)
+    if include_rolling_thesis and thesis:
+        blocks.append(f"**⚡ 30 秒结论**\n\n{thesis}")
+    blocks.extend(("**🔥 今日 Top 3 焦点**", top_three, f"[打开 SPECTRA 网页工作台 →]({public_url})"))
     text = "\n\n".join(blocks)
     return {"msgtype": "markdown", "markdown": {"title": title, "text": text}}
 
@@ -138,11 +216,58 @@ def readiness(run_dir: Path, require_published: bool) -> tuple[bool, str, dict]:
     return True, "ready", read_json(issue_path)
 
 
+def weekend_delivery_blocked(run_id, local_now):
+    issue_day = datetime.strptime(run_id[-8:], '%Y%m%d').date() if re.fullmatch(r'daily-\d{8}', run_id) else local_now.date()
+    return local_now.weekday() >= 5 or issue_day.weekday() >= 5
+
+
+def public_page_ready(public_url: str, run_id: str, timeout: int = 20) -> bool:
+    if not public_url:
+        return False
+    try:
+        with urllib.request.urlopen(public_url, timeout=timeout) as response:
+            page = response.read().decode("utf-8")
+        return bool(re.search(r'"run_id"\s*:\s*"' + re.escape(run_id) + r'"', page))
+    except (urllib.error.URLError, TimeoutError):
+        return False
+
+
+def wait_for_public_page(public_url: str, run_id: str, timeout_seconds: int,
+                         poll_seconds: int, *, sleeper=time.sleep) -> bool:
+    deadline = time.monotonic() + max(0, timeout_seconds)
+    while True:
+        if public_page_ready(public_url, run_id):
+            return True
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            return False
+        sleeper(min(max(1, poll_seconds), remaining))
+
+
 def main() -> int:
+    # Serialize scheduled retries and the immediate completion callback.
+    options = argparse.ArgumentParser(add_help=False)
+    options.add_argument("--config", default=str(DEFAULT_CONFIG))
+    selected, _ = options.parse_known_args()
+    _, config = resolve_config(selected.config)
+    lock_path = runs_dir(config) / ".daily-delivery.lock"
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    with lock_path.open("a+") as lock:
+        try:
+            fcntl.flock(lock.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            return 0
+        return deliver()
+
+
+def deliver() -> int:
     parser = argparse.ArgumentParser(description="Send today's validated SPECTRA page to DingTalk")
     parser.add_argument("--config", default=str(DEFAULT_CONFIG.relative_to(ROOT)))
     parser.add_argument("--run-id")
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--resend", action="store_true", help="explicitly authorized resend of a sent issue")
+    parser.add_argument("--wait-for-web", action="store_true",
+                        help="wait for the newly published issue to become visible before sending")
     args = parser.parse_args()
 
     load_local_env(ROOT / ".env.local")
@@ -151,6 +276,51 @@ def main() -> int:
     timezone_name = config.get("timezone", "Asia/Shanghai")
     run_id = args.run_id or daily_run_id(timezone_name)
     run_dir = runs_dir(config) / run_id
+    if run_id in set(settings.get("paused_run_ids") or []):
+        print(json.dumps({"status": "paused", "run_id": run_id}, ensure_ascii=False))
+        return 0
+    state_path = run_dir / "run.json"
+    state = read_json(state_path) if state_path.exists() else {}
+    marker = run_dir / "dingtalk-push.json"
+    if marker.exists():
+        marker_status = read_json(marker).get("status")
+        if marker_status == "suppressed" or (marker_status == "sent" and not args.resend):
+            print(json.dumps({
+                "status": "already_sent" if marker_status == "sent" else "suppressed",
+                "run_id": run_id,
+            }, ensure_ascii=False))
+            return 0
+    # Gate actual send day AND issue day: weekend issues are never back-sent on Monday.
+    local_now = datetime.now(ZoneInfo(timezone_name))
+    weekend = weekend_delivery_blocked(run_id, local_now)
+    release = config.get("joint_delivery") or {}
+    joint = (release.get("enabled", False)
+             and run_id >= "daily-" + str(release.get("start_date", "9999-12-31")).replace("-", ""))
+    if joint and not args.dry_run and state.get("status") == "completed":
+        if state.get("publish_status") != "published":
+            print(json.dumps({"status": "waiting_for_web_publish", "run_id": run_id}))
+            return 0
+        if weekend:
+            print(json.dumps({'status': 'weekend_web_only', 'run_id': run_id}))
+            return 0
+        if not settings.get('enabled', False):
+            print(json.dumps({'status': 'disabled', 'run_id': run_id}, ensure_ascii=False))
+            return 0
+        # Pages deployment is asynchronous: wait in the completion callback,
+        # then fail closed instead of sending a link to yesterday's issue.
+        visible = public_page_ready(str(settings.get("public_url") or ""), run_id)
+        if not visible and args.wait_for_web:
+            visible = wait_for_public_page(
+                str(settings.get("public_url") or ""), run_id,
+                int(settings.get("web_ready_timeout_seconds", 1800)),
+                int(settings.get("web_ready_poll_seconds", 60)),
+            )
+        if not visible:
+            print(json.dumps({"status": "waiting_for_web", "run_id": run_id}))
+            return 0
+    if weekend:
+        print(json.dumps({'status': 'weekend_dingtalk_blocked', 'run_id': run_id}))
+        return 0
     ready, reason, issue = readiness(run_dir, bool(settings.get("require_published", True)))
     if not settings.get("enabled", False):
         print(json.dumps({"status": "disabled", "run_id": run_id}, ensure_ascii=False))
@@ -159,21 +329,14 @@ def main() -> int:
         print(json.dumps({"status": "not_ready", "run_id": run_id, "reason": reason}, ensure_ascii=False))
         return 0
 
-    marker = run_dir / "dingtalk-push.json"
-    if marker.exists():
-        marker_status = read_json(marker).get("status")
-        if marker_status in {"sent", "suppressed"}:
-            print(json.dumps({
-                "status": "already_sent" if marker_status == "sent" else "suppressed",
-                "run_id": run_id,
-            }, ensure_ascii=False))
-            return 0
-
     webhook = os.environ.get(str(settings.get("webhook_env") or "DINGTALK_WEBHOOK_URL"), "").strip()
     secret = os.environ.get(str(settings.get("secret_env") or "DINGTALK_SECRET"), "").strip() or None
     public_url = str(settings.get("public_url") or "").strip()
     header_image_url = str(settings.get("header_image_url") or "").strip()
-    payload = notification_payload(issue, public_url, header_image_url)
+    payload = notification_payload(
+        issue, public_url, header_image_url, previous_delivery_identities(run_dir),
+        bool(settings.get("include_rolling_thesis", False)),
+    )
     if args.dry_run:
         print(json.dumps({"status": "dry_run", "run_id": run_id, "payload": payload}, ensure_ascii=False, indent=2))
         return 0
@@ -192,6 +355,9 @@ def main() -> int:
         "sent_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "response_code": result.get("errcode"),
     }
+    if marker.exists():
+        previous = read_json(marker)
+        record['history'] = [*previous.get('history', []), {key: value for key, value in previous.items() if key != 'history'}]
     write_json(marker, record)
     print(json.dumps(record, ensure_ascii=False))
     return 0

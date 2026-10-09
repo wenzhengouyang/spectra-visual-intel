@@ -353,6 +353,29 @@ class ProcessorTest(unittest.TestCase):
         analyses = MODULE.validate_llm_analyses(payload, selected)
         self.assertEqual(analyses[0]["source_ids"], ["src_allowed"])
 
+    def test_llm_repairs_short_duplicated_candidate_id_span(self):
+        selected = [{"candidate_id": "cand_e7aa0d063c3865ef", "source_ids": ["src_allowed"]}]
+        payload = {"analyses": [{
+            "candidate_id": "cand_e7aa0d063c3c3865ef", "source_ids": ["src_allowed"],
+            "intelligence_type": "type.technology_breakthrough",
+            "intelligence_type_reason": "论文介绍技术方法。",
+        }]}
+
+        analyses = MODULE.validate_llm_analyses(payload, selected)
+
+        self.assertEqual(analyses[0]["candidate_id"], "cand_e7aa0d063c3865ef")
+
+    def test_llm_still_rejects_unrelated_candidate_id(self):
+        selected = [{"candidate_id": "cand_expected", "source_ids": ["src_allowed"]}]
+        payload = {"analyses": [{
+            "candidate_id": "cand_unrelated", "source_ids": ["src_allowed"],
+            "intelligence_type": "type.technology_breakthrough",
+            "intelligence_type_reason": "论文介绍技术方法。",
+        }]}
+
+        with self.assertRaisesRegex(ValueError, "candidate mismatch"):
+            MODULE.validate_llm_analyses(payload, selected)
+
     def test_missing_api_key_is_explicit(self):
         from spectra_agent.llm_client import LLMConfigurationError, LLMSettings
         with mock.patch.dict("os.environ", {}, clear=True):

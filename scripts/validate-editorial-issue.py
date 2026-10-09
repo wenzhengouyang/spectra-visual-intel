@@ -8,8 +8,21 @@ import json
 import re
 import sys
 from collections import Counter
-from datetime import date
+from datetime import date, datetime
+from zoneinfo import ZoneInfo
 from pathlib import Path
+
+INTERNAL_PLACEHOLDERS = (
+    "来源标题提及上述动态",
+    "具体口径与背景尚待原文核验",
+    "尚待原文核验",
+    "来源已收录，核心事实仍待核验",
+)
+
+
+def contains_internal_placeholder(value: object) -> bool:
+    text = str(value or "")
+    return any(marker in text for marker in INTERNAL_PLACEHOLDERS)
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -43,6 +56,9 @@ def main() -> None:
     story_ids = {story["story_id"] for story in stories}
     news_brief_ids = {brief["brief_id"] for brief in news_briefs}
     event_ids = {event["event_id"] for event in verified["intelligence_events"]}
+    if editorial.get("report_type") == "rolling_7_day_digest":
+        event_ids = {event["event_id"] for event in verified["intelligence_events"]
+                     if issue["period_start"] <= datetime.fromisoformat(event["event_at"].replace("Z", "+00:00")).astimezone(ZoneInfo("Asia/Shanghai")).date().isoformat() <= issue["period_end"]}
     claim_ids = {claim["claim_id"] for claim in verified["evidence_claims"]}
 
     attainable_minimum = min(5, len(event_ids))
@@ -58,6 +74,10 @@ def main() -> None:
     require({story["primary_event_id"] for story in stories} == event_ids, "stories must cover all formal events exactly once")
 
     for story in stories:
+        require(
+            not any(contains_internal_placeholder(story.get(field)) for field in ("headline", "dek", "one_line_takeaway")),
+            f"{story['story_id']} contains an internal editorial placeholder",
+        )
         require(story["editorial_status"] == "fact_checked", f"{story['story_id']} must be fact_checked")
         require(story.get("editorial_tier") in {"core_event", "industry_signal", "brief"}, f"{story['story_id']} has invalid editorial tier")
         require(story.get("editorial_channel") in {"weekly_selection", "capability_metrics", "model_frontier", "product_business", "content_culture", "team_talent"}, f"{story['story_id']} has invalid editorial channel")
@@ -82,10 +102,14 @@ def main() -> None:
         if story.get("article_type") == "core_event":
             require(cover_url.startswith("https://") or cover_url.startswith("assets/"), f"{story['story_id']} needs a safe cover image")
             require(
-                cover.get("kind") in {"official", "editorial", "editorial_fallback", "editorial_diagram", "generated"},
+                cover.get("kind") in {"source", "official", "editorial", "editorial_fallback", "editorial_diagram", "generated"},
                 f"{story['story_id']} has invalid cover kind",
             )
             require(bool(cover.get("label")), f"{story['story_id']} needs a cover label")
+            if cover.get("kind") == "source":
+                require(str(cover.get("source_url") or "").startswith("https://")
+                        and bool(cover.get("credit")) and bool(cover.get("usage_basis")),
+                        f"{story['story_id']} source cover needs provenance")
             if cover_url.startswith("assets/"):
                 require((asset_root / cover_url).exists(), f"{story['story_id']} local cover asset is missing")
         require(story["what_happened"]["statement_type"] == "fact", f"{story['story_id']} WHAT must be fact")
@@ -109,9 +133,10 @@ def main() -> None:
             require(article_section and article_section.get("text"), f"{story['story_id']} article_body.{field} is required")
             require(set(article_section.get("claim_ids", [])) <= claim_ids, f"{story['story_id']} article_body.{field} has unknown claims")
         full_text = str((article.get("full_text") or {}).get("text") or "")
+        language_field = 'dek' if story.get('editorial_tier') == 'brief' else 'body'
         require(
-            not reader_language_errors(full_text, "body"),
-            f"{story['story_id']} body must be complete Chinese prose: {reader_language_errors(full_text, 'body')}",
+            not reader_language_errors(full_text, language_field),
+            f"{story['story_id']} body must be complete Chinese prose: {reader_language_errors(full_text, language_field)}",
         )
         judgment = article.get("judgment") or {}
         # A core event may omit judgment when the locked fact package does not
@@ -134,6 +159,10 @@ def main() -> None:
     require(issue["total_intelligence_count"] == len(stories) + len(news_briefs), "total intelligence count is wrong")
 
     for brief in news_briefs:
+        require(
+            not any(contains_internal_placeholder(brief.get(field)) for field in ("headline", "dek")),
+            f"{brief['brief_id']} contains an internal editorial placeholder",
+        )
         require(brief["priority"] == "priority.p2", f"{brief['brief_id']} must be P2")
         require(brief.get("domain_scope") in {"scope.visual_core", "scope.ai_extended"}, f"{brief['brief_id']} has invalid domain scope")
         require(brief["verification_status"] != "fact_checked", f"{brief['brief_id']} must retain its pending verification boundary")

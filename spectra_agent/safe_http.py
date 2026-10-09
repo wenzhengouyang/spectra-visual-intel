@@ -14,6 +14,7 @@ import queue
 import socket
 import sqlite3
 import ssl
+import subprocess
 import threading
 import time
 from urllib.error import HTTPError
@@ -81,6 +82,44 @@ def origin(url):
     return p.scheme, p.hostname, p.port or (443 if p.scheme == "https" else 80)
 
 
+def fallback_public_dns(host: str, port: int):
+    """Resolve a public host when the macOS resolver is temporarily unavailable."""
+    configured = os.environ.get("SPECTRA_DNS_FALLBACKS", "1.1.1.1,8.8.8.8")
+    resolvers = []
+    for value in configured.split(","):
+        value = value.strip()
+        try:
+            address = ipaddress.ip_address(value)
+        except ValueError:
+            continue
+        if address.version == 4 and address.is_global:
+            resolvers.append(value)
+    for resolver in resolvers:
+        for record_type, family in (("A", socket.AF_INET), ("AAAA", socket.AF_INET6)):
+            try:
+                result = subprocess.run(
+                    ["/usr/bin/dig", "+time=2", "+tries=1", "+short", f"@{resolver}", host, record_type],
+                    capture_output=True, text=True, timeout=4, check=False,
+                )
+            except (OSError, subprocess.TimeoutExpired):
+                continue
+            addresses = []
+            for line in result.stdout.splitlines():
+                try:
+                    address = ipaddress.ip_address(line.strip())
+                except ValueError:
+                    continue
+                if address.version == (4 if family == socket.AF_INET else 6):
+                    addresses.append(address)
+            if addresses:
+                return [
+                    (family, socket.SOCK_STREAM, socket.IPPROTO_TCP, "",
+                     (str(address), port) if family == socket.AF_INET else (str(address), port, 0, 0))
+                    for address in addresses
+                ]
+    return []
+
+
 def resolve_public(url, allowed_local_origins=()):
     p = urlsplit(url)
     if p.scheme not in {"http", "https"} or not p.hostname or p.username or p.password or any(ord(c) < 33 for c in url):
@@ -101,12 +140,24 @@ def resolve_public(url, allowed_local_origins=()):
             results.put(exc)
 
     threading.Thread(target=resolve, daemon=True).start()
+    original_error = None
     try:
         addresses = results.get(timeout=5)
     except queue.Empty:
-        raise TimeoutError("DNS resolution timed out") from None
+        addresses = []
+        original_error = TimeoutError("DNS resolution timed out")
     if isinstance(addresses, Exception):
-        raise BoundaryError(f"DNS resolution failed for {host}: {type(addresses).__name__} errno={getattr(addresses, 'errno', None)}; check network and execution permissions") from addresses
+        original_error = addresses
+        addresses = []
+    if not addresses and not local:
+        addresses = fallback_public_dns(host, port)
+    if not addresses and original_error is not None:
+        if isinstance(original_error, TimeoutError):
+            raise original_error
+        raise BoundaryError(
+            f"DNS resolution failed for {host}: {type(original_error).__name__} "
+            f"errno={getattr(original_error, 'errno', None)}; system and fallback resolvers unavailable"
+        ) from original_error
     if not addresses:
         raise BoundaryError("DNS returned no addresses")
     for _, _, _, _, address in addresses:

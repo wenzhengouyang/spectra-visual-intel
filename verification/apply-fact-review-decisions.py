@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import sys
 from datetime import datetime, timezone
@@ -83,9 +84,13 @@ def main() -> int:
     parser.add_argument("--decisions", required=True)
     parser.add_argument("--output", required=True)
     args = parser.parse_args()
-    result = apply_decisions(read(args.review), read(args.decisions))
+    before = read(args.review)
+    decisions = read(args.decisions)
+    result = apply_decisions(copy.deepcopy(before), decisions)
     output = Path(args.output)
     atomic_json(output, result)
+    from spectra_agent.review_samples import record_fact_review
+    record_fact_review(output.parent, before, result, decisions.get("actor_type", "unspecified"))
     print(json.dumps({
         "output": str(output),
         "include": sum(item["decision"] == "include" for item in result["records"]),

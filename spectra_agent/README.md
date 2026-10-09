@@ -20,6 +20,13 @@ python3 spectra_agent/run.py status
 页面每 5 秒只读刷新当前阶段、核心事件处理数量、最后更新时间和需要人工操作的事项；
 它不会修改审核、检查点或发布状态，并随电脑登录自动启动。
 
+### 手机审核
+
+运行安装器后会生成 `mobile_url`。手机与这台 Mac 连接同一 Wi-Fi 时，用该专属链接打开即可；
+首次访问会保存受保护的审核会话，之后可直接使用浏览器收藏或“添加到主屏幕”。审核入口带访问口令，
+普通的局域网地址无法读取进度或提交审核。Mac 必须保持开机并在线；跨网络访问应通过 HTTPS 安全隧道，
+不要直接把 8010 端口映射到公网。
+
 根据运行目录中的 `REVIEW.md` 完成 `p1-review.json`，批准后恢复：
 
 ```bash
@@ -48,6 +55,12 @@ python3 spectra_agent/run.py run \
 
 每次运行的数据独立保存在 `~/Library/Application Support/SPECTRA/data/runs/<run-id>/`，源码、运行时副本和数据互不混放。目录内包含状态、状态变更历史、JSONL日志、采集结果、候选、审核文件、正式事件、滚动摘要和运行报告。
 
+## 两条采集线
+
+- 日报主线：`config.v0.1.json > collection_lanes.mainline.source_ids` 固定稳定、高价值来源；每天优先完成，直接进入结构化、人工审核和日报，默认硬上限 10 分钟。
+- 覆盖补齐线：其余启用来源，以及主线中当次失败的来源，由 `coverage_runner.py` 异步补拉近 7 天窗口。结果写入当次 Run 的 `coverage-collection.json`，状态写入 `coverage-line.json`；失败只在该文件留痕，不改变日报 Run 状态，也不阻塞审核与发布。
+- GitHub、论文、长文、低频官方源和失败重试默认属于覆盖补齐线。调整来源归属只改配置，不在运行逻辑中散落判断。
+
 采集完成后还会生成 `discussion-radar.json`：它汇总核心人物与机构在近 7 天对同一主题的
 独立提及，用于发现尚未成为正式新闻的前置信号。该文件只进入 P2 观察层，不会自动改变
 P1 队列，也不会绕过人工审核。
@@ -56,7 +69,7 @@ P1 队列，也不会绕过人工审核。
 
 ## 每日更新时间
 
-- 自动触发：每天 08:00（Asia/Shanghai），每次生成滚动近 7 天情报；
+- 自动触发：每天 08:00（Asia/Shanghai）启动日更，10:10 再触发一次有状态恢复；每次生成滚动近 7 天情报；
 - 采集窗口：此前 7 天；
 - 自动完成：采集、来源校验、结构化、去重聚合、P1 队列；
 - 自动暂停：`waiting_for_review`；
@@ -143,7 +156,7 @@ P1 人工事实审核通过后，`fact_selection` 只从 `verified_events` 生�
 .venv-llm/bin/python spectra_agent/install_local_runtime.py
 ```
 
-安装器可重复执行，用于把后续工程修改同步到运行副本；它不复制数据目录，重新加载每天 08:00 的日更服务、发布后自动去重的钉钉推送检查和持续保活的 WeRSS 服务，并执行不采集的运行环境探针。正式日志位于 `~/Library/Application Support/SPECTRA/data/logs/`。
+安装器可重复执行，用于把后续工程修改同步到运行副本；它不复制数据目录，重新加载每天 08:00 的日更与 10:10 的恢复服务、发布后自动去重的钉钉推送检查和持续保活的 WeRSS 服务，并执行不采集的运行环境探针。正式日志位于 `~/Library/Application Support/SPECTRA/data/logs/`。
 
 查看 P1 队列：
 
@@ -176,9 +189,9 @@ P1 人工事实审核通过后，`fact_selection` 只从 `verified_events` 生�
 .venv-llm/bin/python spectra_agent/publish_run.py --run-id daily-YYYYMMDD --push --confirm
 ```
 
-`launchd` 配置模板位于 `spectra_agent/launchd/com.spectra.visual-intel.daily.plist`，每天 08:00 启动本地 runner。
+`launchd` 配置模板位于 `spectra_agent/launchd/com.spectra.visual-intel.daily.plist`，每天 08:00 启动本地 runner，10:10 再从已有状态恢复一次。
 
-钉钉推送已在配置中启用，安装器会加载独立的 `spectra_agent/launchd/com.spectra.visual-intel.dingtalk.plist`，登录后每 30 分钟轻量检查当日 Run。只有 Run 已完成且 GitHub Pages 已发布时才会推送；发送成功后用当日标记去重。仍在审核、Writer 生成或发布校验中时仅记录 `not_ready`，不会推送旧页面。机器人凭证只从被 Git 忽略且部署后权限为 `0600` 的 `.env.local` 读取：
+钉钉推送已在配置中启用，安装器会加载独立的 `spectra_agent/launchd/com.spectra.visual-intel.dingtalk.plist`，每天 10:30 检查当日 Run。只有 Run 已完成且 GitHub Pages 已发布时才会推送；发送成功后用当日标记去重。仍在审核、Writer 生成或发布校验中时仅记录 `not_ready`，不会推送旧页面。机器人凭证只从被 Git 忽略且部署后权限为 `0600` 的 `.env.local` 读取：
 
 ```bash
 DINGTALK_WEBHOOK_URL=https://oapi.dingtalk.com/robot/send?access_token=...

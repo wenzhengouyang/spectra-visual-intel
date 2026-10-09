@@ -18,6 +18,14 @@ SPEC.loader.exec_module(MODULE)
 
 
 class CollectorContractTest(unittest.TestCase):
+    def test_feed_explains_keyword_rejection(self):
+        feed = b'<rss version="2.0"><channel><item><title>Gemini release</title><link>https://example.com/new</link><pubDate>Tue, 11 Aug 2026 12:00:00 GMT</pubDate></item></channel></rss>'
+        with patch.object(MODULE, 'fetch_bytes', return_value=feed):
+            records, health = MODULE.collect_feed(self.source, self.ctx, ['video generation'])
+        self.assertEqual(records, [])
+        self.assertEqual(health['rejected_by_reason'], {'keyword_miss': 1})
+        self.assertEqual(health['rejected_examples'][0]['title'], 'Gemini release')
+
     def setUp(self):
         now = datetime(2026, 8, 12, tzinfo=timezone.utc)
         self.ctx = MODULE.Context(now, datetime(2026, 8, 5, tzinfo=timezone.utc), now, None)
@@ -152,6 +160,23 @@ class CollectorContractTest(unittest.TestCase):
         with patch.object(MODULE, "fetch_bytes", return_value=feed):
             records, _ = MODULE.collect_feed(source, self.ctx, [])
         self.assertEqual(records[0]["official_image_url"], "https://cdn.example.com/release.jpg")
+
+    def test_feed_title_filters_keep_product_updates_and_drop_maintenance_noise(self):
+        source = {
+            "registry_id": "reg_work_ai", "adapter": "github_atom", "source_name": "Work AI",
+            "source_type": "official_product_release", "publisher": "Publisher",
+            "url": "https://example.com/commits.atom", "language": "en",
+            "title_include_terms": ["feat", "release", "version"],
+            "title_exclude_terms": ["fix", "chore", "refactor", "test", "docs"],
+        }
+        feed = b'''<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Atom">
+          <title>Commits</title>
+          <entry><title>feat: add document agent workflow</title><id>1</id><updated>2026-08-10T10:00:00Z</updated><link href="https://example.com/1"/><content>New office workflow.</content></entry>
+          <entry><title>fix: repair test harness</title><id>2</id><updated>2026-08-10T09:00:00Z</updated><link href="https://example.com/2"/><content>Maintenance only.</content></entry>
+        </feed>'''
+        with patch.object(MODULE, "fetch_bytes", return_value=feed):
+            records, _ = MODULE.collect_feed(source, self.ctx, [])
+        self.assertEqual([record["raw_title"] for record in records], ["feat: add document agent workflow"])
 
     def test_registry_includes_compliant_blog_and_podcast_sources(self):
         path = Path(__file__).parents[1] / "collector" / "source_registry.v0.2.json"

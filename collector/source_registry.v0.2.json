@@ -4,7 +4,8 @@
   "watchlists": {
     "wechat_accounts": "collector/wechat_watchlist.v0.1.json",
     "financial_public_reports": "collector/financial_public_report_watchlist.v0.1.json",
-    "core_observers": "collector/observer_watchlist.v0.1.json"
+    "core_observers": "collector/observer_watchlist.v0.1.json",
+    "model_products": "collector/model_product_watchlist.v0.1.json"
   },
   "keyword_groups": {
     "visual_core": [
@@ -47,6 +48,9 @@
       "earnings"
     ],
     "company_strategy": [
+      "Copilot",
+      "agent",
+      "model",
       "AI partnership",
       "strategic partnership",
       "strategic collaboration",
@@ -67,6 +71,18 @@
       "digital video",
       "advertising revenue",
       "creator economy"
+    ],
+    "china_model_updates": [
+      "Gemini",
+      "model", "release", "weights", "checkpoint", "multimodal", "reasoning", "agent", "coding",
+      "image", "video", "3D", "模型", "发布", "权重", "多模态", "推理", "智能体", "编程", "图像", "视频"
+    ],
+    "work_ai": [
+      "agent",
+      "model",
+      "image",
+      "AI workspace", "work assistant", "office", "document", "meeting", "knowledge base", "coding agent", "CLI", "MCP",
+      "工作助手", "办公", "文档", "会议", "知识库", "编程智能体", "工作流"
     ]
   },
   "sources": [
@@ -89,7 +105,7 @@
       "publisher": "Google DeepMind",
       "url": "https://deepmind.google/blog/rss.xml",
       "language": "en",
-      "keyword_group": "visual_core",
+      "keyword_group": "china_model_updates",
       "enabled": true
     },
     {
@@ -100,7 +116,7 @@
       "publisher": "NVIDIA",
       "url": "https://blogs.nvidia.com/blog/category/generative-ai/feed/",
       "language": "en",
-      "keyword_group": "visual_core",
+      "keyword_group": "industry_product",
       "enabled": true
     },
     {
@@ -111,7 +127,7 @@
       "publisher": "Hugging Face",
       "url": "https://huggingface.co/blog/feed.xml",
       "language": "en",
-      "keyword_group": "visual_core",
+      "keyword_group": "china_model_updates",
       "enabled": true
     },
     {
@@ -489,6 +505,168 @@
       "source_type": "code_dataset",
       "publisher": "Wan-Video",
       "url": "https://github.com/Wan-Video/Wan-Animate-2/commits/main.atom",
+      "language": "en",
+      "enabled": true
+    },
+    {
+      "registry_id": "reg_github_qwen38_commits",
+      "adapter": "github_atom",
+      "source_name": "Qwen3.8 Official GitHub Commits",
+      "source_type": "official_model_release",
+      "publisher": "Alibaba Qwen",
+      "url": "https://github.com/QwenLM/Qwen3.8/commits/main.atom",
+      "keyword_group": "china_model_updates",
+      "coverage_tags": ["china_priority", "general_ai", "multimodal"],
+      "language": "en",
+      "enabled": true
+    },
+    {
+      "registry_id": "reg_github_qwen_image_commits",
+      "adapter": "github_atom",
+      "source_name": "Qwen-Image Official GitHub Commits",
+      "source_type": "official_model_release",
+      "publisher": "Alibaba Qwen",
+      "url": "https://github.com/QwenLM/Qwen-Image/commits/main.atom",
+      "keyword_group": "china_model_updates",
+      "coverage_tags": ["china_priority", "image_generation"],
+      "language": "en",
+      "enabled": true
+    },
+    {
+      "registry_id": "reg_github_qwen_code_commits",
+      "adapter": "github_atom",
+      "source_name": "Qwen Code Official GitHub Commits",
+      "source_type": "official_product_release",
+      "publisher": "Alibaba Qwen",
+      "url": "https://github.com/QwenLM/qwen-code/commits/main.atom",
+      "keyword_group": "work_ai",
+      "title_include_terms": ["feat", "release", "version"],
+      "title_exclude_terms": ["fix", "chore", "refactor", "test", "docs"],
+      "coverage_tags": ["china_priority", "work_ai", "coding_agent"],
+      "language": "en",
+      "enabled": true
+    },
+    {
+      "registry_id": "reg_github_deepseek_v3_commits",
+      "adapter": "github_atom",
+      "source_name": "DeepSeek-V3 Official GitHub Commits",
+      "source_type": "official_model_release",
+      "publisher": "DeepSeek",
+      "url": "https://github.com/deepseek-ai/DeepSeek-V3/commits/main.atom",
+      "keyword_group": "china_model_updates",
+      "coverage_tags": ["china_priority", "general_ai", "reasoning"],
+      "language": "en",
+      "enabled": true
+    },
+    {
+      "registry_id": "reg_github_kimi_k3_commits",
+      "adapter": "github_atom",
+      "source_name": "Kimi K3 Official GitHub Commits",
+      "source_type": "official_model_release",
+      "publisher": "Moonshot AI",
+      "url": "https://github.com/MoonshotAI/Kimi-K3/commits/main.atom",
+      "keyword_group": "china_model_updates",
+      "coverage_tags": ["china_priority", "general_ai", "multimodal"],
+      "language": "en",
+      "enabled": true
+    },
+    {
+      "registry_id": "reg_github_kimi_code_commits",
+      "adapter": "github_atom",
+      "source_name": "Kimi Code Official GitHub Commits",
+      "source_type": "official_product_release",
+      "publisher": "Moonshot AI",
+      "url": "https://github.com/MoonshotAI/kimi-code/commits/main.atom",
+      "keyword_group": "work_ai",
+      "title_include_terms": ["feat", "release", "version"],
+      "title_exclude_terms": ["fix", "chore", "refactor", "test", "docs"],
+      "coverage_tags": ["china_priority", "work_ai", "coding_agent"],
+      "language": "en",
+      "enabled": true
+    },
+    {
+      "registry_id": "reg_github_bytedance_seed20_commits",
+      "adapter": "github_atom",
+      "source_name": "ByteDance Seed2.0 Official GitHub Commits",
+      "source_type": "official_model_release",
+      "publisher": "ByteDance Seed",
+      "url": "https://github.com/ByteDance-Seed/Seed2.0/commits/master.atom",
+      "keyword_group": "china_model_updates",
+      "coverage_tags": ["china_priority", "general_ai", "multimodal", "doubao_ecosystem"],
+      "language": "en",
+      "enabled": true
+    },
+    {
+      "registry_id": "reg_github_tencent_hy3_commits",
+      "adapter": "github_atom",
+      "source_name": "Tencent Hy3 Official GitHub Commits",
+      "source_type": "official_model_release",
+      "publisher": "Tencent Hunyuan",
+      "url": "https://github.com/Tencent-Hunyuan/Hy3/commits/main.atom",
+      "keyword_group": "china_model_updates",
+      "coverage_tags": ["china_priority", "general_ai", "agent"],
+      "language": "en",
+      "enabled": true
+    },
+    {
+      "registry_id": "reg_github_tencent_hunyuan_image_commits",
+      "adapter": "github_atom",
+      "source_name": "HunyuanImage Official GitHub Commits",
+      "source_type": "official_model_release",
+      "publisher": "Tencent Hunyuan",
+      "url": "https://github.com/Tencent-Hunyuan/HunyuanImage-3.0/commits/main.atom",
+      "keyword_group": "china_model_updates",
+      "coverage_tags": ["china_priority", "image_generation"],
+      "language": "en",
+      "enabled": true
+    },
+    {
+      "registry_id": "reg_github_baidu_ernie_commits",
+      "adapter": "github_atom",
+      "source_name": "Baidu ERNIE Official GitHub Commits",
+      "source_type": "official_model_release",
+      "publisher": "Baidu ERNIE",
+      "url": "https://github.com/PaddlePaddle/ERNIE/commits/develop.atom",
+      "keyword_group": "china_model_updates",
+      "coverage_tags": ["china_priority", "general_ai", "multimodal"],
+      "language": "en",
+      "enabled": true
+    },
+    {
+      "registry_id": "reg_github_glm5_commits",
+      "adapter": "github_atom",
+      "source_name": "GLM-5 Official GitHub Commits",
+      "source_type": "official_model_release",
+      "publisher": "Zhipu AI / Z.ai",
+      "url": "https://github.com/zai-org/GLM-5/commits/main.atom",
+      "keyword_group": "china_model_updates",
+      "coverage_tags": ["china_priority", "general_ai", "coding_agent"],
+      "language": "en",
+      "enabled": true
+    },
+    {
+      "registry_id": "reg_github_minimax_h3_commits",
+      "adapter": "github_atom",
+      "source_name": "MiniMax H3 Official GitHub Commits",
+      "source_type": "official_model_release",
+      "publisher": "MiniMax",
+      "url": "https://github.com/MiniMax-AI/MiniMax-H3/commits/main.atom",
+      "keyword_group": "china_model_updates",
+      "coverage_tags": ["china_priority", "general_ai", "agent"],
+      "language": "en",
+      "enabled": true
+    },
+    {
+      "registry_id": "reg_github_minimax_cli_commits",
+      "adapter": "github_atom",
+      "source_name": "MiniMax CLI Official GitHub Commits",
+      "source_type": "official_product_release",
+      "publisher": "MiniMax",
+      "url": "https://github.com/MiniMax-AI/cli/commits/main.atom",
+      "keyword_group": "work_ai",
+      "title_include_terms": ["feat", "release", "version"],
+      "title_exclude_terms": ["fix", "chore", "refactor", "test", "docs"],
+      "coverage_tags": ["china_priority", "work_ai", "coding_agent"],
       "language": "en",
       "enabled": true
     },

@@ -1,6 +1,12 @@
 /* SPECTRA · selected B · dark editorial workbench · 2026-09-10 */
+#advancedFilterPanel .primary-filter-row,#advancedFilterPanel .scope-filter-row{display:none}
+#channelFields{display:flex;flex-wrap:wrap;gap:8px}
+/* Hallmark · component: site footer · existing theme · pre-emit critique: P4 H5 E4 S4 R5 V3 */
 :root{--sp-bg:#091320;--sp-panel:#132132;--sp-hover:#1a2c40;--sp-text:#eef2f8;--sp-muted:#a5b5c9;--sp-line:#293b50;--sp-blue:#75baff;--color-paper:var(--sp-bg);--color-paper-2:var(--sp-panel);--color-paper-raised:var(--sp-hover);--color-ink:var(--sp-text);--color-ink-2:var(--sp-muted);--color-rule:var(--sp-line);--color-accent:var(--sp-blue)}
 html,body{overflow-x:clip;background:var(--sp-bg);color:var(--sp-text)}
+body .workspace > .site-footer{display:flex;align-items:center;justify-content:center;margin-top:40px;padding:32px 0 16px;border-top:1px solid var(--sp-line);color:var(--sp-muted);font-family:var(--font-body);font-size:clamp(12px,1.2vw,15px);font-weight:400;line-height:1.6;letter-spacing:.04em;text-align:center}
+body .workspace > .site-footer p{margin:0;white-space:nowrap}
+body .workspace > .site-footer p > span{margin-left:4px}
 body{font-family:"PingFang SC","Microsoft YaHei",sans-serif}
 button,a,input,select{font-family:inherit}button,a{touch-action:manipulation}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--sp-blue);outline-offset:3px}
 .intel-app{max-width:none;background:var(--sp-bg)}.workspace{max-width:1480px;margin:auto;padding:36px 40px}.topbar{position:relative;display:grid;grid-template-columns:1fr auto 1fr;gap:20px;padding:16px 32px;background:var(--sp-bg);border-bottom:1px solid var(--sp-line)}.brand-block strong{color:var(--sp-text);letter-spacing:4px}.brand-block small,.brand-symbol,.topbar-status,.topbar-profile span{display:none}.topbar-profile{justify-self:end}.primary-nav{display:flex;gap:12px;justify-content:center}.nav-item{border-radius:24px;padding:10px 20px;white-space:nowrap;color:var(--sp-muted)}.nav-item.active{background:var(--sp-hover);color:var(--sp-blue);border-color:var(--sp-blue)}
@@ -29,6 +35,7 @@ body[data-current-view=overview] .workspace-header h1{font-size:38px}
 body[data-current-view=overview] .channel-description{display:none}
 body[data-current-view=overview] .period-row{margin:0 0 28px;border:0;padding:0}
 body[data-current-view=overview] .thesis-card{padding:26px 28px;margin-bottom:0}
+body[data-current-view=overview] .thesis-card{display:none}
 body[data-current-view=overview] .thesis-copy{max-width:none;width:100%}
 body[data-current-view=overview] .thesis-content h2{font-size:25px;line-height:1.6;max-width:none;margin:0}
 body[data-current-view=overview] .thesis-content p,body[data-current-view=overview] .trend-one-line{display:none}
@@ -47,9 +54,12 @@ body .topbar .primary-nav .nav-item::after{display:none}body .topbar .primary-na
 body .topbar .brand-block strong{font-size:24px;letter-spacing:5px;font-weight:450}body .topbar-profile{display:block;color:var(--sp-muted);background:transparent;border:0}
 body[data-current-view=overview] .intel-app::before{content:"";display:block;position:absolute;pointer-events:none;inset:0 0 auto 28%;height:360px;opacity:.45;background:repeating-radial-gradient(ellipse at 120% -90%,transparent 0 10px,#26475f 11px,transparent 12px);mask-image:linear-gradient(110deg,transparent,#000 42%);z-index:0}
 .intel-app{position:relative;isolation:isolate}.topbar,.workspace{position:relative;z-index:1}.topbar{background:transparent;border:0;max-width:1480px;margin:auto;padding:28px 40px}.workspace{padding-top:12px}.workspace-header{min-height:74px;margin-bottom:8px}.workspace-header h1{font-size:38px;font-weight:600}.period-row{margin-bottom:48px;font-size:13px}.status-row{gap:14px}.reviewed{color:var(--sp-muted)}
-body[data-current-view=overview] .header-tools{display:none}body[data-current-view=overview] .workspace-header::after{content:"视频与图像模型 · 产品策略情报";display:block;color:var(--sp-muted);font-size:15px;margin-top:10px}body[data-current-view=overview] .workspace-header{display:block}
+body[data-current-view=overview] .header-tools{display:none}body[data-current-view=overview] .workspace-header::after{content:"洞察 AI 前沿，启发产品方向";display:block;color:var(--sp-muted);font-size:15px;margin-top:10px}body[data-current-view=overview] .workspace-header{display:block}
 .thesis-card{background:#142231;min-height:112px}.thesis-label b{font-size:13px;font-weight:400}.thesis-content h2{font-size:25px;font-weight:600}.thesis-card::before,.panel-card::before,.panel-card::after{display:none}
-body[data-current-view=overview] .overview-main{display:grid;grid-template-columns:minmax(0,.72fr) minmax(0,1fr);gap:24px;margin-top:28px;align-items:stretch;max-height:none;height:auto}
+body[data-current-view=overview] .overview-main{display:grid;grid-template-columns:minmax(0,1fr);gap:24px;margin-top:28px;align-items:stretch;max-height:none;height:auto}
+body[data-current-view=overview] .overview-main .timeline-panel{width:100%;max-width:none}
+body[data-current-view=overview] .overview-main .timeline{max-width:1120px;margin-inline:auto}
+body[data-current-view=overview] .overview-main .timeline-detail{max-width:920px;margin-inline:auto}
 body[data-current-view=overview] .dashboard-grid{display:flex;flex-direction:column;position:relative;background:#111e2a;border:1px solid var(--sp-line);border-radius:16px;padding:26px}
 body[data-current-view=overview] .signal-radar{border:0;background:transparent;padding:0;flex:1;box-shadow:none}
 body[data-current-view=overview] .timeline-panel{background:#111e2a;padding:26px;min-height:510px}
@@ -112,15 +122,15 @@ body .story-card-image{flex-shrink:0}
 body .channel-field-bar button{font-family:inherit;line-height:1.4;min-height:38px}
 body .library-entry{cursor:pointer}
 body.is-reading .editorial-section.reading .reader-heading{
-  position:fixed;top:0;left:50%;right:auto;transform:translateX(-50%);
-  width:min(920px,calc(100% - 32px));z-index:100;box-sizing:border-box;
-  min-height:72px;margin:0;padding:14px 24px;display:flex;justify-content:flex-start;
-  border:1px solid #34495e;border-top:0;border-radius:0 0 12px 12px;
-  background:#192c3e;box-shadow:0 8px 24px #050d1826;backdrop-filter:none;
+  position:relative;top:auto;left:auto;right:auto;transform:none;
+  width:auto;z-index:auto;box-sizing:border-box;
+  min-height:0;margin:0;padding:16px 24px 0;display:flex;justify-content:flex-start;
+  border:0;border-radius:0;
+  background:transparent;box-shadow:none;backdrop-filter:none;
 }
 body.is-reading .reader-heading>span{display:none}
 body.is-reading .editorial-section.reading .reader-heading button{font-size:14px;padding:10px 16px}
-body.is-reading .article-reader{background:#142536;border-color:#2c4358;padding-top:80px;overflow:visible}
+body.is-reading .article-reader{background:#142536;border-color:#2c4358;padding-top:0;overflow:visible}
 body.is-reading .editorial-feature,body.is-reading .complete-story,body.is-reading .article-prose{background:transparent}
 body.is-reading .complete-story .article-section{
   display:block;padding:26px 28px;margin:0;border:1px solid #30465a;
@@ -134,8 +144,8 @@ body.is-reading .structured-analysis{gap:24px}
 body.is-reading .source-audit,body.is-reading .key-number-row>div{background:#1a2e40;border-color:#30465a}
 body.is-reading .article-section,body.is-reading .source-audit{scroll-margin-top:96px}
 @media(max-width:650px){
-  body.is-reading .editorial-section.reading .reader-heading{width:100%;min-height:64px;padding:10px 16px;border-radius:0}
-  body.is-reading .article-reader{padding:68px 14px 18px}
+  body.is-reading .editorial-section.reading .reader-heading{width:auto;min-height:0;padding:14px 0 0;border-radius:0}
+  body.is-reading .article-reader{padding:0 14px 18px}
   body.is-reading .editorial-section.reading .editorial-feature{padding:20px 0}
   body.is-reading .complete-story .article-section{padding:22px 20px}
   body.is-reading .complete-story .article-section>div>b{font-size:21px}

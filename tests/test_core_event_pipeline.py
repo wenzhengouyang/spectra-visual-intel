@@ -143,6 +143,14 @@ class CoreEventPipelineTest(unittest.TestCase):
         self.assertEqual(bundle["demoted"][0]["reason"], "long_story_failed_after_max_attempts")
         self.assertEqual(audit["records"][0]["status"], "needs_review")
 
+    def test_competitive_claim_synonyms_cannot_bypass_fact_audit(self):
+        reader = selection(8)['selections'][0]['reader_packet']
+        for sentence in ['这些功能进一步巩固了公司在行业中的地位。', '该模型在复杂任务中表现更佳。']:
+            draft = valid_result()
+            draft['paragraphs'][-1] += sentence
+            result = audit_article(draft, reader['fact_units'], reader['allowed_judgment'], reader['writing_profile'])
+            self.assertTrue(any('unsupported inference' in error for error in result['errors']))
+
     def test_completed_checkpoint_is_reused_without_second_model_call(self):
         with tempfile.TemporaryDirectory() as temp:
             checkpoint = Path(temp) / "jobs.json"
@@ -153,6 +161,31 @@ class CoreEventPipelineTest(unittest.TestCase):
         self.assertEqual(first.calls, 1)
         self.assertEqual(second.calls, 0)
         self.assertEqual(first_bundle["drafts"], second_bundle["drafts"])
+
+    def test_prompt_upgrade_preserves_audited_completed_draft(self):
+        with tempfile.TemporaryDirectory() as temp:
+            checkpoint = Path(temp) / "jobs.json"
+            original, _ = build_bundle(verified(), selection(8), FakeClient(valid_result()), checkpoint, 2)
+            saved = json.loads(checkpoint.read_text())
+            saved['prompt_version'] = 'older-prompt'
+            checkpoint.write_text(json.dumps(saved))
+            client = FakeClient(valid_result())
+            recovered, _ = build_bundle(verified(), selection(8), client, checkpoint, 2)
+            self.assertEqual(client.calls, 0)
+            self.assertEqual(original['drafts'], recovered['drafts'])
+
+    def test_old_pass_cannot_bypass_new_audit_on_resume(self):
+        with tempfile.TemporaryDirectory() as temp:
+            checkpoint = Path(temp) / 'jobs.json'
+            build_bundle(verified(), selection(8), FakeClient(valid_result()), checkpoint, 2)
+            saved = json.loads(checkpoint.read_text())
+            saved['jobs']['evt_1']['audit_record']['draft']['paragraphs'][-1] += '这些功能进一步巩固了公司在行业中的地位。'
+            checkpoint.write_text(json.dumps(saved))
+            from unittest.mock import patch
+            with patch('editorial.core_event_pipeline.revise_long_story', return_value=(valid_result(), {}, {})) as revise:
+                result, _ = build_bundle(verified(), selection(8), FakeClient(valid_result()), checkpoint, 2)
+            self.assertEqual(revise.call_count, 1)
+            self.assertTrue(result['drafts'])
 
     def test_changed_fact_input_invalidates_completed_checkpoint(self):
         with tempfile.TemporaryDirectory() as temp:

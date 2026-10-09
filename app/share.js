@@ -33,7 +33,12 @@
     const local=location.protocol==='file:'||['localhost','127.0.0.1','[::1]'].includes(location.hostname);
     const article=item.story_id&&item.editorial_tier!=='brief';
     const source=(item.source_links||[]).find(s=>safeUrl(s.url)!=='#')?.url;
-    const link=new URL(location.href);link.hash='story='+encodeURIComponent(item.story_id||'');
+    const runId=String(bundle.run_id || '');
+    const archived=location.pathname.includes('/archive/');
+    const link=!archived && /^[A-Za-z0-9_-]+$/.test(runId)
+      ? new URL('archive/'+encodeURIComponent(runId)+'/index.html',location.href)
+      : new URL(location.href);
+    link.hash='story='+encodeURIComponent(item.story_id||'');
     const target=article&&!local?link.href:source;
     dialog.querySelector('.share-hint').textContent=local?'本地预览分享原文链接，收件人无需访问你的电脑。':article?'复制标题、摘要和文章链接。':'复制标题、摘要和原文链接。';
     dialog.querySelector('textarea').value=[item.headline,item.dek,target].filter(Boolean).join('\n\n');

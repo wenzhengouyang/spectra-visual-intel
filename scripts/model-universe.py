@@ -5,6 +5,7 @@ from datetime import datetime, timezone, date
 import hashlib
 from html.parser import HTMLParser
 import json
+import os
 import re
 from pathlib import Path
 import subprocess
@@ -15,7 +16,9 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from spectra_agent.safe_http import request_bytes
 CATALOG = ROOT / 'assets/model-universe/catalog.json'
-STATE = ROOT / 'collector/model-universe-runs'
+STATE = Path(os.environ.get('SPECTRA_MODEL_STATE', str(ROOT / 'collector/model-universe-runs')))
+if ROOT.name == 'runtime' and not os.environ.get('SPECTRA_MODEL_STATE'):
+    STATE = ROOT.parent / 'data/model-universe'
 
 class Text(HTMLParser):
     def __init__(self):
@@ -41,6 +44,7 @@ def collect(limit):
             if url: urls.setdefault(urldefrag(url)[0], []).append(model['id'])
     previous = json.loads((STATE/'latest.json').read_text()) if (STATE/'latest.json').exists() else {'sources':{}}
     sources = previous['sources'].copy()
+    pending = previous.get('pending_verification', {}).copy()
     checked = datetime.now(timezone.utc).isoformat()
     # safe_http owns a thread-bound request budget: fetch sequentially.
     outcomes = []
@@ -56,10 +60,13 @@ def collect(limit):
             record.update(status='changed' if old.get('sha256') and old['sha256'] != digest else 'unchanged' if old.get('sha256') else 'baseline', sha256=digest, final_url=final)
             write(STATE/'snapshots'/f'{digest}.json', {'url':url,'final_url':final,'text':text,'checked_at':checked})
             sources[url] = record
+            if record['status'] in {'baseline', 'changed'}:
+                pending[url] = record
         except Exception as exc:
             record.update(status='error', error=str(exc))
         outcomes.append(record)
-    result = {'checked_at':checked,'sources':sources,'results':outcomes,'rule':'Page changes require evidence review; never imply a model release.'}
+    result = {'checked_at':checked,'sources':sources,'results':outcomes,'pending_verification':pending,'rule':'Page changes require evidence review; never imply a model release.'}
+    result['last_verified_at'] = previous.get('last_verified_at')
     write(STATE/'latest.json',result)
     write(STATE/'history'/(checked.replace(':','-')+'.json'), result)
     print(json.dumps({'sources':len(outcomes),'changed':sum(r['status']=='changed' for r in outcomes),'errors':sum(r['status']=='error' for r in outcomes)},ensure_ascii=False))
@@ -90,6 +97,19 @@ def apply_review(review_path):
     write(STATE/'backups'/f'{stamp}.json',json.loads(CATALOG.read_text()))
     write(CATALOG,catalog)
     subprocess.run(['node',str(ROOT/'scripts/build-model-universe.cjs')],check=True)
+    latest = json.loads((STATE/'latest.json').read_text()) if (STATE/'latest.json').exists() else {}
+    pending = latest.get('pending_verification', {})
+    for change in review['changes']:
+        for url, item in list(pending.items()):
+            if item.get('sha256') == change['snapshot_sha256']:
+                ids = [mid for mid in item.get('model_ids', []) if mid != change['id']]
+                if ids:
+                    pending[url] = {**item, 'model_ids': ids}
+                else:
+                    del pending[url]
+    latest['pending_verification'] = pending
+    latest['last_verified_at'] = datetime.now(timezone.utc).isoformat()
+    write(STATE/'latest.json', latest)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)

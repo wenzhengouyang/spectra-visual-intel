@@ -154,6 +154,7 @@ class ExecutionTests(unittest.TestCase):
         config = {'review_queue': {'max_count': 2, 'intelligence_type_minimums': {'market': 1}}}
         result = select_review_candidates({'selected_candidates': items}, config)
         self.assertIn('market', [r['intelligence_type'] for r in result])
+        self.assertEqual({r['candidate_id'] for r in result}, {'0', '1', '2', '3'})
         config['review_queue']['intelligence_type_minimums']['market'] = 3
         with self.assertRaises(WorkflowError):
             select_review_candidates({'selected_candidates': items}, config)

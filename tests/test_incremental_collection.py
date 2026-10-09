@@ -1,11 +1,13 @@
 import json
 import tempfile
 import unittest
+from unittest.mock import patch
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from collector.merge_incremental_runs import merge
-from spectra_agent.run import active_rate_limit_cooldowns, find_incremental_baseline, incremental_retry_plan, incremental_retry_source_ids
+from spectra_agent.run import active_rate_limit_cooldowns, append_source_selection, configured_mainline_source_ids, find_completed_coverage, find_incremental_baseline, incremental_retry_plan, incremental_retry_source_ids
+from spectra_agent.coverage_runner import coverage_source_ids
 
 
 def record(source_id, url, digest, published, title="item"):
@@ -17,6 +19,37 @@ def record(source_id, url, digest, published, title="item"):
 
 
 class IncrementalCollectionTest(unittest.TestCase):
+    def test_completed_coverage_is_available_to_the_next_run(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            prior = root / "daily-20260915"
+            current = root / "daily-20260916"
+            prior.mkdir()
+            current.mkdir()
+            (prior / "coverage-line.json").write_text(json.dumps({
+                "status": "completed", "completed_at": "2026-09-15T01:00:00Z",
+            }))
+            (prior / "coverage-collection.json").write_text(json.dumps({"source_records": []}))
+            with patch("spectra_agent.run.runs_dir", return_value=root):
+                self.assertEqual(find_completed_coverage({}, current), prior / "coverage-collection.json")
+
+    def test_mainline_is_fixed_and_coverage_derives_every_other_enabled_source(self):
+        config = {"collection_lanes": {
+            "mainline": {"enabled": True, "source_ids": ["fast", "fast"]},
+            "coverage": {"derive_from_non_mainline_enabled_sources": True},
+        }}
+        registry = {"sources": [
+            {"registry_id": "fast", "enabled": True},
+            {"registry_id": "github", "enabled": True},
+            {"registry_id": "off", "enabled": False},
+        ]}
+        self.assertEqual(configured_mainline_source_ids(config), ["fast"])
+        with tempfile.TemporaryDirectory() as temp:
+            self.assertEqual(coverage_source_ids(config, registry, Path(temp)), ["github"])
+        command = ["collector"]
+        append_source_selection(command, ["fast"])
+        self.assertEqual(command, ["collector", "--source", "fast"])
+
     def test_merge_keeps_baseline_and_prefers_delta_update(self):
         baseline = {
             "schema_version": "0.2", "run_id": "monday",

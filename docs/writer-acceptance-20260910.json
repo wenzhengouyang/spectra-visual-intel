@@ -1,0 +1,19 @@
+{
+  "date": "2026-09-10",
+  "source_run": "daily-20260909",
+  "event_id": "evt_b3c5f547a972f8c2",
+  "model": "qwen3:14b",
+  "provider": "local_ollama",
+  "isolated_output": "/tmp/spectra-writer-acceptance.LLQXdk",
+  "formal_artifacts_changed": false,
+  "initial_old_audit_result": "passed",
+  "reader_review_findings": ["unsupported performance claim", "unsupported competitive position claim"],
+  "strengthened_audit_result": "needs_review",
+  "follow_up_max_attempts": 2,
+  "final_status": "demoted_after_failed_long_story",
+  "final_error": "revision patch paragraph[0] still lacks attribution",
+  "core_events": 0,
+  "demoted": 1,
+  "quality_gate_weakened": false,
+  "automatic_quality_improvement_proven": false
+}

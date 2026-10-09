@@ -10,13 +10,17 @@
     <string>/Users/wenzheng/Library/Application Support/SPECTRA/runtime/spectra_agent/dingtalk_push.py</string>
     <string>--config</string>
     <string>spectra_agent/config.v0.1.json</string>
+    <string>--wait-for-web</string>
   </array>
   <key>WorkingDirectory</key>
   <string>/Users/wenzheng/Library/Application Support/SPECTRA/runtime</string>
-  <key>StartInterval</key>
-  <integer>1800</integer>
-  <key>RunAtLoad</key>
-  <true/>
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key>
+    <integer>10</integer>
+    <key>Minute</key>
+    <integer>30</integer>
+  </dict>
   <key>ProcessType</key>
   <string>Background</string>
   <key>EnvironmentVariables</key>

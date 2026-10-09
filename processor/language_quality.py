@@ -18,7 +18,7 @@ ENGLISH_SENTENCE_RE = re.compile(
 )
 KNOWN_TERMS = {
     "ai", "api", "agent", "agents", "benchmark", "chatgpt", "claude", "codex",
-    "deepmind", "deepseek", "gemini", "github", "google", "gpu", "huawei",
+    "deepmind", "deepseek", "gemini", "github", "google", "gpu", "huawei", "huggingface",
     "hugging", "face", "llm", "mcp", "meta", "minimax", "nvidia", "ollama",
     "openai", "qwen", "spatialcrafter", "transformer", "wan", "youtube",
 }

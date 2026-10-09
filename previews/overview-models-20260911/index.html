@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SPECTRA · 总览交互预览</title><link rel="stylesheet" href="tokens.css"><link rel="stylesheet" href="preview.css"></head>
+<body>
+<header class="topbar"><a class="brand" href="#">SPECTRA</a><nav aria-label="主导航"><a href="#" aria-current="page">情报总览</a><a href="#weekly">情报文章</a><button id="myFollow">我的关注</button><button id="ideas">视觉灵感库</button></nav><span class="preview-label">独立交互预览</span></header>
+<main>
+<section class="masthead"><div><h1>情报总览</h1><p>看见 AI 的变化，找到产品的方向。</p></div><div class="period"><span>一周资讯快照</span><strong>2026.09.04 — 09.10</strong><small>模型资料核对：2026.09.11</small></div></section>
+<section class="intro"><span>本期观察</span><h2>从生成内容，走向理解世界与执行任务。</h2><p>本地快照中的研究线索集中在世界模型与具身智能；新增模型目录优先呈现国内团队，再补充国际参照。</p></section>
+<section class="explorer" aria-labelledby="explorerTitle">
+<div class="section-head"><div><h2 id="explorerTitle">模型与工作 AI</h2><p>先选方向，再看模型、版本与相关资讯。</p></div><button class="text-button" id="allModels">浏览全部 <span>↗</span></button></div>
+<div class="category-grid" id="categories"></div>
+<div class="update-strip"><span class="update-label">近期更新</span><button id="recentModel"><strong>Kimi Code</strong><span>v0.41.0 · Web 新增实验性多 Agent 协作</span><span class="date">09.04</span><span>↗</span></button></div>
+<div class="catalog" id="catalog" hidden><div class="catalog-head"><button class="text-button" id="backCategories">← 返回分类</button><h3 id="catalogTitle" tabindex="-1"></h3><span id="resultCount" role="status"></span></div><div class="filters"><label>搜索模型 / 产品<input id="search" type="search" placeholder="名称、公司或用途"></label><label>展示范围<select id="region"><option value="all">全部 · 国内优先</option><option value="cn">仅国内</option><option value="global">仅国际</option></select></label><label class="check"><input id="recentOnly" type="checkbox">近 30 日更新</label></div><div id="modelList"></div></div>
+</section>
+<section class="weekly" id="weekly" aria-labelledby="weeklyTitle"><div class="section-head"><div><h2 id="weeklyTitle">一周资讯</h2><p>研究进展、行业信号与产品变化，沿时间回看。</p></div><span class="quiet">项目快照 · 非实时发布</span></div><div class="date-tabs" id="days" aria-label="资讯日期筛选"></div><div class="news-layout"><div id="newsList"></div><aside><h3>这一周，值得留意</h3><p>世界模型不只需要“看起来真实”，还需要可控、可验证的时空与动作表现。</p><div class="aside-rule"></div><span class="quiet">关注方向</span><p class="aside-topic">世界建模<br>具身智能<br>模型评测</p><small>编辑观察，基于本页研究条目；不代表模型性能排名。</small></aside></div></section>
+<footer>SPECTRA Visual Intelligence © 2026 <button class="text-button" id="about">数据与预览说明 ↗</button></footer>
+</main>
+<dialog id="detail" aria-labelledby="detailTitle"><div class="dialog-top"><span id="detailBreadcrumb">模型档案</span><button class="close" aria-label="关闭详情">×</button></div><div id="detailContent"></div></dialog>
+<script src="data.js"></script><script src="preview.js"></script>
+</body></html>

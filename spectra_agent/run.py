@@ -73,6 +73,8 @@ STATIC_ASSETS = (
     Path("app/visual-library.js"),
     Path("app/accepted-ux.js"),
     Path("app/share.js"),
+    Path("app/account.js"),
+    Path("app/account.css"),
 )
 
 
@@ -106,6 +108,8 @@ def prepare_static_draft(run_dir: Path, static_page: Path) -> Path:
     source_assets = ROOT / "assets"
     if source_assets.exists():
         shutil.copytree(source_assets, run_dir / "assets", dirs_exist_ok=True)
+    from spectra_agent.model_news import project
+    project(run_dir)
     return static_draft
 
 
@@ -217,9 +221,39 @@ def update_state(run_dir: Path, **changes: Any) -> dict[str, Any]:
             # Write back to file with lock held
             write_json(state_path, state)
             sync_issue_workflow(run_dir, state)
+            if current != previous:
+                if state.get('current_stage') in {'image_generation', 'image_preview'}:
+                    from spectra_agent.morning_guards import image_window
+                    image_window(run_dir)
+                if state.get('status') in {'waiting_for_review', 'waiting_for_editorial_review', 'failed'}:
+                    try:
+                        subprocess.Popen([sys.executable, str(ROOT / 'spectra_agent/stage_notification.py'), str(run_dir)],
+                                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+                    except OSError as exc:
+                        log(run_dir, 'notification', 'launch_failed', error=str(exc))
             return state
         finally:
             fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+
+
+def apply_editorial_overrides(run_dir: Path, issue: dict[str, Any]) -> int:
+    """Reapply reviewed copy after a resume rebuilds the editorial bundle."""
+    path = run_dir / "editorial-overrides.json"
+    if not path.exists():
+        return 0
+    overrides = read_json(path)
+    applied = 0
+    for collection, id_field in (("editorial_stories", "story_id"), ("news_briefs", "brief_id")):
+        indexed = {item.get(id_field): item for item in issue.get(collection, [])}
+        for item_id, values in (overrides.get(collection) or {}).items():
+            target = indexed.get(item_id)
+            if target is None:
+                continue
+            for field in ("headline", "dek"):
+                if str(values.get(field) or "").strip():
+                    target[field] = values[field]
+            applied += 1
+    return applied
 
 
 def sync_issue_workflow(run_dir: Path, state: dict[str, Any]) -> None:
@@ -416,7 +450,22 @@ def pre_review_artifacts_recoverable(run_dir: Path, review_path: Path) -> bool:
         return True
     try:
         review = read_json(review_path)
+        candidates = read_json(run_dir / "candidates.json")
     except (OSError, ValueError, json.JSONDecodeError):
+        return True
+    approved_ids = {
+        record.get("candidate_id")
+        for record in review.get("records", [])
+        if record.get("decision") == "include"
+    }
+    current_ids = {
+        candidate.get("candidate_id")
+        for candidate in candidates.get("selected_candidates", [])
+    }
+    # Coverage ingestion can rebuild the shortlist after a reviewer has
+    # already approved it. Recreate the review packet so unchanged decisions
+    # can be restored and only changed candidates return to human review.
+    if not approved_ids.issubset(current_ids):
         return True
     return review.get("review_status") != "approved" and not review.get("verification_harness")
 
@@ -484,6 +533,14 @@ def prepare_retry_artifacts(
             raise WorkflowError(
                 "retry cannot continue without collection.json; start a new run to collect again"
             )
+        from spectra_agent.collection_health import ingest_coverage, mark_coverage_consumed
+        if ingest_coverage(run_dir):
+            update_state(run_dir, publish_status="not_published")
+            if (run_dir / 'p1-review.json').exists() and not (run_dir / 'p1-review.before-coverage.json').exists():
+                write_json(run_dir / 'p1-review.before-coverage.json', read_json(run_dir / 'p1-review.json'))
+            rebuild_structure_from_collection(run_dir, config, llm_requested)
+            mark_coverage_consumed(run_dir)
+            return True
         if not candidates_path.exists():
             rebuild_structure_from_collection(run_dir, config, llm_requested)
             return True
@@ -577,6 +634,24 @@ def find_incremental_baseline(config: dict[str, Any], end: datetime, exclude: Pa
     return max(candidates, default=(None, None), key=lambda item: item[0])[1]
 
 
+def find_completed_coverage(config: dict[str, Any], exclude: Path) -> Path | None:
+    """Return the newest completed coverage result for next-run ingestion."""
+    candidates: list[tuple[str, Path]] = []
+    for directory in runs_dir(config).iterdir() if runs_dir(config).exists() else []:
+        status_path = directory / "coverage-line.json"
+        output_path = directory / "coverage-collection.json"
+        if directory == exclude or not status_path.exists() or not output_path.exists():
+            continue
+        try:
+            status = read_json(status_path)
+            payload = read_json(output_path)
+            if status.get("status") == "completed" and isinstance(payload.get("source_records"), list):
+                candidates.append((str(status.get("completed_at") or directory.name), output_path))
+        except (OSError, ValueError, TypeError, json.JSONDecodeError):
+            continue
+    return max(candidates, default=("", None), key=lambda item: item[0])[1]
+
+
 def annotate_display_window(collection_path: Path, config: dict[str, Any]) -> None:
     """Add the rolling collection window used by the daily page."""
     collection = read_json(collection_path)
@@ -657,6 +732,47 @@ def incremental_retry_plan(
     return sorted(retry_ids - set(cooled)), cooled
 
 
+def configured_mainline_source_ids(config: dict[str, Any]) -> list[str]:
+    mainline = ((config.get("collection_lanes") or {}).get("mainline") or {})
+    if not mainline.get("enabled", False):
+        return []
+    return list(dict.fromkeys(mainline.get("source_ids") or []))
+
+
+def append_source_selection(command_args: list[str], source_ids: list[str]) -> None:
+    for source_id in source_ids:
+        command_args += ["--source", source_id]
+
+
+def launch_coverage_line(run_dir: Path, config: dict[str, Any], start: datetime, end: datetime) -> int | None:
+    coverage = ((config.get("collection_lanes") or {}).get("coverage") or {})
+    if not coverage.get("enabled", False):
+        return None
+    status_path = run_dir / "coverage-line.json"
+    write_json(status_path, {
+        "status": "queued", "queued_at": utc_now(), "blocking_daily": False,
+        "purpose": coverage.get("purpose"),
+    })
+    log_path = run_dir / "coverage-line.log"
+    command_args = [
+        sys.executable, str(ROOT / "spectra_agent/coverage_runner.py"),
+        "--config", str(DEFAULT_CONFIG.relative_to(ROOT)), "--run-id", run_dir.name,
+        "--start", start.isoformat(), "--end", end.isoformat(),
+    ]
+    try:
+        handle = log_path.open("a", encoding="utf-8")
+        process = subprocess.Popen(command_args, cwd=ROOT, stdout=handle, stderr=handle, start_new_session=True)
+        handle.close()
+        log(run_dir, "coverage_line", "background_coverage_started", pid=process.pid, blocking_daily=False)
+        return process.pid
+    except Exception as exc:
+        write_json(status_path, {
+            "status": "failed_to_start", "failed_at": utc_now(), "error": str(exc), "blocking_daily": False,
+        })
+        log(run_dir, "coverage_line", "background_coverage_start_failed", error=str(exc), blocking_daily=False)
+        return None
+
+
 def command(run_dir: Path, stage: str, args: list[str], timeout: int | None = None) -> None:
     """Execute a subprocess with timeout and proper error handling.
 
@@ -690,6 +806,7 @@ def command(run_dir: Path, stage: str, args: list[str], timeout: int | None = No
             text=True,
             capture_output=True,
             timeout=timeout,
+            env={**os.environ, "SPECTRA_ACQUISITION_BUDGET_DB": str(run_dir / "acquisition-budget.sqlite")},
         )
         log(
             run_dir, stage, "command_finished",
@@ -817,8 +934,6 @@ def select_review_candidates(candidates: dict[str, Any], config: dict[str, Any])
         if present < int(minimum):
             warnings.append(f"{intelligence_type}: requested {minimum}, available {present}")
     for item in backbone:
-        if len(selected) >= maximum:
-            break
         if item["candidate_id"] not in selected_ids:
             selected.append(item)
             selected_ids.add(item["candidate_id"])
@@ -839,6 +954,7 @@ def review_template(collection: dict[str, Any], candidates: dict[str, Any], run_
                 verification_questions.append(question)
         records.append({
             "candidate_id": item["candidate_id"],
+            "supplemental_evidence": item.get("supplemental_evidence"),
             "source_id": item["primary_source_id"],
             "title": item["canonical_title"],
             "url": source["canonical_url"],
@@ -1133,8 +1249,18 @@ def _create_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
     write_json(latest_pointer(config), {"run_id": run_id})
     try:
         update_state(run_dir, status="running", current_stage="collect")
+        from spectra_agent.morning_guards import network_preflight, coverage_decision
+        network_preflight(run_dir)
         collection_path = run_dir / "collection.json"
         target_end = parse_timestamp(args.end) if args.end else datetime.now(timezone.utc)
+        desired_start = target_end - timedelta(days=int(args.days or config.get("schedule", {}).get("window_days", 7)))
+        mainline_source_ids = configured_mainline_source_ids(config)
+        mainline_timeout = int((((config.get("collection_lanes") or {}).get("mainline") or {}).get("timeout_seconds", 600)))
+        # The coverage lane has its own output and never blocks the daily
+        # mainline. Start it first so a mainline failure cannot prevent it.
+        coverage_pid = launch_coverage_line(run_dir, config, desired_start, target_end)
+        if coverage_pid:
+            update_state(run_dir, coverage_line_status="running", coverage_worker_pid=coverage_pid)
         baseline_path = find_incremental_baseline(config, target_end, run_dir)
         if args.from_collection:
             shutil.copyfile(ROOT / args.from_collection, collection_path)
@@ -1147,7 +1273,11 @@ def _create_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
                 int((config.get("incremental_collection") or {}).get("overlap_hours", 6)),
             )
             delta_start = baseline_end - timedelta(hours=overlap_hours)
-            desired_start = target_end - timedelta(days=int(args.days or config.get("schedule", {}).get("window_days", 7)))
+            local_end = target_end.astimezone(ZoneInfo(config.get('timezone', 'Asia/Shanghai')))
+            if local_end.weekday() == 0:
+                weekend_start = (local_end - timedelta(days=2)).replace(hour=0, minute=0, second=0, microsecond=0)
+                delta_start = min(delta_start, weekend_start.astimezone(timezone.utc))
+                update_state(run_dir, weekend_digest_start=weekend_start.isoformat())
             delta_path = run_dir / "collection.incremental.json"
             check_werss_service(config, run_dir)
             cooldown_hours = int((config.get("incremental_collection") or {}).get("rate_limit_cooldown_hours", 24))
@@ -1158,15 +1288,17 @@ def _create_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
             ]
             for registry_id in active_cooldowns:
                 delta_cmd += ["--exclude-source", registry_id]
+            append_source_selection(delta_cmd, mainline_source_ids)
             if args.newscrawler_command:
                 delta_cmd += ["--newscrawler-command", args.newscrawler_command]
-            command(run_dir, "collect_incremental", delta_cmd)
+            command(run_dir, "collect_incremental", delta_cmd, timeout=mainline_timeout if mainline_source_ids else None)
             delta = read_json(delta_path)
             retry_ids, cooled_sources = incremental_retry_plan(baseline, delta)
             if cooled_sources:
                 log(run_dir, "collect", "full_window_retry_cooled", sources=cooled_sources)
             retry_path = run_dir / "collection.full-window-retry.json"
-            if retry_ids:
+            background_coverage_enabled = bool((((config.get("collection_lanes") or {}).get("coverage") or {}).get("enabled", False)))
+            if retry_ids and not background_coverage_enabled:
                 retry_cmd = [
                     collector_python(config), "collector/collect.py", "--config", config["collection_config"],
                     "--output", str(retry_path), "--start", desired_start.isoformat(), "--end", target_end.isoformat(),
@@ -1202,7 +1334,8 @@ def _create_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
             incremental_summary = merged_collection.get("summary") or {}
             update_state(
                 run_dir,
-                collection_mode="daily_incremental",
+                collection_mode="daily_mainline_incremental" if mainline_source_ids else "daily_incremental",
+                mainline_source_count=len(mainline_source_ids),
                 incremental_baseline_run=baseline_path.parent.name,
                 incremental_overlap_hours=overlap_hours,
                 incremental_changed_records=incremental_summary.get("changed_records", 0),
@@ -1236,16 +1369,50 @@ def _create_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
             cmd += ["--end", target_end.isoformat()]
             if args.days:
                 cmd += ["--days", str(args.days)]
+            append_source_selection(cmd, mainline_source_ids)
             if args.newscrawler_command:
                 cmd += ["--newscrawler-command", args.newscrawler_command]
-            command(run_dir, "collect", cmd)
+            command(run_dir, "collect", cmd, timeout=mainline_timeout if mainline_source_ids else None)
             update_state(
                 run_dir,
-                collection_mode="full_baseline",
+                collection_mode="daily_mainline_baseline" if mainline_source_ids else "full_baseline",
+                mainline_source_count=len(mainline_source_ids),
                 incremental_fallback_reason="scheduled_rolling_baseline_or_valid_recent_baseline_not_found",
             )
+        prior_coverage = find_completed_coverage(config, run_dir)
+        if prior_coverage:
+            mainline_collection = read_json(collection_path)
+            merged_path = run_dir / "collection.with-coverage.json"
+            command(run_dir, "merge_prior_coverage", [
+                sys.executable, "collector/merge_incremental_runs.py",
+                "--baseline", str(collection_path), "--delta", str(prior_coverage),
+                "--window-start", desired_start.isoformat(), "--window-end", target_end.isoformat(),
+                "--output", str(merged_path),
+            ])
+            merged_collection = read_json(merged_path)
+            mainline_checks = mainline_collection.get("source_checks", [])
+            coverage_checks = read_json(prior_coverage).get("source_checks", [])
+            merged_collection["source_checks"] = mainline_checks
+            merged_collection["mainline_source_checks"] = mainline_checks
+            merged_collection["coverage_source_checks"] = coverage_checks
+            summary = merged_collection.get("summary") or {}
+            summary.update({
+                "configured_sources": len(mainline_checks),
+                "successful_sources": sum(item.get("status") == "success" for item in mainline_checks),
+                "degraded_sources": sum(item.get("status") == "degraded" for item in mainline_checks),
+                "failed_sources": sum(item.get("status") == "failed" for item in mainline_checks),
+                "coverage_records_ingested": len(read_json(prior_coverage).get("source_records", [])),
+            })
+            merged_collection["summary"] = summary
+            write_json(merged_path, merged_collection)
+            merged_path.replace(collection_path)
+            update_state(run_dir, prior_coverage_ingested=str(prior_coverage))
         annotate_display_window(collection_path, config)
         command(run_dir, "validate_collection", [sys.executable, "scripts/validate-source-run.py", str(collection_path)])
+
+        mode = coverage_decision(run_dir, read_json(collection_path),
+            float((config.get('run_evaluation') or {}).get('thresholds', {}).get('source_success_rate_min', .9)))
+        update_state(run_dir, recommended_publication_mode=mode['recommended_mode'])
 
         radar_config = config.get("discussion_radar") or {"enabled": True, "required": False}
         if radar_config.get("enabled", True):
@@ -1331,6 +1498,7 @@ def _create_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
         )
         write_json(run_dir / "p1-review.json", template)
         confidence_summary = evidence.get("summary", {})
+        write_json(run_dir / "review-input.json", template)
         log(run_dir, "verification_harness", "evidence_packet_ready", **confidence_summary)
 
         policy = template.get("review_policy") or {}
@@ -1488,7 +1656,30 @@ def _resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
         template = apply_review_policy(
             template, candidates, evidence, config.get("review_policy"), collection
         )
+        # A stable candidate ID plus identical source bytes preserves the human
+        # decision even if a later model pass phrases suggested evidence differently.
+        from spectra_agent.collection_health import read as read_optional
+        prior_review = read_optional(run_dir / 'p1-review.before-coverage.json')
+        prior_collection = read_optional(run_dir / 'collection.before-coverage.json')
+        old_sources = {s['source_id']: s.get('content_hash') for s in prior_collection.get('source_records', [])}
+        current_sources = {s['source_id']: s.get('content_hash') for s in collection.get('source_records', [])}
+        old_records = {r['candidate_id']: r for r in prior_review.get('records', [])}
+        prior_batch_reviewed = bool(
+            prior_review.get('review_status') == 'approved'
+            and prior_review.get('verified_by')
+            and prior_review.get('verified_at')
+        )
+        for index, record in enumerate(template['records']):
+            previous = old_records.get(record['candidate_id'])
+            source_id = record.get('source_id')
+            if (previous and (previous.get('reviewed_by') or prior_batch_reviewed) and old_sources.get(source_id)
+                    and old_sources[source_id] == current_sources.get(source_id)):
+                # `event` is materialized only after fact approval, so a
+                # freshly rebuilt review template intentionally has no event.
+                # Source bytes and proposed evidence are the factual identity.
+                template['records'][index] = previous
         write_json(review_path, template)
+        write_json(run_dir / "review-input.json", template)
         policy = template.get("review_policy") or {}
         if (
             template["records"]
@@ -1541,6 +1732,9 @@ def _resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
         verified_path = run_dir / "verified-events.json"
         command(run_dir, "verify", [sys.executable, "verification/build-final-events.py", "--review", str(review_path), "--collection", str(run_dir / "collection.json"), "--candidates", str(run_dir / "candidates.json"), "--output", str(verified_path)])
         command(run_dir, "validate_verified", [sys.executable, "scripts/validate-verified-events.py", "--verified", str(verified_path), "--collection", str(run_dir / "collection.json")])
+        from spectra_agent.review_samples import record_fact_review
+        baseline = read_json(run_dir / "review-input.json") if (run_dir / "review-input.json").exists() else {"records": []}
+        record_fact_review(run_dir, baseline, review, kind="fact_final")
         verified = read_json(verified_path)
         count = verified["summary"]["included_events"]
         approved_count = sum(
@@ -1695,6 +1889,10 @@ def _resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
             generate_command += ["--drafts", str(editorial_drafts_path)]
         command(run_dir, "generate", generate_command)
         issue = read_json(issue_path)
+        override_count = apply_editorial_overrides(run_dir, issue)
+        if override_count:
+            write_json(issue_path, issue)
+            log(run_dir, "generate", "reviewed_editorial_overrides_restored", count=override_count)
         if resumed_localization_issue is not None:
             from processor.p2_localizer import restore_reviewed_localizations
             restored = restore_reviewed_localizations(
@@ -1709,7 +1907,10 @@ def _resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
             story.get("article_type") == "core_event"
             for story in issue.get("editorial_stories", [])
         )
-        if core_event_count < minimum_core_events:
+        from spectra_agent.publication_quality import brief_only_allowed
+        brief_only = brief_only_allowed(issue, config)
+        update_state(run_dir, publication_mode="brief_only" if brief_only else "standard")
+        if core_event_count < minimum_core_events and not brief_only:
             update_state(
                 run_dir,
                 status="waiting_for_editorial_review",
@@ -1768,18 +1969,36 @@ def _resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
                 "publish_status": "not_published",
             }, ensure_ascii=False, indent=2))
             return 2
+        if (config.get('image_generation') or {}).get('enabled', False):
+            from spectra_agent.image_generation import prepare as prepare_image_generation
+            image_jobs = prepare_image_generation(run_dir)
+            image_config = config.get('image_generation') or {}
+            if image_jobs['status'] == 'pending' and image_config.get('block_publication', True):
+                update_state(run_dir, status='waiting_for_editorial_review', current_stage='image_generation',
+                             paused_reason='等待配图：新闻原图 → 官方素材 → AI 兜底', publish_status='not_published')
+                return 2
+            if image_jobs['status'] == 'pending':
+                update_state(
+                    run_dir,
+                    pending_image_story_ids=[job['story_id'] for job in image_jobs['jobs'] if job.get('status') != 'generated'],
+                    image_follow_up_status='pending',
+                )
+            issue = read_json(issue_path)
+        from spectra_agent.publication_quality import requires_cover
         pending_image_ids = [
             story.get("story_id")
             for story in issue.get("editorial_stories", [])
-            if (story.get("cover_image") or {}).get("kind") in {"editorial_diagram", "generated"}
+            if requires_cover(story)
+            and (story.get("cover_image") or {}).get("kind") in {"editorial_diagram", "generated", "source", "official"}
             and (story.get("cover_image") or {}).get("review_status") != "approved"
         ]
-        if pending_image_ids:
+        image_config = config.get('image_generation') or {}
+        if pending_image_ids and image_config.get('block_publication', True):
             update_state(
                 run_dir,
                 status="waiting_for_editorial_review",
                 current_stage="image_preview",
-                paused_reason="generated story covers require human preview",
+                paused_reason="等待图文一致性审核：允许授权 Agent 审核具体图片",
                 pending_image_story_ids=pending_image_ids,
                 error=None,
             )
@@ -1789,13 +2008,36 @@ def _resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
                 "pending_image_story_ids": pending_image_ids,
                 "next": (
                     f"python3 spectra_agent/image_review.py --run-dir {run_dir} "
-                    "--approve all --reviewer <name>, then resume"
+                    "--approve <reviewed-story-ids> --reviewer <name>, then resume"
                 ),
                 "publish_status": "not_published",
             }, ensure_ascii=False, indent=2))
             return 2
         update_state(run_dir, pending_image_story_ids=[])
         issue = read_json(issue_path)
+        release_path = run_dir / 'limited-release-approval.json'
+        release = read_json(release_path) if release_path.exists() else {}
+        manual_limited_release = (release.get('run_id') == run_dir.name
+                           and release.get('approved_by') == 'user'
+                           and release.get('allowed_failed_checks') == ['source_success_rate']
+                           and bool(release.get('disclosure')))
+        from spectra_agent.morning_guards import automatic_limited_release
+        automatic_release = automatic_limited_release(
+            run_dir,
+            read_json(run_dir / 'collection.json'),
+            config.get('automatic_limited_release') or {},
+        )
+        limited_release = manual_limited_release or automatic_release.get('authorized', False)
+        release_disclosure = release.get('disclosure') if manual_limited_release else automatic_release.get('disclosure')
+        if limited_release:
+            # Coverage health is operational metadata for the local report. It
+            # must never replace reader-facing editorial judgment on the site.
+            issue['issue']['coverage_disclosure'] = release_disclosure
+            issue['issue']['release_mode'] = 'limited_source_coverage'
+            issue['issue']['release_authorization'] = 'user' if manual_limited_release else 'bounded_automatic_policy'
+            write_json(issue_path, issue)
+            from spectra_agent.image_review import embed_issue
+            embed_issue(static_draft, issue)
         command(run_dir, "validate_issue", [sys.executable, "scripts/validate-editorial-issue.py", "--editorial", str(issue_path), "--verified", str(verified_path), "--config", str(resolve_config(args.config)[0])])
         validate_static_package(run_dir, static_draft, issue)
         reader_quality_errors = publication_quality_errors(issue, config, asset_root=run_dir)
@@ -1847,7 +2089,11 @@ def _resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
                 allow_expand=evaluation["rolling_advice"]["allow_expand"],
                 failed_checks=evaluation["failed_checks"],
             )
-            if evaluation["status"] == "fail" and evaluation_config.get("block_completion_on_failure", False):
+            coverage_exception = limited_release and set(evaluation['failed_checks']) == {'source_success_rate'}
+            if coverage_exception:
+                log(run_dir, 'run_evaluation', 'limited_release_authorized',
+                    authorization='user' if manual_limited_release else 'bounded_automatic_policy')
+            if evaluation["status"] == "fail" and evaluation_config.get("block_completion_on_failure", False) and not coverage_exception:
                 raise WorkflowError(
                     "run evaluation failed and block_completion_on_failure is enabled: "
                     + ", ".join(evaluation["failed_checks"])
@@ -1906,6 +2152,17 @@ def _resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
             "static_draft": str(static_draft),
             "publish_status": "not_published",
         }, ensure_ascii=False, indent=2))
+        delivery = config.get("joint_delivery") or {}
+        if (delivery.get("enabled") and delivery.get("auto_launch_on_complete", True)
+                and run_dir.name >= "daily-" + str(delivery.get("start_date", "9999-12-31")).replace("-", "")):
+            try:
+                with (run_dir / "joint-delivery.log").open("a") as delivery_log:
+                    subprocess.Popen([sys.executable, str(ROOT / "spectra_agent/daily_delivery.py"),
+                        "--config", str(resolve_config(args.config)[0]), "--run-id", run_dir.name,
+                        "--wait-for-web"],
+                        cwd=ROOT, stdout=delivery_log, stderr=delivery_log, start_new_session=True)
+            except OSError as exc:
+                log(run_dir, "delivery", "delivery_launch_failed", error=str(exc))
         return 0
     except Exception as exc:
         failed_stage = read_json(run_dir / "run.json").get("current_stage")

@@ -797,6 +797,24 @@ def validate_llm_analyses(payload: dict[str, Any], selected: list[dict[str, Any]
         raise ValueError("LLM structure output must contain an analyses array")
     expected = {item["candidate_id"] for item in selected}
     received = [item.get("candidate_id") for item in analyses if isinstance(item, dict)]
+    unexpected = [candidate_id for candidate_id in received if candidate_id not in expected]
+    missing = [candidate_id for candidate_id in expected if candidate_id not in received]
+    if len(unexpected) == 1 and len(missing) == 1:
+        wrong = str(unexpected[0])
+        wanted = str(missing[0])
+        # Local models occasionally duplicate a short span while copying an
+        # opaque candidate id. Repair only a unique 1-4 character insertion;
+        # every other mismatch remains a hard failure.
+        insertion_matches = {
+            wrong[:index] + wrong[index + width:]
+            for width in range(1, 5)
+            for index in range(len(wrong) - width + 1)
+        }
+        if wanted in insertion_matches:
+            for analysis in analyses:
+                if analysis.get("candidate_id") == unexpected[0]:
+                    analysis["candidate_id"] = missing[0]
+            received = [item.get("candidate_id") for item in analyses if isinstance(item, dict)]
     if len(received) != len(set(received)):
         raise ValueError("LLM structure output contains duplicate candidate_id values")
     if set(received) != expected:
@@ -1187,6 +1205,22 @@ def main() -> int:
         result["llm"] = {"status": "not_requested"}
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
+    from spectra_agent.brief_quality import evidence_search_plan
+    from spectra_agent.evidence_search import execute_plans
+    from spectra_agent import safe_http
+    safe_http.configure_budget(os.environ.get("SPECTRA_ACQUISITION_BUDGET_DB") or str(output.parent / "acquisition-budget.sqlite"))
+    candidates_for_search = {c["candidate_id"]: c for c in [*result.get("feed_candidates", []), *result.get("selected_candidates", [])]}
+    plans = [evidence_search_plan(item) for item in candidates_for_search.values()]
+    search_packet = (
+        execute_plans(output.with_suffix(".evidence-search.json"), plans)
+        if (config.get("evidence_search") or {}).get("enabled", False)
+        else {"status": "disabled", "auto_approve": False, "jobs": []}
+    )
+    result["evidence_search"] = {"status": search_packet["status"]}
+    supplements = {j["candidate_id"]: j for j in search_packet["jobs"]}
+    for candidate in [*result.get("feed_candidates", []), *result.get("selected_candidates", [])]:
+        if candidate["candidate_id"] in supplements:
+            candidate["supplemental_evidence"] = supplements[candidate["candidate_id"]]
     output.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(result["summary"], ensure_ascii=False, indent=2))
     return 0

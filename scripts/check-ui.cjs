@@ -7,7 +7,7 @@ const assert = require('node:assert/strict');
     const page = await browser.newPage({viewport:{width:1440,height:1040}});
     const errors=[];
     page.on('pageerror', error => errors.push(error.message));
-    await page.goto('http://127.0.0.1:4174/index.html');
+    await page.goto(process.env.SPECTRA_UI_URL || 'http://127.0.0.1:4174/index.html');
     for (const width of [1920,1440,1280]) {
       await page.setViewportSize({width,height:1080});
       for (const view of ['overview','selection','interests','ideas']) {

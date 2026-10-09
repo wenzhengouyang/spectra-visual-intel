@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import copy
 import json
+import math
 import os
 import re
 import sys
@@ -37,11 +38,53 @@ ENGLISH_MONTHS = {
     "may": "5月", "june": "6月", "july": "7月", "august": "8月",
     "september": "9月", "october": "10月", "november": "11月", "december": "12月",
 }
-SOURCE_ATTRIBUTION_RE = re.compile(
-    r"(?i:\b(?:says?|said|claims?|claimed|reports?|reported|according to|plans? to|might|could)\b)|"
-    r"\bmay\b|称|声称|表示|据报道|据称|计划|拟|预计|可能|或将|作者报告",
+ENGLISH_NUMBER_WORDS = {
+    "zero": 0, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
+    "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10,
+    "eleven": 11, "twelve": 12, "thirteen": 13, "fourteen": 14,
+    "fifteen": 15, "sixteen": 16, "seventeen": 17, "eighteen": 18,
+    "nineteen": 19, "twenty": 20, "thirty": 30, "forty": 40,
+    "fifty": 50, "sixty": 60, "seventy": 70, "eighty": 80, "ninety": 90,
+}
+CHINESE_DIGITS = {"零": 0, "一": 1, "二": 2, "两": 2, "三": 3, "四": 4,
+                  "五": 5, "六": 6, "七": 7, "八": 8, "九": 9}
+SOURCE_REPORT_RE = re.compile(
+    r"(?i:\b(?:says?|said|claims?|claimed|reports?|reported|according to)\b)|称|声称|表示|据报道|据称|作者报告"
 )
-ZH_ATTRIBUTION_RE = re.compile(r"称|声称|表示|据|报告|计划|拟|预计|可能|或将|作者|公司")
+ZH_REPORT_RE = re.compile(r"称|声称|表示|据|报告|作者")
+SOURCE_UNCERTAINTY_RE = re.compile(
+    r"(?i:\b(?:plans? to|might|could|reportedly)\b)|\bmay\b|计划|拟|预计|可能|或将|尚未确认|不确定"
+)
+ZH_UNCERTAINTY_RE = re.compile(r"计划|拟|预计|可能|或将|据报道|据称|尚未确认|不确定")
+AUTO_REPAIR_ROUNDS = 2
+FACT_RISK_ERROR_MARKERS = ("numbers/units", "attribution or uncertainty")
+RULE_SAMPLES_PATH = ROOT / "processor/localization_rule_samples.v0.1.json"
+
+
+def repair_rule_examples() -> str:
+    try:
+        samples = json.loads(RULE_SAMPLES_PATH.read_text(encoding="utf-8")).get("samples", [])
+    except (OSError, ValueError):
+        return ""
+    examples = [
+        {"source": item.get("source"), "accepted": item.get("accepted")}
+        for item in samples if item.get("source") and item.get("accepted")
+    ]
+    return "\n参考已审核规则样本：" + json.dumps(examples, ensure_ascii=False)
+
+
+def chinese_ordinal_value(raw: str) -> int | None:
+    if raw == "十":
+        return 10
+    if "十" in raw:
+        left, right = raw.split("十", 1)
+        tens = CHINESE_DIGITS.get(left, 1) if left else 1
+        ones = CHINESE_DIGITS.get(right, 0) if right else 0
+        return tens * 10 + ones
+    digits = [CHINESE_DIGITS.get(char) for char in raw]
+    if any(value is None for value in digits):
+        return None
+    return int("".join(str(value) for value in digits))
 
 
 def has_chinese(value: str | None) -> bool:
@@ -52,6 +95,14 @@ def fields_needing_translation(brief: dict[str, Any]) -> list[str]:
     fields = [field for field in ("headline", "dek") if not has_readable_chinese(brief.get(field), field)]
     if SENSATIONAL_HEADLINE_RE.search(str(brief.get("headline") or "")) and "headline" not in fields:
         fields.append("headline")
+    for field in ("headline", "dek"):
+        original = brief.get(f"original_{field}")
+        if not original or field in fields:
+            continue
+        try:
+            validate_translation(str(original), str(brief.get(field) or ""), field)
+        except ValueError:
+            fields.append(field)
     return fields
 
 
@@ -61,8 +112,44 @@ def raw_number_tokens(value: str) -> set[str]:
 
 def number_basis(value: str) -> str:
     text = value or ""
+    # "one of the largest" is a ranking idiom, not a factual count that must
+    # appear as the digit 1 in Chinese.
+    text = re.sub(r"(?i)\bone\s+of\b", "ranking-of", text)
+    # Hyphenated dimensionality and demonstratives are descriptive language,
+    # not reportable quantities. Converting them to bare digits makes the
+    # shared numeric validator invent a missing fact in otherwise faithful
+    # Chinese copy.
+    text = re.sub(r"(?i)\b(?:one|two|three|four|five|six|seven|eight|nine|ten)-dimensional\b", "dimensional", text)
+    text = re.sub(r"(?i)\bthis\s+one(?:\s+here)?\b", "this item", text)
+    word_pattern = "|".join(sorted(ENGLISH_NUMBER_WORDS, key=len, reverse=True))
+
+    def replace_english_number(match: re.Match[str]) -> str:
+        parts = re.split(r"[-\s]+", match.group(0).lower())
+        return str(sum(ENGLISH_NUMBER_WORDS[part] for part in parts))
+
+    text = re.sub(rf"(?i)\b(?:{word_pattern})(?:[- ](?:{word_pattern}))?\b",
+                  replace_english_number, text)
+
+    def replace_chinese_ordinal(match: re.Match[str]) -> str:
+        parsed = chinese_ordinal_value(match.group(1))
+        return str(parsed) if parsed is not None else match.group(0)
+
+    text = re.sub(r"第([零一二两三四五六七八九十]{1,3})", replace_chinese_ordinal, text)
+    text = re.sub(
+        r"([零一二两三四五六七八九十]{1,3})(?=位|人|个|家|项|条|次|台|所|款|名|种|类|套|步|份)",
+        lambda match: str(chinese_ordinal_value(match.group(1)))
+        if chinese_ordinal_value(match.group(1)) is not None else match.group(0),
+        text,
+    )
     for month, replacement in ENGLISH_MONTHS.items():
+        if month.lower() == "may":
+            text = re.sub(r"(?i)\bmay\b(?=\s+\d)|(?<=\d)\s+\bmay\b|(?<=in )\bmay\b|(?<=of )\bmay\b", replacement, text)
+            continue
         text = re.sub(rf"(?i)\b{month}\b", replacement, text)
+    # English dates commonly use an ordinal day (for example, "October
+    # 14th").  Once the month has been converted to Chinese, normalize that
+    # day too so it compares to the natural Chinese form "10月14日".
+    text = re.sub(r"(?i)(?<=月)\s*(\d{1,2})(?:st|nd|rd|th)\b", r"\1日", text)
     # A four-digit calendar year is often bare in English but naturally gains
     # “年” in Chinese. Normalize both sides before semantic unit comparison.
     text = re.sub(r"\b((?:19|20)\d{2})\b(?!年)", r"\1年", text)
@@ -74,13 +161,39 @@ def validate_translation(source: str, translated: str, field: str) -> None:
         raise ValueError(f"{field} is not a readable Chinese sentence")
     source_numbers = number_basis(source)
     translated_numbers = number_basis(translated)
-    if not numbers_match(source_numbers, translated_numbers) or not numbers_match(translated_numbers, source_numbers):
+    forward_matches = numbers_match(source_numbers, translated_numbers)
+    reverse_matches = numbers_match(translated_numbers, source_numbers)
+    # Chinese commonly makes an implicit English article/pair explicit as
+    # “一个/两位”.  Those grammatical 1/2 counts are safe when neither side
+    # contains an explicit Arabic number.  Material added quantities (20%,
+    # years, money, etc.) remain blocked.
+    source_explicit = raw_number_tokens(source)
+    translated_explicit = raw_number_tokens(translated)
+    source_semantic = semantic_numbers(source_numbers)
+    translated_semantic = semantic_numbers(translated_numbers)
+    unmatched_translated = list(translated_semantic)
+    for wanted in source_semantic:
+        match = next((item for item in unmatched_translated
+                      if item.get("kind") == wanted.get("kind")
+                      and math.isclose(float(item.get("value") or 0), float(wanted.get("value") or 0),
+                                       rel_tol=1e-9, abs_tol=1e-9)), None)
+        if match is not None:
+            unmatched_translated.remove(match)
+    implicit_classifier_only = (
+        translated_explicit.issubset(source_explicit)
+        and unmatched_translated
+        and all(item.get("kind") == "count" and item.get("value") in {1.0, 2.0}
+                for item in unmatched_translated)
+    )
+    if not forward_matches or (not reverse_matches and not implicit_classifier_only):
         missing = raw_number_tokens(source) - raw_number_tokens(translated)
         raise ValueError(
             f"{field} translation lost, changed or added numbers/units: {sorted(missing)}; "
             f"required={semantic_numbers(source)}"
         )
-    if SOURCE_ATTRIBUTION_RE.search(source) and not ZH_ATTRIBUTION_RE.search(translated):
+    if SOURCE_REPORT_RE.search(source) and not ZH_REPORT_RE.search(translated):
+        raise ValueError(f"{field} translation lost attribution or uncertainty wording")
+    if SOURCE_UNCERTAINTY_RE.search(source) and not ZH_UNCERTAINTY_RE.search(translated):
         raise ValueError(f"{field} translation lost attribution or uncertainty wording")
 
 
@@ -88,11 +201,12 @@ def apply_translation(brief: dict[str, Any], translated: dict[str, Any]) -> None
     requested = fields_needing_translation(brief)
     for field in requested:
         target = translated[f"{field}_zh"].strip()
+        source = str(brief.get(f"original_{field}") or brief.get(field) or "")
         try:
-            validate_translation(str(brief.get(field) or ""), target, field)
+            validate_translation(source, target, field)
         except ValueError as exc:
             raise ValueError(f"{brief.get('brief_id')} {exc}") from exc
-        brief[f"original_{field}"] = brief.get(field)
+        brief.setdefault(f"original_{field}", brief.get(field))
         brief[field] = target
     if requested:
         brief["localization_status"] = "machine_localized_validated"
@@ -115,6 +229,32 @@ def validate_localized_brief(brief: dict[str, Any]) -> list[str]:
     if SENSATIONAL_HEADLINE_RE.search(str(brief.get("headline") or "")):
         errors.append("headline_uses_sensational_media_wording")
     return errors
+
+
+def requires_human_localization_review(errors: list[str]) -> bool:
+    """Only factual fidelity risks belong in the human localization queue."""
+    return any(marker in error for error in errors for marker in FACT_RISK_ERROR_MARKERS)
+
+
+def fact_risk_differences(record: dict[str, Any]) -> list[dict[str, str]]:
+    """Build the small, factual comparison shown to a human reviewer."""
+    risks: list[dict[str, str]] = []
+    for error in record.get("errors") or []:
+        if "numbers/units" in error:
+            risk_type = "number_or_unit"
+        elif "attribution or uncertainty" in error:
+            risk_type = "attribution_or_uncertainty"
+        else:
+            continue
+        field = "headline" if "headline" in error else "dek" if "dek" in error else "unknown"
+        risks.append({
+            "risk_type": risk_type,
+            "field": field,
+            "source": str(record.get(f"original_{field}") or ""),
+            "candidate": str(record.get(f"candidate_{field}_zh") or record.get(f"{field}_zh") or ""),
+            "reason": error,
+        })
+    return risks
 
 
 def quarantine_failed_briefs(issue: dict[str, Any], failed: list[dict[str, Any]]) -> dict[str, Any]:
@@ -287,17 +427,24 @@ def main() -> None:
             for brief in batch
         ]
         last_error: Exception | None = None
-        for attempt in range(1, 4):
+        # Generate once. Validation failure then enters exactly two bounded,
+        # field-level repair rounds instead of immediately asking a person.
+        for attempt in range(1, 2):
             retry_note = "" if attempt == 1 else (
                 "\n上次输出未通过校验。translate_fields的结果必须以中文句子表达并包含中文汉字，"
                 "不能照抄英文；例如‘Nvidia partners with X’应写为‘英伟达与X达成合作’。同时完整保留数字。"
             )
-            result, metadata = client.generate_json(
-                instructions=INSTRUCTIONS + retry_note,
-                input_text=json.dumps({"briefs": input_items}, ensure_ascii=False),
-                schema_name="spectra_p2_localization",
-                schema=schema_for(ids),
-            )
+            try:
+                result, metadata = client.generate_json(
+                    instructions=INSTRUCTIONS + retry_note,
+                    input_text=json.dumps({"briefs": input_items}, ensure_ascii=False),
+                    schema_name="spectra_p2_localization",
+                    schema=schema_for(ids),
+                )
+            except Exception as exc:
+                last_error = exc
+                metadata = {"generation_error": str(exc)}
+                continue
             rows = result.get("translations", [])
             by_id = {row["brief_id"]: row for row in rows}
             try:
@@ -328,7 +475,8 @@ def main() -> None:
                     "dek": brief.get("dek", ""),
                 }
                 field_error: Exception | None = None
-                for repair_attempt in range(1, 4):
+                last_candidate: dict[str, Any] = {}
+                for repair_attempt in range(1, AUTO_REPAIR_ROUNDS + 1):
                     error_hint = field_error or last_error
                     required_numbers = {
                         field: semantic_numbers(str(brief.get(field) or ""))
@@ -340,14 +488,20 @@ def main() -> None:
                         "不能只保留英文标题；专有名词可保留英文，但动作、状态和说明必须译成中文。"
                         f"对应译文的数字、数量级和单位必须与此清单语义完全一致：{json.dumps(required_numbers, ensure_ascii=False)}。"
                         "例如100 million必须译为1亿或保留为100 million，不能只写100；不得添加原文没有的数字。"
-                    )
-                    repair_result, repair_metadata = client.generate_json(
-                        instructions=INSTRUCTIONS + repair_note,
-                        input_text=json.dumps({"briefs": [single_item]}, ensure_ascii=False),
-                        schema_name="spectra_p2_localization_repair",
-                        schema=schema_for([brief_id]),
-                    )
+                    ) + repair_rule_examples()
+                    try:
+                        repair_result, repair_metadata = client.generate_json(
+                            instructions=INSTRUCTIONS + repair_note,
+                            input_text=json.dumps({"briefs": [single_item]}, ensure_ascii=False),
+                            schema_name="spectra_p2_localization_repair",
+                            schema=schema_for([brief_id]),
+                        )
+                    except Exception as exc:
+                        field_error = exc
+                        continue
                     repair_rows = repair_result.get("translations", [])
+                    if repair_rows:
+                        last_candidate = repair_rows[0]
                     try:
                         if len(repair_rows) != 1 or repair_rows[0].get("brief_id") != brief_id:
                             raise ValueError("field repair response ID does not match requested brief ID")
@@ -371,6 +525,8 @@ def main() -> None:
                         "candidate_id": brief.get("candidate_id"),
                         "original_headline": brief.get("headline"),
                         "original_dek": brief.get("dek"),
+                        "candidate_headline_zh": last_candidate.get("headline_zh"),
+                        "candidate_dek_zh": last_candidate.get("dek_zh"),
                         "errors": [str(field_error)],
                         "review_status": "pending",
                         "allowed_decisions": ["supply_chinese_copy", "retry", "exclude"],
@@ -402,27 +558,45 @@ def main() -> None:
                 "review_status": "pending",
                 "allowed_decisions": ["supply_chinese_copy", "retry", "exclude"],
             })
+    human_failures = [item for item in failed_briefs if requires_human_localization_review(item.get("errors") or [])]
+    for item in human_failures:
+        item["fact_risks"] = fact_risk_differences(item)
+    automatic_exclusions = [item for item in failed_briefs if item not in human_failures]
     review_queue = quarantine_failed_briefs(issue, failed_briefs)
+    review_queue.update({
+        "status": "waiting_for_review" if human_failures else "not_required",
+        "count": len(human_failures),
+        "records": human_failures,
+        "automatic_exclusion_count": len(automatic_exclusions),
+    })
+    write_json(output_path.with_name("p2-localization-auto-exclusions.json"), {
+        "schema_version": "0.1",
+        "record_type": "p2_localization_auto_exclusions",
+        "count": len(automatic_exclusions),
+        "records": automatic_exclusions,
+    })
     now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     localized_total = sum(
         brief.get("localization_status") == "machine_localized_validated"
         for brief in issue.get("news_briefs", [])
     )
     issue["localization"] = {
-        "status": "completed_with_review" if failed_briefs else "completed",
+        "status": "completed_with_review" if human_failures else "completed",
         "language": "zh-CN",
         "translated_briefs": localized_total,
-        "blocked_briefs": len(failed_briefs),
+        "blocked_briefs": len(human_failures),
+        "auto_excluded_briefs": len(automatic_exclusions),
         "completed_at": now,
         "note": "机器翻译仅改善中文阅读，不改变P2待核验状态；英文原文保留在original_*字段。",
     }
     write_json(output_path, issue)
     write_json(review_queue_path, review_queue)
     write_json(checkpoint_path, {
-        "status": "completed_with_review" if failed_briefs else "completed",
+        "status": "completed_with_review" if human_failures else "completed",
         "processed": len(targets),
         "published": max(0, len(targets) - len(failed_briefs)),
-        "blocked": len(failed_briefs),
+        "blocked": len(human_failures),
+        "auto_excluded": len(automatic_exclusions),
         "total": len(targets),
         "batches": batches,
     })

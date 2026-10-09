@@ -36,17 +36,31 @@ def review_target(run_dir: Path, state: dict[str, Any]) -> Path:
 
 
 def notification_key(state: dict[str, Any]) -> str:
-    return f"terminal_review_v1:{state.get('status', 'unknown')}:{state.get('current_stage', 'unknown')}"
+    # Bump the key when the popup workflow changes so an old, non-actionable
+    # notification cannot suppress the repaired review window.
+    return f"terminal_review_v2:{state.get('status', 'unknown')}:{state.get('current_stage', 'unknown')}"
 
 
 def terminal_review_command(run_dir: Path, state: dict[str, Any]) -> str:
     root = Path(__file__).resolve().parents[1]
     python = root / ".venv-llm/bin/python"
-    if state.get("status") == "waiting_for_review":
+    status = state.get("status")
+    stage = state.get("current_stage")
+    if status == "waiting_for_review":
         command = [
             str(python), str(root / "spectra_agent/review_cli.py"),
             "--config", "spectra_agent/config.v0.1.json",
             "--run-id", run_dir.name, "--interactive", "--resume",
+        ]
+    elif status == "waiting_for_editorial_review" and stage == "localization_review":
+        command = [
+            str(python), str(root / "scripts/localization-review-terminal.py"),
+            "--run-dir", str(run_dir),
+        ]
+    elif status == "waiting_for_editorial_review" and stage == "image_preview":
+        command = [
+            str(python), str(root / "scripts/image-review-terminal.py"),
+            "--run-dir", str(run_dir),
         ]
     else:
         command = [
@@ -62,7 +76,7 @@ def show_review_popup(
     state: dict[str, Any],
     settings: dict[str, Any],
     *,
-    launcher: Callable[..., Any] = subprocess.Popen,
+    launcher: Callable[..., Any] = subprocess.run,
 ) -> dict[str, Any]:
     if not settings.get("enabled", True):
         return {"status": "disabled"}
@@ -83,14 +97,19 @@ def show_review_popup(
         terminal_command,
     ]
     try:
-        launcher(
+        result = launcher(
             command,
             stdin=subprocess.DEVNULL,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            start_new_session=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=20,
         )
-    except OSError as exc:
+        if getattr(result, "returncode", 0) != 0:
+            error = getattr(result, "stderr", b"")
+            if isinstance(error, bytes):
+                error = error.decode(errors="replace")
+            return {"status": "failed", "key": key, "error": str(error)[:500]}
+    except (OSError, subprocess.TimeoutExpired) as exc:
         return {"status": "failed", "key": key, "error": str(exc)}
 
     shown_keys.append(key)

@@ -8,6 +8,7 @@ fallback that only promotes verified facts and keeps judgment visibly separate.
 from __future__ import annotations
 
 import argparse
+import difflib
 import hashlib
 import json
 import re
@@ -25,6 +26,8 @@ if str(ROOT) not in sys.path:
 from spectra_agent.compat import rolling_thesis as compatible_rolling_thesis
 from spectra_agent.editorial_policy import classify_brief, classify_story
 from spectra_agent.publication_quality import expected_cover_motif
+from spectra_agent.brief_quality import isolate_headline
+from processor.language_quality import has_readable_chinese
 
 
 VERIFIED_PATH = ROOT / "verification/runs/p1-verified-events-v0.2.json"
@@ -56,7 +59,7 @@ def write_semantic_cover(headline: str, category: str, credit: str, target_dir: 
     target = target_dir / filename
     accent_by_motif = {
         "document": "#9aaee8", "layers": "#72c1bd", "workflow": "#c5a3e6",
-        "compute": "#e0a36f", "healthcare": "#77bfa3", "swarm": "#b8a0dc",
+        "compute": "#e0a36f", "autonomy": "#72c1bd", "healthcare": "#77bfa3", "swarm": "#b8a0dc",
         "signal": "#94a3b8",
     }
     motif = semantic_cover_motif(headline, category)
@@ -65,6 +68,7 @@ def write_semantic_cover(headline: str, category: str, credit: str, target_dir: 
         "document": '<rect x="980" y="150" width="330" height="470" rx="20" class="shape"/><path d="M1040 260h210M1040 330h210M1040 400h150" class="line"/><circle cx="1145" cy="530" r="64" class="node"/>',
         "layers": '<path d="M970 250l190-100 190 100-190 100zM970 390l190-100 190 100-190 100zM970 530l190-100 190 100-190 100z" class="shape"/><circle cx="1160" cy="390" r="34" class="node"/>',
         "workflow": '<circle cx="1160" cy="390" r="175" class="shape"/><circle cx="1160" cy="215" r="38" class="node"/><circle cx="1315" cy="470" r="38" class="node"/><circle cx="1005" cy="470" r="38" class="node"/><path d="M1198 225c85 25 135 82 125 178M1288 504c-63 67-141 78-220 22M1028 426c-9-85 31-151 100-190" class="line"/>',
+        "autonomy": '<path d="M870 690c140-260 300-300 560-480M1030 760c140-260 300-300 560-480" class="line"/><path d="M1110 530l105-45 105 45v115l-105 45-105-45z" class="shape"/><path d="M1145 530v-65M1285 530v-65M1145 650v65M1285 650v65" class="line"/><circle cx="1040" cy="405" r="32" class="node"/><circle cx="1370" cy="350" r="32" class="node"/><path d="M1070 415l55 105M1340 365l-55 105" class="line"/>',
         "compute": '<rect x="990" y="220" width="210" height="210" rx="18" class="shape"/><path d="M1040 270h110v110h-110zM1200 325h120M1200 365h120M1200 405h120M1095 430v105M1055 430v105M1135 430v105" class="line"/><g class="nodes"><circle cx="1260" cy="325" r="12"/><circle cx="1320" cy="325" r="12"/><circle cx="1260" cy="365" r="12"/><circle cx="1320" cy="365" r="12"/><circle cx="1260" cy="405" r="12"/><circle cx="1320" cy="405" r="12"/></g>',
         "healthcare": '<path d="M1110 215h100v125h125v100h-125v125h-100V440H985V340h125z" class="shape"/><path d="M880 640c120-130 210-35 300-145s170-15 285-145" class="line"/><circle cx="880" cy="640" r="24" class="node"/><circle cx="1180" cy="495" r="24" class="node"/><circle cx="1465" cy="350" r="24" class="node"/>',
         "swarm": '<g class="nodes"><circle cx="1040" cy="245" r="30"/><circle cx="1190" cy="190" r="30"/><circle cx="1335" cy="275" r="30"/><circle cx="995" cy="445" r="30"/><circle cx="1190" cy="405" r="38"/><circle cx="1390" cy="475" r="30"/><circle cx="1110" cy="610" r="30"/><circle cx="1310" cy="625" r="30"/></g><path d="M1040 245l150-55 145 85M1040 245l-45 200 195-40 200 70M995 445l115 165 80-205 120 220 80-150M1190 190v215" class="line"/>',
@@ -97,6 +101,8 @@ def resolve_cover_image(
             generated = item.get('kind') == 'generated'
             return {
                 **{key: value for key, value in item.items() if key != "event_id"},
+                "asset_origin": "reused_manifest",
+                "generated_this_run": False,
                 "semantic_motif": semantic_cover_motif(headline, category) if generated else item.get('semantic_motif'),
                 "semantic_match": "passed" if generated else "source_matched",
                 "review_status": "pending" if generated else "approved",
@@ -106,8 +112,10 @@ def resolve_cover_image(
             if item.get("source_url") == source_url:
                 return {
                     **{key: value for key, value in item.items() if key != "event_id"},
+                    "asset_origin": "reused_manifest",
+                    "generated_this_run": False,
                     "semantic_match": "source_matched",
-                    "review_status": "approved",
+                    "review_status": "pending" if item.get("kind") in {"generated", "editorial_diagram"} else "approved",
                 }
     if official_image_url.startswith("https://"):
         return {
@@ -126,12 +134,15 @@ def resolve_cover_image(
         return {
             "url": relative_url,
             "kind": "editorial_diagram",
-            "label": "主题示意图",
+            "generation_method": "programmatic_svg",
+            "generated_this_run": False,
+            "label": "内部配图占位",
             "credit": "SPECTRA",
             "source_url": source_url or None,
             "semantic_motif": semantic_cover_motif(headline, category),
             "semantic_match": "passed",
             "review_status": "pending",
+            "provisional": True,
         }
     fallback_key = {
         "type.industry_market": "行业与市场",
@@ -396,8 +407,70 @@ def reader_facing_text(value: str) -> str:
     for phrase in audit_phrases:
         text = text.replace(phrase, "")
     text = re.sub(r"；对“[^”]+”的更强表述不纳入正式结论", "", text)
+    text = re.sub(
+        r"^(?:公司称|论文作者报告|据报道)(?:\s*[／/]\s*(?:公司称|论文作者报告|据报道))*\s*[，,]\s*",
+        "据来源披露，",
+        text,
+    )
+    text = re.sub(r"^据来源披露，(?:公司称\s*[／/]\s*)+", "据来源披露，", text)
     text = re.sub(r"([。！？]){2,}", r"\1", text)
     return text.strip()
+
+
+def materially_repeats(left: str, right: str, threshold: float = 0.82) -> bool:
+    """Treat a short fact as repeated when it is effectively the headline."""
+    normalize = lambda value: re.sub(r"[^0-9a-z\u3400-\u9fff]+", "", str(value or "")).lower()
+    first, second = normalize(left), normalize(right)
+    if not first or not second:
+        return False
+    shorter, longer = sorted((first, second), key=len)
+    if shorter in longer:
+        return True
+    if difflib.SequenceMatcher(None, first, second).ratio() >= threshold:
+        return True
+    if len(shorter) >= 10:
+        short_pairs = {shorter[index:index + 2] for index in range(len(shorter) - 1)}
+        long_pairs = {longer[index:index + 2] for index in range(len(longer) - 1)}
+        if short_pairs and len(short_pairs & long_pairs) / len(short_pairs) >= 0.78:
+            return True
+    return False
+
+
+def dedupe_reader_texts(values: list[str], threshold: float = 0.86) -> list[str]:
+    unique: list[str] = []
+    for value in values:
+        text = reader_facing_text(value)
+        if text and not any(materially_repeats(text, prior, threshold) for prior in unique):
+            unique.append(text)
+    return unique
+
+
+def dedupe_reader_paragraphs(paragraphs: list[str]) -> list[str]:
+    """Remove repeated sentences across adjacent reader-facing paragraphs."""
+    seen: list[str] = []
+    cleaned: list[str] = []
+    for paragraph in paragraphs:
+        kept: list[str] = []
+        for raw in re.findall(r"[^。！？]+[。！？]?", reader_facing_text(paragraph)):
+            sentence = raw.strip()
+            if sentence and not any(materially_repeats(sentence, prior, 0.88) for prior in seen):
+                kept.append(sentence)
+                seen.append(sentence)
+        text = "".join(kept).strip()
+        if text:
+            cleaned.append(text)
+    return cleaned
+
+
+def reader_takeaway(copy: dict) -> str:
+    candidates = [copy.get("one_line_takeaway"), copy.get("why"), copy.get("take")]
+    for candidate in candidates:
+        text = reader_facing_text(candidate or "")
+        if (text and "在进展页核对" not in text and "审核" not in text
+                and not materially_repeats(text, copy.get("dek", ""))
+                and not materially_repeats(text, copy.get("headline", ""))):
+            return text
+    return ""
 
 
 def build_article_body(copy: dict, event: dict, claim_ids: list[str]) -> dict:
@@ -407,22 +480,23 @@ def build_article_body(copy: dict, event: dict, claim_ids: list[str]) -> dict:
     watch_items = [str(item).strip() for item in copy.get("watch", []) if str(item).strip()]
     fact_parts = [reader_facing_text(copy["what"])]
     how = reader_facing_text(copy.get("how") or "")
-    if how and how not in fact_parts[0]:
+    if how:
         fact_parts.append(how)
+    fact_parts = dedupe_reader_paragraphs(fact_parts)
+    lead = fact_parts[0] if fact_parts else ""
+    details = "\n\n".join(fact_parts[1:])
+    fact_points = dedupe_reader_texts([
+        str(item) for item in copy.get("fact_points", []) if str(item).strip()
+    ])
+    summary_paragraphs = dedupe_reader_paragraphs([
+        str(item) for item in copy.get("summary_paragraphs", []) if str(item).strip()
+    ])
     return {
-        "lead": section(reader_facing_text(copy["what"]), claim_ids, "fact"),
-        "key_details": section(how, claim_ids, "fact") if how else None,
+        "lead": section(lead, claim_ids, "fact"),
+        "key_details": section(details, claim_ids, "fact") if details else None,
         "full_text": section("\n\n".join(fact_parts), claim_ids, "fact"),
-        "fact_points": [
-            reader_facing_text(item)
-            for item in copy.get("fact_points", [])
-            if reader_facing_text(item)
-        ],
-        "summary_paragraphs": [
-            reader_facing_text(item)
-            for item in copy.get("summary_paragraphs", [])
-            if reader_facing_text(item)
-        ],
+        "fact_points": fact_points,
+        "summary_paragraphs": summary_paragraphs,
         "judgment": section(judgment, claim_ids, "judgment"),
         "evidence_boundary": section(event["limitations"], claim_ids, "judgment"),
         "watch_next": watch_items,
@@ -467,6 +541,7 @@ VERIFIED_HEADLINE_OVERRIDES = {
     "evt_20260812_tencent_q2_ai": "腾讯财报披露AI相关预付款用途与收入增长",
     "evt_20260825_gemini_legal": "Google Cloud发布面向法律行业的Gemini Enterprise",
     "evt_39d45e3610efd0f0": "Anthropic公开Claude消费端系统提示，并说明版权内容复现限制",
+    "evt_52eb93eb65eb7990": "量化可能导致世界动作模型任务性能下降",
 }
 
 CHINESE_TEXT_RE = re.compile(r"[\u3400-\u9fff]")
@@ -487,13 +562,21 @@ def neutral_fallback_headline(event: dict, review_item: dict, claims: list[dict]
         or event.get("canonical_title")
         or ""
     ).strip()
-    unsafe = not CHINESE_TEXT_RE.search(title) or any(marker in title for marker in SENSATIONAL_HEADLINE_MARKERS)
+    unsafe = not has_readable_chinese(title, "headline") or any(
+        marker in title for marker in SENSATIONAL_HEADLINE_MARKERS
+    )
     if unsafe and claims:
         candidates = [
             ATTRIBUTION_PREFIX_RE.sub("", reader_facing_text(item.get("text", ""))).strip("。！？ ")
             for item in claims
         ]
         title = next((candidate for candidate in candidates if CHINESE_TEXT_RE.search(candidate)), "")
+    acronym_lead = re.match(
+        r"^[A-Za-z][A-Za-z\s-]+\(([A-Z][A-Z0-9-]{1,12})\)框架被提出[，,]用于(.+)$",
+        title,
+    )
+    if acronym_lead:
+        title = f"{acronym_lead.group(1)}：用于{acronym_lead.group(2)}"
     if len(title) > 54:
         title = title[:52].rstrip("，,; ") + "…"
     return title or "近7日人工智能情报更新"
@@ -1039,14 +1122,19 @@ def generic_copy(event: dict, review_item: dict, rank: int) -> dict:
     fact = event["fact_summary"]
     entity = event["primary_entity"]["name"]
     digest = hashlib.sha256(event["event_id"].encode()).hexdigest()[:12]
-    summary_paragraphs = fallback_summary_paragraphs(claims)
     readable_facts = [reader_facing_text(item.get("text", "")) for item in claims]
+    body_facts = [fact for fact in readable_facts if not materially_repeats(title, fact)]
+    summary_paragraphs = fallback_summary_paragraphs([
+        item for item in claims
+        if not materially_repeats(title, reader_facing_text(item.get("text", "")))
+    ])
+    lead_fact = body_facts[0] if body_facts else "原文还披露了与该方法相关的实现细节，正文将进一步展开。"
     copy = {
         "story_id": f"story_{digest}",
         "article_type": "core_event" if rank < 5 else "brief",
         "headline": title,
-        "dek": readable_facts[0] if readable_facts else fact,
-        "one_line_takeaway": readable_facts[0] if readable_facts else fact,
+        "dek": lead_fact,
+        "one_line_takeaway": lead_fact,
         "category": ROUTE_CATEGORY.get(event["primary_route"], "视觉智能"),
         "what": summary_paragraphs[0] if summary_paragraphs else fact,
         "fact_points": list(dict.fromkeys(item for item in readable_facts if item)),
@@ -1142,14 +1230,27 @@ def build_news_briefs(
             continue
         copy = P2_BRIEF_COPY.get(candidate["candidate_id"], {})
         llm_analysis = candidate.get("llm_analysis") or {}
-        summary = compact_brief_summary(
-            copy.get("summary") or llm_analysis.get("what") or source.get("raw_excerpt") or "来源已收录，核心事实仍待核验。"
-        )
+        summary_source = copy.get("summary") or llm_analysis.get("what") or source.get("raw_excerpt")
+        # A P2 brief may only publish copy grounded in an extracted source
+        # summary. Do not turn a missing extraction into internal workflow text.
+        if not summary_source:
+            continue
+        summary = compact_brief_summary(summary_source)
         headline = (
             copy.get("headline")
             or llm_analysis.get("canonical_title")
             or candidate["canonical_title"]
         )
+        original_headline = headline
+        headline = isolate_headline(headline, candidate["primary_route"])
+        if not headline:
+            continue
+        if headline != original_headline:
+            # Isolation proves only that the title contains a relevant segment;
+            # it does not prove the roundup summary describes that segment.
+            # Keep this item out of publication until source extraction supplies
+            # verified copy instead of leaking an internal placeholder.
+            continue
         source_badge, verification_status = brief_source_status(source)
         tags = [ROUTE_CATEGORY.get(candidate["primary_route"], "视觉智能")]
         for values in (candidate.get("tags") or {}).values():
@@ -1314,12 +1415,23 @@ def main() -> None:
     writer_drafts = {item["event_id"]: item for item in (draft_bundle or {}).get("drafts", [])}
     cover_manifest = load_cover_manifest()
     events = {item["event_id"]: item for item in verified["intelligence_events"]}
+    # The report shows seven local calendar dates, not a trailing 168-hour window.
+    report_end_value = verified.get("display_window_end") or verified.get("window_end")
+    if report_end_value and set(events) != set(STORY_COPY):
+        report_end = report_date(report_end_value)
+        report_start = report_end - timedelta(days=6)
+        events = {key: event for key, event in events.items()
+                  if report_start <= report_date(event["event_at"]) <= report_end}
     claims = {item["claim_id"]: item for item in verified["evidence_claims"]}
-    reviews = {
-        item["event"]["event_id"]: item
-        for item in review["records"]
-        if item.get("decision") == "include"
-    }
+    reviews = {}
+    for item in review["records"]:
+        if item.get("decision") != "include":
+            continue
+        event_id = (item.get("event") or {}).get("event_id")
+        if not event_id and item.get("candidate_id", "").startswith("cand_"):
+            event_id = "evt_" + item["candidate_id"].removeprefix("cand_")
+        if event_id in events:
+            reviews[event_id] = item
 
     ordered_events = sorted(events.values(), key=lambda item: ({"priority.p0": 0, "priority.p1": 1, "priority.p2": 2}.get(item["priority"], 9), item["event_at"]))
     stories = []
@@ -1340,15 +1452,25 @@ def main() -> None:
         writer_draft = writer_drafts.get(event_id)
         if writer_draft:
             paragraphs = writer_draft["factual_paragraphs"]
+            writer_headline = writer_draft.get("headline") or copy["headline"]
+            writer_dek = writer_draft.get("dek") or copy["dek"]
+            writer_judgment = str(writer_draft.get("judgment") or "").strip()
+            if "在进展页核对" in writer_judgment or "审核" in writer_judgment:
+                writer_judgment = ""
+            # Writer copy can be factually valid while still merely restating
+            # its own headline. Preserve the distinct fallback dek in that
+            # case so publication does not stall on redundant card copy.
+            if materially_repeats(writer_headline, writer_dek):
+                writer_dek = copy["dek"]
             copy.update({
-                "headline": writer_draft.get("headline") or copy["headline"],
-                "dek": writer_draft.get("dek") or copy["dek"],
+                "headline": writer_headline,
+                "dek": writer_dek,
                 "one_line_takeaway": writer_draft.get("one_line_takeaway") or copy["one_line_takeaway"],
                 "what": paragraphs[0]["text"],
                 "fact_points": [item["text"] for item in paragraphs],
                 "summary_paragraphs": [item["text"] for item in paragraphs],
                 "how": "\n\n".join(item["text"] for item in paragraphs[1:]),
-                "why": writer_draft.get("judgment") or copy["why"],
+                "why": writer_judgment or copy["why"],
                 "take": None,
                 "watch": writer_draft.get("watch_next") or copy["watch"],
             })
@@ -1374,7 +1496,7 @@ def main() -> None:
             "article_type": copy["article_type"],
             "headline": copy["headline"],
             "dek": copy["dek"],
-            "one_line_takeaway": copy["one_line_takeaway"],
+            "one_line_takeaway": reader_takeaway(copy),
             "category": copy["category"],
             "domain_scope": event.get("domain_scope") or domain_scope(event["primary_route"]),
             "intelligence_type": intelligence_type,
@@ -1462,11 +1584,23 @@ def main() -> None:
         )
         if candidate_run and collection else []
     )
+    editorial_overrides_path = output_path.parent / "editorial-overrides.json"
+    editorial_overrides = (
+        json.loads(editorial_overrides_path.read_text()) if editorial_overrides_path.exists() else {}
+    )
+    brief_overrides = editorial_overrides.get("news_briefs") or {}
+    for brief in news_briefs:
+        override = brief_overrides.get(brief.get("brief_id")) or {}
+        for field in ("headline", "dek"):
+            if str(override.get(field) or "").strip():
+                brief[field] = str(override[field]).strip()
     selected_top_event_ids = [
         item for item in verified["editorial_selection"]["top_event_ids"] if item in story_by_event
     ][:5]
     candidate_core_event_ids = publication_core_event_ids(selected_top_event_ids, writer_drafts, draft_bundle)
     selected_set = set(candidate_core_event_ids)
+    override_path = Path(args.output).parent / 'editorial-tier-overrides.json'
+    tier_overrides = json.loads(override_path.read_text()) if override_path.exists() else {}
     for story in stories:
         event_id = story["primary_event_id"]
         event = dict(events[event_id])
@@ -1479,6 +1613,10 @@ def main() -> None:
             selected=event_id in selected_set,
             writer_draft=event_id in writer_drafts,
         ))
+        decision = tier_overrides.get(story['story_id'], {})
+        if decision.get('decision') == 'demote_to_brief' and decision.get('reviewed_by'):
+            story.update(editorial_tier='brief', article_type='brief', content_format='source_brief')
+            story['revision_note'] = decision.get('reason', '人工审核降为普通短讯')
         if story["editorial_tier"] == "brief":
             story["article_body"]["reading_mode"] = "source_brief"
         if story["article_type"] != "core_event":

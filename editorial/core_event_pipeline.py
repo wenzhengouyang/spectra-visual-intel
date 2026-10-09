@@ -22,7 +22,7 @@ from editorial.diagnostic_long_writer import (  # noqa: E402
 from editorial.finalize_diagnostic_long_stories import clean  # noqa: E402
 
 CHECKPOINT_SCHEMA_VERSION = "0.2"
-WRITER_PROMPT_VERSION = "core_event_writer.v1.2.2"
+WRITER_PROMPT_VERSION = "core_event_writer.v1.2.3"
 
 
 def completed_draft_from_audit(event_id: str, cleaned: dict[str, Any], facts: list[dict],
@@ -99,12 +99,13 @@ def build_bundle(verified: dict[str, Any], selection: dict[str, Any], client,
         if schema_compatible and prompt_compatible and model_compatible and window_compatible:
             # Full compatibility: use entire checkpoint
             checkpoint = loaded
-        elif schema_compatible and loaded.get("jobs"):
-            # Partial compatibility: recover completed jobs, re-run others
-            # Only keep jobs that succeeded (have "status": "success")
+        elif schema_compatible and window_compatible and model_compatible and loaded.get("jobs"):
+            # A prompt update should retry failures, not discard already audited
+            # drafts. Input fingerprints are still checked below before reuse.
             recovered_jobs = {
                 event_id: job for event_id, job in loaded.get("jobs", {}).items()
-                if job.get("status") == "success" and job.get("draft")
+                if job.get("status") == "completed" and job.get("draft")
+                and ((job.get("audit_record") or {}).get("audit") or {}).get("status") == "passed"
             }
             if recovered_jobs:
                 checkpoint["jobs"] = recovered_jobs
@@ -139,6 +140,15 @@ def build_bundle(verified: dict[str, Any], selection: dict[str, Any], client,
         cached = jobs.get(event_id) or {}
         if cached.get("input_fingerprint") != input_fingerprint:
             cached = {}
+        if cached.get("status") == "completed":
+            saved_article = (cached.get("audit_record") or {}).get("draft")
+            fresh_audit = audit_article(saved_article, facts, reader.get("allowed_judgment", ""), profile) if saved_article else None
+            if not fresh_audit:
+                cached = {}
+            elif fresh_audit.get("status") != "passed":
+                cached = {**cached, "status": "retryable_failure", "attempts": 0,
+                          "audit_record": {**cached["audit_record"], "audit": fresh_audit, "status": "failed"},
+                          "revised_draft": saved_article}
         if cached.get("status") == "completed" and cached.get("input_fingerprint") == input_fingerprint:
             drafts.append(cached["draft"])
             records.append(cached["audit_record"])

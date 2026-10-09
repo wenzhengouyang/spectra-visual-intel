@@ -1,0 +1,57 @@
+{
+  "schema_version": "0.1",
+  "purpose": "为 AI 模型与工具动态、工作 AI 两个产品板块提供稳定对象清单；模型档案与新闻事件分离，只有真实来源事件才能显示为更新。",
+  "directory_sync": {
+    "profile_source": "previews/overview-models-20260911/data.js",
+    "coverage_baseline": "previews/overview-models-20260911/market-coverage-20260913.md",
+    "validation_command": "node scripts/validate-model-directory.cjs",
+    "checked_at": "2026-09-13",
+    "profile_count": 99,
+    "rule": "watchlist 负责主动采集通道，profile_source 负责全市场静态档案；没有真实来源事件的档案不得显示为近期更新。"
+  },
+  "editorial_priority": {
+    "china": 100,
+    "global": 70,
+    "rule": "同等证据与时效下优先展示国内模型；不因优先级降低事实、来源或审核门槛。"
+  },
+  "model_tabs": [
+    {"id": "all", "label": "全部"},
+    {"id": "general_ai", "label": "通用 AI"},
+    {"id": "image_generation", "label": "图像生成"},
+    {"id": "video_generation", "label": "视频生成"},
+    {"id": "world_3d", "label": "3D 与世界模型"},
+    {"id": "coding_agent", "label": "编程与 Agent"}
+  ],
+  "work_ai_categories": ["办公与文档", "知识与搜索", "会议与协作", "编程与开发", "Agent 与工作流"],
+  "products": [
+    {"family": "通义千问 / Qwen", "company": "阿里巴巴", "region": "china", "tabs": ["general_ai"], "source_ids": ["reg_github_qwen38_commits"], "collection_status": "active_partial"},
+    {"family": "Qwen-Image", "company": "阿里巴巴", "region": "china", "tabs": ["image_generation"], "source_ids": ["reg_github_qwen_image_commits"], "collection_status": "active_partial"},
+    {"family": "通义万相 / Wan", "company": "阿里巴巴", "region": "china", "tabs": ["video_generation", "image_generation"], "source_ids": ["reg_github_wan22_commits", "reg_github_wananimate2_commits"], "collection_status": "active_partial"},
+    {"family": "Qwen Code", "company": "阿里巴巴", "region": "china", "tabs": ["coding_agent"], "work_ai": true, "work_ai_scope": "编程与开发", "source_ids": ["reg_github_qwen_code_commits"], "collection_status": "active_partial"},
+    {"family": "钉钉 AI", "company": "阿里巴巴", "region": "china", "tabs": [], "work_ai": true, "work_ai_scope": "会议与协作", "source_ids": [], "collection_status": "needs_official_channel"},
+    {"family": "豆包 / Seed", "company": "字节跳动", "region": "china", "tabs": ["general_ai"], "source_ids": ["reg_github_bytedance_seed20_commits"], "collection_status": "active_partial"},
+    {"family": "即梦", "company": "字节跳动", "region": "china", "tabs": ["image_generation", "video_generation"], "source_ids": [], "collection_status": "needs_official_channel"},
+    {"family": "飞书 AI", "company": "字节跳动", "region": "china", "tabs": [], "work_ai": true, "work_ai_scope": "办公与文档", "source_ids": [], "collection_status": "needs_official_channel"},
+    {"family": "扣子 / Coze", "company": "字节跳动", "region": "china", "tabs": ["coding_agent"], "work_ai": true, "work_ai_scope": "Agent 与工作流", "source_ids": [], "collection_status": "needs_official_channel"},
+    {"family": "混元 / Hunyuan", "company": "腾讯", "region": "china", "tabs": ["general_ai", "image_generation", "video_generation", "world_3d"], "source_ids": ["reg_github_tencent_hy3_commits", "reg_github_tencent_hunyuan_image_commits"], "collection_status": "active_partial"},
+    {"family": "ima / CodeBuddy", "company": "腾讯", "region": "china", "tabs": ["coding_agent"], "work_ai": true, "work_ai_scope": "知识与搜索 / 编程与开发", "source_ids": [], "collection_status": "needs_official_channel"},
+    {"family": "文心 / ERNIE", "company": "百度", "region": "china", "tabs": ["general_ai"], "source_ids": ["reg_github_baidu_ernie_commits"], "collection_status": "active_partial"},
+    {"family": "DeepSeek", "company": "深度求索", "region": "china", "tabs": ["general_ai"], "source_ids": ["reg_github_deepseek_v3_commits"], "collection_status": "active_partial"},
+    {"family": "Kimi", "company": "月之暗面", "region": "china", "tabs": ["general_ai"], "source_ids": ["reg_github_kimi_k3_commits"], "collection_status": "active_partial"},
+    {"family": "Kimi Code", "company": "月之暗面", "region": "china", "tabs": ["coding_agent"], "work_ai": true, "work_ai_scope": "编程与开发", "source_ids": ["reg_github_kimi_code_commits"], "collection_status": "active_partial"},
+    {"family": "GLM", "company": "智谱 AI", "region": "china", "tabs": ["general_ai", "coding_agent"], "work_ai": true, "work_ai_scope": "编程与开发 / Agent 与工作流", "source_ids": ["reg_github_glm5_commits"], "collection_status": "active_partial"},
+    {"family": "MiniMax", "company": "MiniMax", "region": "china", "tabs": ["general_ai", "coding_agent"], "work_ai": true, "work_ai_scope": "编程与开发 / Agent 与工作流", "source_ids": ["reg_github_minimax_h3_commits", "reg_github_minimax_cli_commits"], "collection_status": "active_partial"},
+    {"family": "MiniMax Design", "company": "MiniMax", "region": "china", "tabs": ["image_generation", "video_generation"], "work_ai": true, "work_ai_scope": "Agent 与工作流 / 创意生产", "source_ids": [], "official_entry": "https://design.minimax.cn/", "collection_status": "needs_official_channel"},
+    {"family": "海螺 AI", "company": "MiniMax", "region": "china", "tabs": ["video_generation"], "source_ids": [], "collection_status": "needs_official_channel"},
+    {"family": "可灵 AI", "company": "快手", "region": "china", "tabs": ["image_generation", "video_generation"], "source_ids": ["reg_ir_kuaishou_results"], "collection_status": "active_partial"},
+    {"family": "WPS AI", "company": "金山办公", "region": "china", "tabs": [], "work_ai": true, "work_ai_scope": "办公与文档", "source_ids": [], "collection_status": "needs_official_channel"}
+  ],
+  "display_rules": {
+    "default_region": "china",
+    "sort": ["has_update_desc", "update_time_desc", "china_priority_desc"],
+    "model_profile_without_news": "可显示静态档案，但不得标记为近期更新",
+    "news_link_required_for_update": true,
+    "duplicate_product_across_tabs": false,
+    "cross_tab_behavior": "一个产品只生成一张档案卡，通过能力标签与多个页签关联"
+  }
+}

@@ -44,6 +44,15 @@ class EditorialTimelineTest(unittest.TestCase):
         headline = MODULE.neutral_fallback_headline(event, review, claims)
         self.assertIn("系统提示", headline)
 
+    def test_domain_led_mixed_title_falls_back_to_a_readable_chinese_claim(self):
+        event = {"event_id": "mixed", "canonical_title": "huggingface.co/security.txt 提示 AI Agent 可使用 CyberGym…"}
+        review = {"agent_analysis": {}}
+        claims = [{"text": "据 Simon Willison 报道，Hugging Face 提供了 CyberGym 安全基准测试工具。"}]
+
+        headline = MODULE.neutral_fallback_headline(event, review, claims)
+
+        self.assertEqual(headline, "Hugging Face 提供了 CyberGym 安全基准测试工具")
+
     def test_cover_manifest_resolves_specific_asset_and_safe_fallback(self):
         manifest = {
             "covers": [{"event_id": "evt_1", "url": "assets/editorial/one.jpg", "kind": "editorial"}],
@@ -122,6 +131,73 @@ class EditorialTimelineTest(unittest.TestCase):
         self.assertIn("按照王兴兴的判断", cleaned)
         self.assertIn("可能提升", cleaned)
         self.assertNotIn("预测而非已验证结果", cleaned)
+
+    def test_english_full_name_is_compacted_to_acronym_headline(self):
+        title = MODULE.neutral_fallback_headline(
+            {"event_id": "evt_smi", "canonical_title": "Spatial Memory Intelligence (SMI)框架被提出，用于系统化管理世界模型中的长期记忆"},
+            {"agent_analysis": {}},
+            [],
+        )
+        self.assertEqual(title, "SMI：用于系统化管理世界模型中的长期记忆")
+
+    def test_reader_facing_text_collapses_stacked_attribution(self):
+        cleaned = MODULE.reader_facing_text("公司称／论文作者报告／据报道，方法减少了推理成本。")
+        self.assertEqual(cleaned, "据来源披露，方法减少了推理成本。")
+
+    def test_fallback_copy_does_not_repeat_headline_as_dek(self):
+        copy = MODULE.generic_copy(
+            {
+                "event_id": "evt_repeat_guard",
+                "canonical_title": "公司称提出CoDeR，一种新的世界建模范式",
+                "fact_summary": "公司称提出CoDeR，一种新的世界建模范式。",
+                "primary_entity": {"name": "CoDeR"},
+                "primary_route": "frontier.world_model",
+            },
+            {"claims": [
+                {"text": "公司称提出CoDeR，一种新的世界建模范式。"},
+                {"text": "公司称通过代码构建可执行世界并结合视频生成模型实现视觉呈现。"},
+            ]},
+            5,
+        )
+        self.assertNotEqual(copy["headline"], copy["dek"].rstrip("。"))
+        self.assertNotIn("提出CoDeR，一种新的世界建模范式", copy["dek"])
+
+    def test_article_body_removes_repeated_facts_across_sections(self):
+        copy = {
+            "what": "模型支持虚拟试穿。用户可以保存商品。",
+            "how": "模型支持虚拟试穿。系统使用用户照片。",
+            "fact_points": ["模型支持虚拟试穿。", "模型支持虚拟试穿", "系统使用用户照片。"],
+            "summary_paragraphs": ["模型支持虚拟试穿。", "模型支持虚拟试穿。系统使用用户照片。"],
+            "why": "", "take": "", "watch": [],
+        }
+        body = MODULE.build_article_body(copy, {"limitations": "仅限已核验事实。"}, ["claim_1"])
+        self.assertEqual(body["full_text"]["text"].count("模型支持虚拟试穿"), 1)
+        self.assertEqual(body["fact_points"], ["模型支持虚拟试穿。", "系统使用用户照片。"])
+
+    def test_repeated_takeaway_is_omitted(self):
+        copy = {"headline": "模型推出购物功能", "dek": "用户可以使用照片虚拟试穿。",
+                "one_line_takeaway": "用户可以使用照片虚拟试穿。", "why": "", "take": ""}
+        self.assertEqual(MODULE.reader_takeaway(copy), "")
+
+    def test_expanded_sentence_is_treated_as_semantic_repetition(self):
+        short = "新功能允许用户虚拟试穿衣物和配饰。"
+        expanded = "新功能允许用户使用自己的照片虚拟试穿衣物和配饰。"
+        self.assertTrue(MODULE.materially_repeats(short, expanded))
+
+    def test_review_note_is_not_a_takeaway(self):
+        copy = {"headline": "模型更新", "dek": "新增模型接口。",
+                "one_line_takeaway": "在进展页核对所展示证据后确认。", "why": "", "take": ""}
+        self.assertEqual(MODULE.reader_takeaway(copy), "")
+
+    def test_review_note_is_an_internal_placeholder(self):
+        from spectra_agent.publication_quality import publication_quality_errors
+        issue = {"editorial_stories": [{"story_id": "story_1", "article_type": "brief",
+                                         "headline": "模型更新开放测试",
+                                         "dek": "据来源报道，模型接口已经开放测试。",
+                                         "why_it_matters": {"text": "在进展页核对所展示证据后确认。"}}]}
+        with tempfile.TemporaryDirectory() as temp:
+            errors = publication_quality_errors(issue, {}, asset_root=Path(temp))
+        self.assertIn("story_1.internal_editorial_placeholder", errors)
 
     def test_p2_summary_does_not_copy_full_article(self):
         summary = MODULE.compact_brief_summary("Long source sentence. " * 80)

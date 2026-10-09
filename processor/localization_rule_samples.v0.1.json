@@ -1,0 +1,42 @@
+{
+  "schema_version": "0.1",
+  "created_from_run": "daily-20260915",
+  "samples": [
+    {
+      "rule": "preserve_reported_uncertainty",
+      "source": "OpenAI buys Glass Imaging for $300 million, report says",
+      "rejected": "OpenAI以3亿美元收购Glass Imaging",
+      "accepted": "据报道，OpenAI以3亿美元收购Glass Imaging"
+    },
+    {
+      "rule": "calendar_year_is_not_a_count",
+      "source": "TechCrunch Disrupt 2026",
+      "rejected": "TechCrunch Disrupt 2026的Builders Stage",
+      "accepted": "2026年TechCrunch Disrupt的Builders Stage"
+    },
+    {
+      "rule": "number_words_are_semantically_equal",
+      "source": "Twenty-five leading mathematicians",
+      "rejected": "顶尖数学家签署公开信",
+      "accepted": "25位顶尖数学家签署公开信"
+    },
+    {
+      "rule": "rewrite_url_led_headline_as_chinese_sentence",
+      "source": "huggingface.co/security.txt suggests AI agents can use CyberGym",
+      "rejected": "huggingface.co/security.txt提示AI Agent可使用CyberGym",
+      "accepted": "Hugging Face提示：AI智能体可使用CyberGym进行安全测试"
+    },
+    {
+      "rule": "rewrite_mixed_language_headline_for_readability",
+      "source": "OpenAI CEO Sam Altman says it would be ill-advised to go public in 2026",
+      "rejected": "OpenAI CEO Sam Altman称2026年上市不具明智性",
+      "accepted": "OpenAI首席执行官萨姆·奥尔特曼称，2026年上市并非明智之举"
+    },
+    {
+      "rule": "never_publish_internal_placeholder",
+      "source": "How Grok Bot designers use AI agents to build personal sites and product prototypes",
+      "rejected": "来源标题提及上述动态，具体口径与背景尚待原文核验。",
+      "accepted": "SpaceXAI的两位Grok Bot设计师展示了如何用Bot自动更新个人网站、远程操作Figma，并把临时想法转成可运行的产品原型。"
+    }
+  ]
+}

@@ -170,7 +170,11 @@ def classify_story(
         or story.get("watch_next")
     )
     core_ready = selected and relevance == "direct" and impact == "high" and complete and actionable and evidence == "primary_reported" and core_depth_ready
-    tier = "core_event" if core_ready else "industry_signal" if relevance in {"direct", "adjacent"} else "brief"
+    # A visually relevant item is not automatically deep enough to become an
+    # industry signal.  When reviewed evidence only supports a short item,
+    # fall back to a source brief instead of forcing padded analysis prose.
+    signal_ready = relevance in {"direct", "adjacent"} and complete
+    tier = "core_event" if core_ready else "industry_signal" if signal_ready else "brief"
     text = _text(story.get("headline"), story.get("dek"), copy.get("what"))
     priority = "p0" if core_ready and URGENT_TERMS.search(text) else "p1" if core_ready or (relevance == "direct" and impact == "high") else "p2" if tier == "industry_signal" else "p3"
     return {

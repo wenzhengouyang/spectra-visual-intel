@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Spectra — 视觉行业情报工作台 (演示版)</title>
+  <link rel="stylesheet" href="tokens.css?v=4" />
+  <link rel="stylesheet" href="app/globals.css?v=19" />
+  <link rel="stylesheet" href="app/magazine-layout.css?v=1" />
+</head>
+<body>
+  <div class="magazine-app">
+    <!-- Top Navigation Bar -->
+    <header class="magazine-header">
+      <div class="magazine-container">
+        <div class="header-brand">
+          <div class="brand-symbol"><span></span><span></span><span></span></div>
+          <div class="brand-text"><strong>SPECTRA</strong><small>VISUAL INTELLIGENCE</small></div>
+        </div>
+        <nav class="header-nav">
+          <button class="nav-link">总览</button>
+          <button class="nav-link">情报文章</button>
+          <button class="nav-link">我的关注</button>
+          <button class="nav-link">灵感库</button>
+        </nav>
+        <div class="header-actions">
+          <label class="header-search">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="6.5" cy="6.5" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M11 11L15 15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            <input type="text" placeholder="搜索..." />
+          </label>
+          <button class="view-toggle active" data-view="grid">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect width="6" height="6"/><rect x="10" width="6" height="6"/><rect y="10" width="6" height="6"/><rect x="10" y="10" width="6" height="6"/></svg>
+          </button>
+          <button class="view-toggle" data-view="list">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect width="16" height="2" fill="currentColor"/><rect y="7" width="16" height="2" fill="currentColor"/><rect y="14" width="16" height="2" fill="currentColor"/></svg>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Content Category Tabs -->
+    <nav class="category-nav">
+      <div class="magazine-container">
+        <div class="category-tabs">
+          <button class="category-tab active">本期精选</button>
+          <button class="category-tab">能力与评测</button>
+          <button class="category-tab">视觉模型</button>
+          <button class="category-tab">产品与商业</button>
+          <button class="category-tab">内容与文化</button>
+          <button class="category-tab">团队与人才</button>
+        </div>
+        <div class="category-meta">
+          <span class="issue-date">2026-09-02 至 2026-09-08</span>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="magazine-main">
+      <div class="magazine-container">
+
+        <!-- Hero + Sidebar Layout -->
+        <div class="hero-section">
+          <!-- Hero Article (Left) -->
+          <article class="hero-card">
+            <div class="hero-image">
+              <img src="assets/editorial/product-company-v1.jpg" alt="" loading="eager" />
+            </div>
+            <div class="hero-content">
+              <div class="hero-meta">
+                <time datetime="2026-09-04">Sep 04, 2026</time>
+                <span class="hero-category">核心事件</span>
+              </div>
+              <h1 class="hero-title">AI代理在企业中获得更多自主权</h1>
+              <p class="hero-excerpt">据VentureBeat报道，文章指出AI代理在企业中获得更多自主权。这种自主权体现在代理能够规划、决策并在系统间行动，无需人类在每一步批准。治理责任必须嵌入数据层而非依赖抽象政策，这成为企业部署AI代理时的关键挑战。</p>
+              <a href="#" class="hero-link">Read more →</a>
+            </div>
+          </article>
+
+          <!-- Popular Sidebar (Right) -->
+          <aside class="popular-sidebar">
+            <h2 class="sidebar-title">Popular Articles</h2>
+            <div class="sidebar-articles">
+              <article class="sidebar-article">
+                <div class="sidebar-image">
+                  <img src="assets/editorial/industry-market-v1.jpg" alt="" loading="lazy" />
+                </div>
+                <div class="sidebar-content">
+                  <h3>乳腺癌治疗与AI技术的结合正在推动医疗管理的变革</h3>
+                  <div class="sidebar-meta">
+                    <time>Sep 02, 2026</time>
+                    <span>13 min read</span>
+                  </div>
+                </div>
+              </article>
+              <article class="sidebar-article">
+                <div class="sidebar-image">
+                  <img src="assets/editorial/product-company-v1.jpg" alt="" loading="lazy" />
+                </div>
+                <div class="sidebar-content">
+                  <h3>DeepSeek推出经济型推理模型挑战OpenAI</h3>
+                  <div class="sidebar-meta">
+                    <time>Sep 03, 2026</time>
+                    <span>12 min read</span>
+                  </div>
+                </div>
+              </article>
+              <article class="sidebar-article">
+                <div class="sidebar-image">
+                  <img src="assets/editorial/industry-market-v1.jpg" alt="" loading="lazy" />
+                </div>
+                <div class="sidebar-content">
+                  <h3>AI工程技能图谱发布</h3>
+                  <div class="sidebar-meta">
+                    <time>Aug 28, 2026</time>
+                    <span>20 min read</span>
+                  </div>
+                </div>
+              </article>
+            </div>
+          </aside>
+        </div>
+
+        <!-- Article Grid (3 columns) -->
+        <section class="article-grid">
+          <article class="article-card">
+            <div class="article-image">
+              <img src="assets/editorial/product-company-v1.jpg" alt="" loading="lazy" />
+            </div>
+            <div class="article-content">
+              <time class="article-date">Sep 04, 2026</time>
+              <h2 class="article-title">GLM-5.3漏洞披露，AI模型与硬件性能提升</h2>
+              <p class="article-excerpt">据The Batch报道，软件工程基础在智能体编程时代发生了哪些根本性变化？本文深入探讨AI模型安全性与性能优化的最新进展。</p>
+              <div class="article-meta">
+                <span class="read-time">21 min read</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="article-card">
+            <div class="article-image">
+              <img src="assets/editorial/industry-market-v1.jpg" alt="" loading="lazy" />
+            </div>
+            <div class="article-content">
+              <time class="article-date">Sep 03, 2026</time>
+              <h2 class="article-title">Anthropic推出水印技术，Grok 4.6性能飙升</h2>
+              <p class="article-excerpt">本文回顾AI工程技能图谱中的最高级别技能，探讨如何在实际项目中应用这些关键能力。</p>
+              <div class="article-meta">
+                <span class="read-time">18 min read</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="article-card">
+            <div class="article-image">
+              <img src="assets/editorial/product-company-v1.jpg" alt="" loading="lazy" />
+            </div>
+            <div class="article-content">
+              <time class="article-date">Sep 02, 2026</time>
+              <h2 class="article-title">Meta争夺编程数据，Google机器人多模态模型发布</h2>
+              <p class="article-excerpt">深入解析Meta在AI训练数据领域的战略布局，以及Google在机器人领域的最新突破。</p>
+              <div class="article-meta">
+                <span class="read-time">15 min read</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="article-card">
+            <div class="article-image">
+              <img src="assets/editorial/industry-market-v1.jpg" alt="" loading="lazy" />
+            </div>
+            <div class="article-content">
+              <time class="article-date">Sep 01, 2026</time>
+              <h2 class="article-title">视频生成模型在商业应用中的最新进展</h2>
+              <p class="article-excerpt">从技术突破到商业落地，视频生成AI正在重塑内容创作行业的未来。</p>
+              <div class="article-meta">
+                <span class="read-time">12 min read</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="article-card">
+            <div class="article-image">
+              <img src="assets/editorial/product-company-v1.jpg" alt="" loading="lazy" />
+            </div>
+            <div class="article-content">
+              <time class="article-date">Aug 31, 2026</time>
+              <h2 class="article-title">世界模型研究取得重大突破</h2>
+              <p class="article-excerpt">最新研究显示，世界模型在理解物理规律和预测未来状态方面取得了显著进展。</p>
+              <div class="article-meta">
+                <span class="read-time">16 min read</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="article-card">
+            <div class="article-image">
+              <img src="assets/editorial/industry-market-v1.jpg" alt="" loading="lazy" />
+            </div>
+            <div class="article-content">
+              <time class="article-date">Aug 30, 2026</time>
+              <h2 class="article-title">AI评测标准迎来重大更新</h2>
+              <p class="article-excerpt">新的评测框架更加关注实际应用场景，而非单纯的基准测试分数。</p>
+              <div class="article-meta">
+                <span class="read-time">14 min read</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="article-card">
+            <div class="article-image">
+              <img src="assets/editorial/product-company-v1.jpg" alt="" loading="lazy" />
+            </div>
+            <div class="article-content">
+              <time class="article-date">Aug 29, 2026</time>
+              <h2 class="article-title">创作者经济与AI工具的深度融合</h2>
+              <p class="article-excerpt">AI辅助创作工具正在改变内容创作者的工作流程，但也带来了新的挑战。</p>
+              <div class="article-meta">
+                <span class="read-time">11 min read</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="article-card">
+            <div class="article-image">
+              <img src="assets/editorial/industry-market-v1.jpg" alt="" loading="lazy" />
+            </div>
+            <div class="article-content">
+              <time class="article-date">Aug 28, 2026</time>
+              <h2 class="article-title">顶尖AI人才流动趋势分析</h2>
+              <p class="article-excerpt">从大型科技公司到创业公司，AI领域的人才流动模式正在发生变化。</p>
+              <div class="article-meta">
+                <span class="read-time">13 min read</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="article-card">
+            <div class="article-image">
+              <img src="assets/editorial/product-company-v1.jpg" alt="" loading="lazy" />
+            </div>
+            <div class="article-content">
+              <time class="article-date">Aug 27, 2026</time>
+              <h2 class="article-title">4D空间重建技术的产业化探索</h2>
+              <p class="article-excerpt">从实验室到产品，4D重建技术正在寻找其商业化路径。</p>
+              <div class="article-meta">
+                <span class="read-time">17 min read</span>
+              </div>
+            </div>
+          </article>
+        </section>
+
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="magazine-footer">
+      <div class="magazine-container">
+        <p>SPECTRA Visual Intelligence © 2026 · Magazine Layout Demo</p>
+      </div>
+    </footer>
+
+  </div>
+</body>
+</html>

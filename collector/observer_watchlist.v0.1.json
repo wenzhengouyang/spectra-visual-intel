@@ -182,8 +182,8 @@
       "role": "模型与产品机构",
       "focus": ["视频生成", "图像生成", "多模态", "开源生态"],
       "homepage": "https://github.com/Wan-Video",
-      "existing_registry_ids": ["reg_github_wan22_commits", "reg_github_wananimate2_commits", "reg_ir_alibaba_results"],
-      "channels": [{"kind": "official_github", "url": "https://github.com/Wan-Video", "collection_status": "active_existing"}],
+      "existing_registry_ids": ["reg_github_wan22_commits", "reg_github_wananimate2_commits", "reg_github_qwen38_commits", "reg_github_qwen_image_commits", "reg_github_qwen_code_commits", "reg_ir_alibaba_results"],
+      "channels": [{"kind": "official_github", "url": "https://github.com/Wan-Video", "collection_status": "active_existing"}, {"kind": "official_github", "url": "https://github.com/QwenLM", "collection_status": "active_existing"}],
       "evidence_tier": "first_party"
     },
     {
@@ -194,8 +194,8 @@
       "role": "模型与研究机构",
       "focus": ["视频生成", "图像生成", "多模态", "具身智能"],
       "homepage": "https://seed.bytedance.com/",
-      "existing_registry_ids": [],
-      "channels": [{"kind": "official_blog", "url": "https://seed.bytedance.com/", "collection_status": "link_only"}],
+      "existing_registry_ids": ["reg_github_bytedance_seed20_commits"],
+      "channels": [{"kind": "official_blog", "url": "https://seed.bytedance.com/", "collection_status": "link_only"}, {"kind": "official_github", "url": "https://github.com/ByteDance-Seed", "collection_status": "active_existing"}],
       "evidence_tier": "first_party"
     },
     {
@@ -218,8 +218,8 @@
       "role": "模型与产品机构",
       "focus": ["视频生成", "图像生成", "多模态", "3D资产"],
       "homepage": "https://github.com/Tencent-Hunyuan",
-      "existing_registry_ids": ["reg_ir_tencent_results"],
-      "channels": [{"kind": "official_github", "url": "https://github.com/Tencent-Hunyuan", "collection_status": "link_only"}],
+      "existing_registry_ids": ["reg_ir_tencent_results", "reg_github_tencent_hy3_commits", "reg_github_tencent_hunyuan_image_commits"],
+      "channels": [{"kind": "official_github", "url": "https://github.com/Tencent-Hunyuan", "collection_status": "active_existing"}],
       "evidence_tier": "first_party"
     },
     {
@@ -228,10 +228,10 @@
       "observer_type": "institution",
       "region": "china",
       "role": "模型与产品机构",
-      "focus": ["视频生成", "多模态", "基础模型"],
+      "focus": ["视频生成", "图像生成", "多模态", "Agent", "创意生产", "基础模型"],
       "homepage": "https://www.minimaxi.com/news",
-      "existing_registry_ids": [],
-      "channels": [{"kind": "official_blog", "url": "https://www.minimaxi.com/news", "collection_status": "link_only"}],
+      "existing_registry_ids": ["reg_github_minimax_h3_commits", "reg_github_minimax_cli_commits"],
+      "channels": [{"kind": "official_blog", "url": "https://www.minimaxi.com/news", "collection_status": "link_only"}, {"kind": "official_product", "url": "https://design.minimax.cn/", "collection_status": "link_only"}, {"kind": "official_github", "url": "https://github.com/MiniMax-AI", "collection_status": "active_existing"}],
       "evidence_tier": "first_party"
     },
     {
@@ -242,8 +242,8 @@
       "role": "模型与产品机构",
       "focus": ["视频生成", "多模态", "Agent", "基础模型"],
       "homepage": "https://github.com/zai-org",
-      "existing_registry_ids": [],
-      "channels": [{"kind": "official_github", "url": "https://github.com/zai-org", "collection_status": "link_only"}],
+      "existing_registry_ids": ["reg_github_glm5_commits"],
+      "channels": [{"kind": "official_github", "url": "https://github.com/zai-org", "collection_status": "active_existing"}],
       "evidence_tier": "first_party"
     },
     {
@@ -254,8 +254,8 @@
       "role": "模型与产品机构",
       "focus": ["基础模型", "多模态", "Agent", "产品发布"],
       "homepage": "https://www.moonshot.cn/",
-      "existing_registry_ids": [],
-      "channels": [{"kind": "official_blog", "url": "https://www.moonshot.cn/", "collection_status": "link_only"}],
+      "existing_registry_ids": ["reg_github_kimi_k3_commits", "reg_github_kimi_code_commits"],
+      "channels": [{"kind": "official_blog", "url": "https://www.moonshot.cn/", "collection_status": "link_only"}, {"kind": "official_github", "url": "https://github.com/MoonshotAI", "collection_status": "active_existing"}],
       "evidence_tier": "first_party"
     },
     {
@@ -266,8 +266,20 @@
       "role": "模型与产品机构",
       "focus": ["基础模型", "多模态", "Agent", "产品发布"],
       "homepage": "https://yiyan.baidu.com/",
-      "existing_registry_ids": [],
-      "channels": [{"kind": "official_blog", "url": "https://yiyan.baidu.com/", "collection_status": "link_only"}],
+      "existing_registry_ids": ["reg_github_baidu_ernie_commits"],
+      "channels": [{"kind": "official_blog", "url": "https://yiyan.baidu.com/", "collection_status": "link_only"}, {"kind": "official_github", "url": "https://github.com/PaddlePaddle/ERNIE", "collection_status": "active_existing"}],
+      "evidence_tier": "first_party"
+    },
+    {
+      "observer_id": "org_deepseek",
+      "name": "DeepSeek",
+      "observer_type": "institution",
+      "region": "china",
+      "role": "模型与产品机构",
+      "focus": ["基础模型", "推理", "Agent", "开源生态"],
+      "homepage": "https://github.com/deepseek-ai",
+      "existing_registry_ids": ["reg_github_deepseek_v3_commits"],
+      "channels": [{"kind": "official_github", "url": "https://github.com/deepseek-ai", "collection_status": "active_existing"}],
       "evidence_tier": "first_party"
     },
     {

@@ -36,8 +36,29 @@ class LocalNotificationTest(unittest.TestCase):
             digest.write_text("ok", encoding="utf-8")
             state = {"status": "waiting_for_editorial_review", "current_stage": "image_review"}
             self.assertEqual(review_target(run_dir, state), digest)
-            self.assertEqual(notification_key(state), "terminal_review_v1:waiting_for_editorial_review:image_review")
+            self.assertEqual(notification_key(state), "terminal_review_v2:waiting_for_editorial_review:image_review")
             self.assertIn("run.py", terminal_review_command(run_dir, state))
+
+    def test_second_round_review_commands_are_actionable(self):
+        with tempfile.TemporaryDirectory() as temp:
+            run_dir = Path(temp) / "daily-20260914"
+            run_dir.mkdir()
+            localization = {"status": "waiting_for_editorial_review", "current_stage": "localization_review"}
+            images = {"status": "waiting_for_editorial_review", "current_stage": "image_preview"}
+            self.assertIn("localization-review-terminal.py", terminal_review_command(run_dir, localization))
+            self.assertIn("image-review-terminal.py", terminal_review_command(run_dir, images))
+
+    def test_failed_osascript_is_not_recorded_as_shown(self):
+        class Failed:
+            returncode = 1
+            stderr = b"Terminal unavailable"
+
+        with tempfile.TemporaryDirectory() as temp:
+            run_dir = Path(temp)
+            state = {"status": "waiting_for_editorial_review", "current_stage": "localization_review"}
+            result = show_review_popup(run_dir, state, {"enabled": True}, launcher=lambda *a, **k: Failed())
+            self.assertEqual(result["status"], "failed")
+            self.assertFalse((run_dir / "local-review-notification.json").exists())
 
 
 if __name__ == "__main__":

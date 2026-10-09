@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from spectra_agent.publication_quality import publication_quality_errors
+from spectra_agent.publication_quality import expected_cover_motif, publication_quality_errors
 
 
 def sample_issue() -> dict:
@@ -16,7 +16,7 @@ def sample_issue() -> dict:
             "category": "产品与公司",
             "article_body": {"full_text": {"text": body}},
             "cover_image": {
-                "url": "assets/cover.svg", "kind": "editorial_diagram",
+                "url": "assets/cover.svg", "kind": "generated",
                 "semantic_motif": "signal", "semantic_match": "passed", "review_status": "approved",
                 "asset_fingerprint": hashlib.sha256(b"unique").hexdigest(),
             },
@@ -26,6 +26,18 @@ def sample_issue() -> dict:
 
 
 class PublicationQualityTest(unittest.TestCase):
+    def test_autonomous_driving_uses_a_specific_cover_motif(self):
+        self.assertEqual(expected_cover_motif("用于闭环自动驾驶模拟的实时可控世界模型", "视觉智能"), "autonomy")
+
+    def test_brief_only_keeps_language_gate_and_rejects_empty(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            issue = {"news_briefs": [{"headline": "模型更新开放测试", "dek": "据来源报道，本次更新调整了模型接口的测试范围。"}]}
+            self.assertEqual(publication_quality_errors(issue, {}, asset_root=root), [])
+            self.assertIn("no_publishable_content", publication_quality_errors({}, {}, asset_root=root))
+            issue["news_briefs"][0]["headline"] = "English headline only"
+            self.assertTrue(publication_quality_errors(issue, {}, asset_root=root))
+
     def setUp(self):
         self.config = {"publication_quality": {"minimum_core_events": 1, "core_event_min_characters": 0, "require_generated_image_review": True}}
 
@@ -36,12 +48,65 @@ class PublicationQualityTest(unittest.TestCase):
             (root / "assets/cover.svg").write_text("unique")
             self.assertEqual(publication_quality_errors(sample_issue(), self.config, asset_root=root), [])
 
+    def test_repeated_headline_and_dek_are_blocked(self):
+        issue = sample_issue()
+        story = issue["editorial_stories"][0]
+        story["dek"] = story["headline"] + "。"
+        story["article_body"] = {"lead": {"text": story["headline"] + "。"}, "full_text": {"text": "有后续事实。"}}
+        with tempfile.TemporaryDirectory() as temp:
+            errors = publication_quality_errors(issue, self.config, asset_root=Path(temp))
+        self.assertIn("story_1.headline_dek_repeated", errors)
+        self.assertIn("story_1.headline_lead_repeated", errors)
+
+    def test_cross_section_and_fact_point_repetition_are_blocked(self):
+        issue = sample_issue()
+        article = issue["editorial_stories"][0]["article_body"]
+        article["lead"] = {"text": "模型支持虚拟试穿。"}
+        article["key_details"] = {"text": "模型支持虚拟试穿。系统使用用户照片。"}
+        article["fact_points"] = ["模型支持虚拟试穿。", "模型支持虚拟试穿"]
+        with tempfile.TemporaryDirectory() as temp:
+            errors = publication_quality_errors(issue, self.config, asset_root=Path(temp))
+        self.assertIn("story_1.article_sentences_repeated", errors)
+        self.assertIn("story_1.fact_points_repeated", errors)
+
+    def test_repeated_takeaway_is_blocked(self):
+        issue = sample_issue()
+        issue["editorial_stories"][0]["one_line_takeaway"] = issue["editorial_stories"][0]["dek"]
+        with tempfile.TemporaryDirectory() as temp:
+            errors = publication_quality_errors(issue, self.config, asset_root=Path(temp))
+        self.assertIn("story_1.takeaway_repeated", errors)
+
+    def test_internal_placeholder_in_body_blocks_publication(self):
+        issue = sample_issue()
+        issue["editorial_stories"][0]["article_body"]["full_text"]["text"] = (
+            "来源标题提及上述动态，具体口径与背景尚待原文核验。"
+        )
+        with tempfile.TemporaryDirectory() as temp:
+            errors = publication_quality_errors(issue, self.config, asset_root=Path(temp))
+        self.assertTrue(any("internal_editorial_placeholder" in error for error in errors))
+
     def test_unreviewed_generated_cover_blocks(self):
         issue = sample_issue()
         issue["editorial_stories"][0]["cover_image"]["review_status"] = "pending"
         with tempfile.TemporaryDirectory() as temp:
             errors = publication_quality_errors(issue, self.config, asset_root=Path(temp))
         self.assertTrue(any("needs_human_preview" in error for error in errors))
+
+    def test_pending_cover_can_be_deferred_without_weakening_text_checks(self):
+        issue = sample_issue()
+        issue["editorial_stories"][0]["cover_image"] = {
+            "url": "assets/draft.svg", "kind": "editorial_diagram",
+            "review_status": "pending", "provisional": True,
+        }
+        config = {"publication_quality": {
+            "minimum_core_events": 1,
+            "core_event_min_characters": 0,
+            "require_generated_image_review": True,
+            "allow_pending_cover_publish": True,
+        }}
+        with tempfile.TemporaryDirectory() as temp:
+            errors = publication_quality_errors(issue, config, asset_root=Path(temp))
+        self.assertFalse(any("cover_" in error for error in errors))
 
     def test_replaced_generated_cover_invalidates_approval(self):
         with tempfile.TemporaryDirectory() as temp:

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import shutil
 import subprocess
@@ -39,6 +40,67 @@ except ImportError:
         validate_static_package,
         write_json,
     )
+
+
+class NoFreshContent(WorkflowError):
+    """The run is valid, but contains no reader-visible item absent from the last release."""
+
+
+def _story_identity(story: dict) -> str:
+    links = story.get("source_links") or []
+    for link in links:
+        url = str((link or {}).get("url") or "").strip()
+        if url:
+            return "url:" + url.split("#", 1)[0].rstrip("/").casefold()
+    text = "\n".join(str(story.get(key) or "").strip() for key in ("headline", "dek", "one_line_takeaway"))
+    return "copy:" + hashlib.sha256(text.encode("utf-8")).hexdigest() if text.strip() else ""
+
+
+def _issue_identities(issue: dict) -> set[str]:
+    stories = [*(issue.get("editorial_stories") or []), *(issue.get("news_briefs") or [])]
+    return {identity for story in stories if (identity := _story_identity(story))}
+
+
+def previous_published_identities(run_dir: Path) -> set[str]:
+    """Read earlier releases; unpublished drafts never become the baseline."""
+    identities: set[str] = set()
+    for candidate in sorted(run_dir.parent.glob("daily-*"), reverse=True):
+        if candidate.name >= run_dir.name:
+            continue
+        state_path, issue_path = candidate / "run.json", candidate / "editorial-issue.json"
+        if not state_path.exists() or not issue_path.exists():
+            continue
+        try:
+            if read_json(state_path).get("publish_status") == "published":
+                identities.update(_issue_identities(read_json(issue_path)))
+        except (OSError, json.JSONDecodeError):
+            continue
+    return identities
+
+
+def validate_freshness(run_dir: Path, issue: dict) -> int:
+    current = _issue_identities(issue)
+    previous = previous_published_identities(run_dir)
+    fresh_count = len(current - previous) if previous else len(current)
+    if fresh_count < 1:
+        raise NoFreshContent("今日无更新：没有发现相对上一已发布版本的真实新增内容")
+    return fresh_count
+
+
+def validate_evaluation_release(evaluation: dict, issue: dict) -> None:
+    """Fail closed, except for the existing bounded source-coverage policy."""
+    if evaluation.get("status") != "fail" and not evaluation.get("blocking_recommended"):
+        return
+    failed = set(evaluation.get("failed_checks") or [])
+    meta = issue.get("issue") or {}
+    bounded_coverage = (
+        failed == {"source_success_rate"}
+        and meta.get("release_mode") == "limited_source_coverage"
+        and meta.get("release_authorization") in {"user", "bounded_automatic_policy"}
+        and bool(str(meta.get("coverage_disclosure") or "").strip())
+    )
+    if not bounded_coverage:
+        raise WorkflowError("run evaluation blocks publication: " + ", ".join(sorted(failed or {"evaluation_failed"})))
 
 
 def command(arguments: list[str], cwd: Path, capture: bool = False) -> str:
@@ -77,12 +139,14 @@ def validate_run(run_dir: Path, config: dict, config_path: Path = DEFAULT_CONFIG
         from spectra_agent.execution import publication_version
         if evaluation.get("content_version") != publication_version(run_dir):
             raise WorkflowError("evaluation is missing a current content version; resume --retry before publishing")
+        validate_evaluation_release(evaluation, issue)
         failures = [
             item["name"] for item in evaluation.get("publication_checks", [])
             if item.get("severity") == "error" and not item.get("passed")
         ]
         if failures:
             raise WorkflowError("publication checks failed: " + ", ".join(failures))
+    validate_freshness(run_dir, issue)
     return issue
 
 
@@ -121,6 +185,8 @@ def prepare_checkout(config: dict) -> Path:
 
 
 def copy_package(run_dir: Path, checkout: Path) -> list[str]:
+    from spectra_agent.model_news import project
+    project(run_dir)
     shutil.copyfile(canonical_artifact(run_dir, "rolling-digest.html"), checkout / "index.html")
     paths = ["index.html"]
     for relative in STATIC_ASSETS:
@@ -133,6 +199,23 @@ def copy_package(run_dir: Path, checkout: Path) -> list[str]:
     if source_assets.exists():
         shutil.copytree(source_assets, checkout / "assets", dirs_exist_ok=True)
         paths.append("assets")
+    # Keep each published issue self-contained so rolling updates do not break shares.
+    run_id = read_json(run_dir / "editorial-issue.json").get("run_id") or run_dir.name
+    if not isinstance(run_id, str) or not run_id or any(c not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-" for c in run_id):
+        raise WorkflowError("invalid archive run id")
+    archive = checkout / "archive" / run_id
+    if not archive.exists():
+        staging = checkout / "archive" / (run_id + ".pending")
+        staging.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(checkout / "index.html", staging / "index.html")
+        for relative in STATIC_ASSETS:
+            target = staging / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(checkout / relative, target)
+        if source_assets.exists():
+            shutil.copytree(source_assets, staging / "assets", dirs_exist_ok=True)
+        staging.rename(archive)
+    paths.append(str(archive.relative_to(checkout)))
     return paths
 
 
@@ -161,10 +244,10 @@ def main() -> int:
         # must still be staged, otherwise the HTML can publish broken cover URLs.
         command(["git", "add", "-f", "--", *changed_paths], checkout)
         staged = command(["git", "diff", "--cached", "--name-only"], checkout, capture=True)
-        if not staged:
-            print(json.dumps({"run_id": args.run_id, "status": "unchanged", "published": True}, ensure_ascii=False))
-            return 0
-        command(["git", "commit", "-m", f"publish: {args.run_id}"], checkout)
+        if staged:
+            command(["git", "commit", "-m", f"publish: {args.run_id}"], checkout)
+        # A previous push may have failed after committing locally. Even with
+        # an empty staging area, retry the push before marking this run published.
         branch = (config.get("publishing") or {}).get("branch", "main")
         command(["git", "push", "origin", f"HEAD:{branch}"], checkout)
         state = read_json(run_dir / "run.json")
@@ -173,6 +256,18 @@ def main() -> int:
         state["published_branch"] = branch
         write_json(run_dir / "run.json", state)
         print(json.dumps({"run_id": args.run_id, "status": "published", "branch": branch}, ensure_ascii=False))
+        return 0
+    except NoFreshContent as exc:
+        state = read_json(run_dir / "run.json")
+        state.update({
+            "publish_status": "not_published",
+            "publication_mode": "no_update",
+            "no_update": True,
+            "no_update_reason": str(exc),
+        })
+        write_json(run_dir / "run.json", state)
+        print(json.dumps({"run_id": args.run_id, "status": "no_update", "published": False,
+                          "reason": str(exc)}, ensure_ascii=False))
         return 0
     except (WorkflowError, subprocess.CalledProcessError, OSError, json.JSONDecodeError) as exc:
         print(json.dumps({"run_id": args.run_id, "status": "blocked", "error": str(exc)}, ensure_ascii=False), file=sys.stderr)

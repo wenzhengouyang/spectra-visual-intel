@@ -1,0 +1,12 @@
+{
+ "qwen":{"source":"https://help.aliyun.com/zh/model-studio/models","versions":["qwen3.8-max","qwen3.7-plus","qwen3.8-flash","qwen3.5-omni-plus"]},
+ "qwen-image":{"source":"https://help.aliyun.com/zh/model-studio/models","versions":["qwen-image-3.0-pro"]},
+ "wan":{"source":"https://help.aliyun.com/zh/model-studio/models","versions":["wan3.0-video","wan2.7-image-pro"]},
+ "happyhorse":{"source":"https://help.aliyun.com/zh/model-studio/models","versions":["happyhorse-1.1-i2v","happyhorse-1.0-video-edit"]},
+ "deepseek":{"source":"https://api-docs.deepseek.com/api/list-models","versions":["deepseek-v4-flash","deepseek-v4-pro"]},
+ "seedream":{"source":"https://www.volcengine.com/product/ark","versions":["Doubao-Seedream-5.0-lite","Doubao-Seedream-4.0"]},
+ "seedance":{"source":"https://www.volcengine.com/activity/ai-savingsplans","versions":["Doubao-Seedance-1.5-pro"]},
+ "vidu":{"source":"https://platform.vidu.cn/docs/model-map","versions":["Vidu Q3","Vidu Q2","Vidu Q1","Vidu 2.0"]},
+ "glm":{"source":"https://docs.bigmodel.cn/cn/guide/start/concept-param","versions":["GLM-5.1","GLM-5","GLM-5-Turbo","GLM-5v-Turbo","GLM-4.7","GLM-4.6","GLM-4.6V","GLM-4.5","GLM-4.5V"]},
+ "minimax":{"source":"https://platform.minimaxi.com/docs/release-notes/models","versions":["MiniMax-M2.5","MiniMax-M2.5-highspeed"],"status":"官方历史发布记录"}
+}

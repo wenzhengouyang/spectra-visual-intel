@@ -4,7 +4,7 @@
   "schedule": {
     "frequency": "daily",
     "weekdays": ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"],
-    "local_time": "08:00",
+    "local_time": "09:00",
     "window_days": 7,
     "action": "collect_structure_and_pause_for_review"
   },
@@ -16,6 +16,31 @@
     "reuse_llm_checkpoint": true,
     "full_window_retry_on_missing_or_failed_baseline_source": true,
     "rate_limit_cooldown_hours": 24
+  },
+  "collection_lanes": {
+    "mainline": {
+      "enabled": true,
+      "source_ids": [
+        "reg_rss_openai_news",
+        "reg_rss_deepmind_news",
+        "reg_rss_nvidia_generative_ai",
+        "reg_rss_huggingface_blog",
+        "reg_rss_deeplearning_batch",
+        "reg_rss_techcrunch_ai",
+        "reg_rss_venturebeat_ai",
+        "reg_rss_microsoft_source_strategy",
+        "reg_rss_google_cloud_ai_strategy"
+      ],
+      "timeout_seconds": 600,
+      "purpose": "早间稳定高价值信号；该结果直接进入结构化、审核和日报。"
+    },
+    "coverage": {
+      "enabled": true,
+      "derive_from_non_mainline_enabled_sources": true,
+      "include_failed_mainline_sources": true,
+      "timeout_seconds": 1800,
+      "purpose": "GitHub、论文、长文、低频官方源及失败重试；异步留档，不阻塞当日日报。"
+    }
   },
   "reliability": {
     "max_automatic_attempts": 2
@@ -46,7 +71,7 @@
     "max_attempts": 3,
     "min_verified_fact_units": 8,
     "generation_mode": "serial_background",
-    "prompt_version": "core_event_writer.v1.2.2"
+    "prompt_version": "core_event_writer.v1.2.3"
   },
   "werss_service": {
     "enabled": true,
@@ -116,7 +141,7 @@
     "rolling_window": 3,
     "use_llm": false,
     "thresholds": {
-      "source_success_rate_min": 0.9,
+      "source_success_rate_min": 0.85,
       "duplicate_processing_rate_max": 0.15,
       "sample_fact_failure_rate_max": 0.05,
       "auto_lock_post_edit_rate_max": 0.05,
@@ -126,6 +151,13 @@
       "minimum_distinct_windows": 3,
       "require_unchanged_strategy": true
     }
+  },
+  "automatic_limited_release": {
+    "enabled": true,
+    "minimum_success_rate": 0.8,
+    "minimum_successful_sources": 20,
+    "maximum_failed_sources": 6,
+    "allowed_failed_checks": ["source_success_rate"]
   },
   "semantic_review": {
     "enabled": true,
@@ -137,12 +169,16 @@
     "block_on_non_pass": true,
     "automatic_approval_enabled": false
   },
+  "image_generation": {"enabled": true, "provider": "codex_imagegen", "block_publication": false},
+  "joint_delivery": {"enabled": true, "start_date": "2026-09-11", "auto_launch_on_complete": true, "local_time": "12:30"},
   "publication_quality": {
+    "allow_brief_only": true,
     "minimum_core_events": 1,
     "core_event_min_characters": 260,
     "industry_signal_min_characters": 220,
     "industry_signal_min_fact_points": 3,
     "require_generated_image_review": true,
+    "allow_pending_cover_publish": true,
     "maximum_cover_duplicate_rate": 0.0
   },
   "local_runtime": {
@@ -153,12 +189,16 @@
   },
   "dingtalk_push": {
     "enabled": true,
-    "local_time": "10:00",
+    "paused_run_ids": ["daily-20260915", "daily-20260916"],
+    "local_time": "after_publish",
     "webhook_env": "DINGTALK_WEBHOOK_URL",
     "secret_env": "DINGTALK_SECRET",
     "require_published": true,
+    "web_ready_timeout_seconds": 1800,
+    "web_ready_poll_seconds": 60,
+    "include_rolling_thesis": false,
     "public_url": "https://wenzhengouyang.github.io/spectra-visual-intel/",
-    "header_image_url": "https://wenzhengouyang.github.io/spectra-visual-intel/assets/dingtalk/spectra-dingtalk-banner-responsive-20260908.png"
+    "header_image_url": "https://wenzhengouyang.github.io/spectra-visual-intel/assets/dingtalk/spectra-header-blue-approved.png"
   },
   "publishing": {
     "remote": "origin",

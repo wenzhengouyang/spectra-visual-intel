@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Spectra — 视觉行业情报工作台</title>
+  <meta name="description" content="面向AI产品策略从业者的视觉行业研究、趋势洞察与情报文章工作台。" />
+  <link rel="stylesheet" href="tokens.css?v=4" />
+  <link rel="stylesheet" href="app/globals.css?v=19" />
+  <link rel="stylesheet" href="app/magazine-layout.css?v=1" />
+</head>
+<body>
+  <div class="magazine-app">
+    <!-- Top Navigation Bar -->
+    <header class="magazine-header">
+      <div class="magazine-container">
+        <div class="header-brand">
+          <div class="brand-symbol"><span></span><span></span><span></span></div>
+          <div class="brand-text"><strong>SPECTRA</strong><small>VISUAL INTELLIGENCE</small></div>
+        </div>
+        <nav class="header-nav">
+          <button class="nav-link">总览</button>
+          <button class="nav-link">情报文章</button>
+          <button class="nav-link">我的关注</button>
+          <button class="nav-link">灵感库</button>
+        </nav>
+        <div class="header-actions">
+          <label class="header-search">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="6.5" cy="6.5" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M11 11L15 15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            <input type="text" placeholder="搜索..." />
+          </label>
+          <button class="view-toggle active" data-view="grid" aria-label="网格视图">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect width="6" height="6"/><rect x="10" width="6" height="6"/><rect y="10" width="6" height="6"/><rect x="10" y="10" width="6" height="6"/></svg>
+          </button>
+          <button class="view-toggle" data-view="list" aria-label="列表视图">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect width="16" height="2" fill="currentColor"/><rect y="7" width="16" height="2" fill="currentColor"/><rect y="14" width="16" height="2" fill="currentColor"/></svg>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Content Category Tabs -->
+    <nav class="category-nav">
+      <div class="magazine-container">
+        <div class="category-tabs">
+          <button class="category-tab active" data-category="weekly">本期精选</button>
+          <button class="category-tab" data-category="capability">能力与评测</button>
+          <button class="category-tab" data-category="model">视觉模型</button>
+          <button class="category-tab" data-category="product">产品与商业</button>
+          <button class="category-tab" data-category="culture">内容与文化</button>
+          <button class="category-tab" data-category="team">团队与人才</button>
+        </div>
+        <div class="category-meta">
+          <span class="issue-date" id="issueDate">2026-09-02 至 2026-09-08</span>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="magazine-main">
+      <div class="magazine-container">
+
+        <!-- Hero + Sidebar Layout -->
+        <div class="hero-section">
+          <!-- Hero Article (Left) -->
+          <article class="hero-card" id="heroArticle">
+            <div class="hero-image">
+              <img src="assets/editorial/product-company-v1.jpg" alt="" loading="eager" />
+            </div>
+            <div class="hero-content">
+              <div class="hero-meta">
+                <time datetime="2026-09-04">Sep 04, 2026</time>
+                <span class="hero-category">核心事件</span>
+              </div>
+              <h1 class="hero-title">正在加载文章...</h1>
+              <p class="hero-excerpt">数据加载中...</p>
+              <a href="#" class="hero-link">Read more →</a>
+            </div>
+          </article>
+
+          <!-- Popular Sidebar (Right) -->
+          <aside class="popular-sidebar">
+            <h2 class="sidebar-title">Popular Articles</h2>
+            <div class="sidebar-articles" id="popularArticles">
+              <article class="sidebar-article">
+                <div class="sidebar-image">
+                  <img src="assets/editorial/default-cover.jpg" alt="" loading="lazy" />
+                </div>
+                <div class="sidebar-content">
+                  <h3>Reinforcement Learning Heats Up</h3>
+                  <div class="sidebar-meta">
+                    <time>Jan 22, 2025</time>
+                    <span>4 min read</span>
+                  </div>
+                </div>
+              </article>
+              <article class="sidebar-article">
+                <div class="sidebar-image">
+                  <img src="assets/editorial/default-cover.jpg" alt="" loading="lazy" />
+                </div>
+                <div class="sidebar-content">
+                  <h3>DeepSeek Sharpens Its Reasoning</h3>
+                  <div class="sidebar-meta">
+                    <time>Jan 22, 2025</time>
+                    <span>4 min read</span>
+                  </div>
+                </div>
+              </article>
+              <article class="sidebar-article">
+                <div class="sidebar-image">
+                  <img src="assets/editorial/default-cover.jpg" alt="" loading="lazy" />
+                </div>
+                <div class="sidebar-content">
+                  <h3>AI Engineering Skills Map</h3>
+                  <div class="sidebar-meta">
+                    <time>Aug 14, 2026</time>
+                    <span>20 min read</span>
+                  </div>
+                </div>
+              </article>
+            </div>
+          </aside>
+        </div>
+
+        <!-- Article Grid (3 columns) -->
+        <section class="article-grid" id="articleGrid">
+          <!-- Will be populated by JavaScript -->
+          <article class="article-card">
+            <div class="article-image">
+              <img src="assets/editorial/product-company-v1.jpg" alt="" loading="lazy" />
+            </div>
+            <div class="article-content">
+              <time class="article-date">加载中...</time>
+              <h2 class="article-title">正在加载文章列表</h2>
+              <p class="article-excerpt">请稍候，数据加载中...</p>
+              <div class="article-meta">
+                <span class="read-time">— min read</span>
+              </div>
+            </div>
+          </article>
+        </section>
+
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="magazine-footer">
+      <div class="magazine-container">
+        <p>SPECTRA Visual Intelligence &copy; 2026</p>
+      </div>
+    </footer>
+
+  </div>
+
+  <script>
+    // Load and render real data from editorial-bundle.json
+    let bundle = null;
+    let allStories = [];
+    let filteredStories = [];
+    let currentCategory = 'weekly';
+
+    async function loadData() {
+      try {
+        const response = await fetch('editorial-bundle.json');
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        bundle = await response.json();
+        allStories = bundle.editorial_stories || [];
+        console.log('Loaded stories:', allStories.length);
+        renderPage();
+      } catch (error) {
+        console.error('Failed to load data:', error);
+        // 显示错误信息
+        document.getElementById('heroArticle').querySelector('.hero-title').textContent = '数据加载失败';
+        document.getElementById('heroArticle').querySelector('.hero-excerpt').textContent = error.message;
+      }
+    }
+
+    function renderPage() {
+      filterStories();
+      renderHero();
+      renderPopularSidebar();
+      renderArticleGrid();
+      updateIssueDates();
+    }
+
+    function filterStories() {
+      if (currentCategory === 'weekly') {
+        // 本期精选：显示所有核心事件
+        filteredStories = allStories.filter(s => s.article_type === 'core_event');
+      } else {
+        // 其他频道：按 editorial_channel 筛选
+        const channelMap = {
+          capability: 'capability_metrics',
+          model: 'model_frontier',
+          product: 'product_business',
+          culture: 'content_culture',
+          team: 'team_talent'
+        };
+        const channel = channelMap[currentCategory];
+        filteredStories = allStories.filter(s => s.editorial_channel === channel);
+      }
+      // 按优先级和日期排序
+      filteredStories.sort((a, b) => {
+        const priorityOrder = { 'priority.p0': 0, 'priority.p1': 1, 'priority.p2': 2, 'priority.p3': 3 };
+        const aPriority = priorityOrder[a.editorial_priority] ?? 99;
+        const bPriority = priorityOrder[b.editorial_priority] ?? 99;
+        if (aPriority !== bPriority) return aPriority - bPriority;
+        return new Date(b.published_at) - new Date(a.published_at);
+      });
+    }
+
+    function renderHero() {
+      const hero = filteredStories[0];
+      if (!hero) return;
+
+      const heroCard = document.getElementById('heroArticle');
+      const cover = storyCover(hero);
+      const date = formatDate(hero.published_at);
+
+      heroCard.innerHTML = `
+        <div class="hero-image">
+          <img src="${cover}" alt="" loading="lazy" />
+        </div>
+        <div class="hero-content">
+          <div class="hero-meta">
+            <time datetime="${hero.published_at}">${date}</time>
+            <span class="hero-category">${hero.article_type === 'core_event' ? '核心事件' : '短讯'}</span>
+          </div>
+          <h1 class="hero-title">${escapeHtml(hero.headline)}</h1>
+          <p class="hero-excerpt">${escapeHtml(hero.dek)}</p>
+          <a href="#" class="hero-link" data-story-id="${hero.story_id}">Read more →</a>
+        </div>
+      `;
+    }
+
+    function renderPopularSidebar() {
+      // 显示最近的 3 篇文章（排除 hero）
+      const popular = filteredStories.slice(1, 4);
+      const container = document.getElementById('popularArticles');
+
+      container.innerHTML = popular.map(story => {
+        const cover = storyCover(story);
+        const date = formatDate(story.published_at);
+        return `
+          <article class="sidebar-article" data-story-id="${story.story_id}">
+            <div class="sidebar-image">
+              <img src="${cover}" alt="" loading="lazy" />
+            </div>
+            <div class="sidebar-content">
+              <h3>${escapeHtml(story.headline)}</h3>
+              <div class="sidebar-meta">
+                <time>${date}</time>
+                <span>${story.reading_time_minutes} min read</span>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join('');
+    }
+
+    function renderArticleGrid() {
+      // 显示所有文章（不跳过前几篇，让布局更满）
+      const articles = filteredStories.slice(0);
+      const container = document.getElementById('articleGrid');
+
+      console.log('Rendering grid with', articles.length, 'articles');
+
+      if (articles.length === 0) {
+        container.innerHTML = '<p style="grid-column: 1/-1; text-align: center; padding: 4rem; color: var(--color-text-light);">暂无文章</p>';
+        return;
+      }
+
+      container.innerHTML = articles.map(story => {
+        const cover = storyCover(story);
+        const date = formatDate(story.published_at);
+        return `
+          <article class="article-card" data-story-id="${story.story_id}">
+            <div class="article-image">
+              <img src="${cover}" alt="" loading="lazy" />
+            </div>
+            <div class="article-content">
+              <time class="article-date">${date}</time>
+              <h2 class="article-title">${escapeHtml(story.headline)}</h2>
+              <p class="article-excerpt">${escapeHtml(story.dek)}</p>
+              <div class="article-meta">
+                <span class="read-time">${story.reading_time_minutes} min read</span>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join('');
+    }
+
+    function updateIssueDates() {
+      if (!bundle || !bundle.issue) return;
+      const start = bundle.issue.period_start;
+      const end = bundle.issue.period_end;
+      document.getElementById('issueDate').textContent = `${start} 至 ${end}`;
+    }
+
+    function storyCover(story) {
+      const cover = story.cover_image;
+      if (cover && cover.url) {
+        return cover.url;
+      }
+      // 使用第一个可用的产品封面作为默认图
+      return 'assets/editorial/product-company-v1.jpg';
+    }
+
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const month = months[date.getMonth()];
+      const day = date.getDate();
+      const year = date.getFullYear();
+      return `${month} ${day}, ${year}`;
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Category tab switching
+    document.querySelectorAll('.category-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        currentCategory = tab.dataset.category;
+        renderPage();
+      });
+    });
+
+    // Initialize
+    loadData();
+  </script>
+</body>
+</html>

@@ -2,7 +2,7 @@
 (() => {
   if (typeof bundle === 'undefined' || !bundle) return;
   const ideas = document.getElementById('ideas');
-  ideas.innerHTML = '<div class="ideas-heading"><p>从真实资讯中，留意方法、边界与后续进展。</p><span class="ideas-status" id="ideasStatus"></span></div><div id="visualLibrary"></div>';
+  ideas.innerHTML = '<div class="ideas-heading"><span class="ideas-status" id="ideasStatus"></span></div><div id="visualLibrary"></div>';
   window.SpectraVisualLibrary.mount(bundle, (id) => renderArticle(id, true));
   let readingOrigin = null;
   const originalShowView = showView;

@@ -3,15 +3,23 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script>
+    // The template contains fixture data; direct previews must use the rendered issue.
+    if (location.pathname.endsWith('/visual-intelligence-prototype.html')) {
+      location.replace(new URL('index.html' + location.search + location.hash, location.href).href);
+    }
+  </script>
   <title>Spectra — 视觉智能前沿</title>
   <meta name="description" content="面向AI产品策略从业者的视觉生成能力、模型前沿与产业信号。" />
   <link rel="stylesheet" href="tokens.css?v=4" />
   <link rel="stylesheet" href="app/globals.css?v=19" />
   <link rel="stylesheet" href="app/hallmark-editorial.css?v=14" />
-  <link rel="stylesheet" href="app/accepted-ui.css?v=20260910-share1" />
+  <link rel="stylesheet" href="app/accepted-ui.css?v=20260914-overview3" />
   <script src="app/visual-library.js?v=20260910" defer></script>
   <script src="app/accepted-ux.js?v=20260910" defer></script>
   <script src="app/share.js?v=20260910" defer></script>
+  <link rel="stylesheet" href="app/account.css?v=20260910" />
+  <script src="app/account.js?v=20260910" defer></script>
 </head>
 <script src="assets/model-universe/mount.js" defer></script>
 <body>
@@ -25,12 +33,12 @@
         <button class="nav-item" data-view-target="ideas">视觉灵感库</button>
       </nav>
       <div class="topbar-status"><span class="live-dot"></span><b id="reviewCount">—</b><span>原文核验</span><i id="publishCount">正式事件加载中</i></div>
-      <button class="topbar-profile" id="openInterestProfile" aria-label="打开我的兴趣档案">WY<span id="profileSummary">3 个关注方向</span></button>
+      <button class="topbar-profile" id="openInterestProfile" aria-label="打开我的兴趣档案">我的关注<span id="profileSummary">关注方向</span></button>
     </header>
 
     <section class="workspace" id="overview">
       <header class="workspace-header">
-        <div><div class="breadcrumb">SPECTRA / <span id="viewBreadcrumb">情报总览</span></div><h1 id="viewTitle">视觉智能总览</h1><p class="channel-description" id="channelDescription">先看近7日主判断、趋势分布和关键事件，再进入情报文章阅读。</p></div>
+        <div><div class="breadcrumb">SPECTRA / <span id="viewBreadcrumb">情报总览</span></div><h1 id="viewTitle">视觉智能总览</h1><p class="channel-description" id="channelDescription">查看近7日趋势分布和关键事件，再进入情报文章阅读。</p></div>
         <div class="header-tools">
           <label class="search-box"><span>⌕</span><input id="search" placeholder="搜索事件、模型或场景" /></label>
           <select id="focus" aria-label="领域筛选"><option>全部领域</option><option>视频生成</option><option>世界模型</option><option>具身智能</option><option>评测与标准</option><option>空间与4D</option></select>
@@ -45,27 +53,7 @@
 
       <div class="period-row"><div class="period-switch"><button>‹</button><strong id="issuePeriod">—</strong><button>›</button></div><div class="status-row"><span class="demo-badge">REAL SAMPLE</span><span id="updatedAt">更新时间加载中</span><span class="reviewed">● 原文核验</span></div></div>
 
-      <section class="thesis-card" data-platform-view="overview">
-        <div class="thesis-label"><span>ROLLING THESIS</span><b>编辑判断 · 基于已核验事件</b></div>
-        <div class="thesis-content">
-          <div class="thesis-copy"><span class="thesis-kicker">近7日主判断</span><h2 id="rollingThesis">正在加载本期判断…</h2><p id="thesisDek"></p></div>
-        </div><div class="thesis-glow"></div>
-      </section>
-
       <div class="overview-main" data-platform-view="overview">
-      <section class="dashboard-grid" id="trend-radar">
-        <article class="signal-radar panel-card">
-          <div class="panel-heading"><div><span class="section-kicker">TREND RADAR</span><h2>趋势雷达 · 近7日判断</h2></div><div class="legend"><span id="trendCount">趋势加载中</span></div></div>
-          <div class="trend-one-line"><span>近7日趋势</span><strong id="trendOneLine">正在形成趋势判断…</strong></div>
-          <div class="trend-scatter-shell">
-            <div class="trend-y-label">战略影响 ↑</div>
-            <div class="trend-scatter" id="radarPlot" aria-label="趋势成熟度与战略影响散点图"></div>
-            <div class="trend-x-label">成熟度 / 落地确定性 →</div>
-          </div>
-          <div class="trend-focus-summary" id="radarSummary"></div>
-        </article>
-      </section>
-
       <section class="timeline-panel panel-card" id="rolling-timeline">
         <div class="panel-heading"><div><span class="section-kicker">ROLLING TIMELINE</span><h2>近7日关键事件</h2></div><button class="text-button" id="timelineCount">事件加载中</button></div>
         <div class="timeline-grid" id="timeline"></div><div class="timeline-detail" id="eventDetail" aria-live="polite"></div>
@@ -101,7 +89,7 @@
         <div class="panel-heading editorial-heading"><div><span class="section-kicker">ROLLING EDITORIAL</span><h2>近7日前沿精选</h2></div><span class="digest-chip" id="storyMix">内容加载中</span></div>
         <div class="p0-status" id="p0Status" role="status"><b>P0</b><span>正在判断本期是否存在必须立即关注的信号</span></div>
         <div class="editorial-browse">
-          <section class="story-group core-event-group"><div class="story-group-head"><div><span>CORE EVENT</span><h3>核心事件</h3></div><p id="coreEventCount">—</p></div><div class="story-card-grid" id="coreEventIndex"></div></section>
+          <section class="story-group core-event-group"><div class="story-group-head"><div><span>CORE EVENT</span><h3>核心事件与行业信号</h3></div><p id="coreEventCount">—</p></div><div class="story-card-grid" id="coreEventIndex"></div></section>
           <section class="story-group brief-group"><div class="story-group-head"><div><span>ROLLING BRIEFING</span><h3>近期短讯</h3></div><p id="briefCount">—</p></div><div class="brief-list" id="briefIndex"></div></section>
         </div>
         <div class="article-reader" id="articleReader" hidden><div class="reader-heading"><span>ARTICLE READER</span><button id="backToArticles">← 返回文章列表</button></div><article class="editorial-feature" id="editorialArticle"></article></div>
@@ -116,7 +104,7 @@
           <button class="idea-card cyan"><div class="idea-top"><span>BUSINESS</span><b>04</b></div><small>商业应用</small><h3>视频到4D资产工作流</h3><p>验证视频潜变量能否缩短虚拟场景与空间资产的生产链路。</p><div class="idea-footer"><span>关联信号 2</span><i>↗</i></div></button>
         </div>
       </section>
-      <footer><span>SPECTRA / VISUAL INTELLIGENCE</span><p id="footerSummary">内容加载中</p><span>ROLLING DIGEST</span></footer>
+      <footer class="site-footer"><p>SPECTRA Visual Intelligence <span>© <span id="footerYear">2026</span></span></p></footer>
     </section>
   </main>
 
@@ -138,10 +126,10 @@
     const DEFAULT_INTERESTS = [];
     const KNOWN_TAGS = ['视频生成', '世界模型', '具身智能', '评测与标准', '空间与4D', '基础模型与多模态', 'AI Agent与工具', '算力与数据', '开源生态', '商业化', '大厂动态'];
     const CHANNEL_FIELDS = {
-      selection: [['all','全部文章'], ['core_event','核心事件'], ['p0','P0'], ['editorial_judgment','编辑判断']]
+      selection: [['all','全部'], ['type.industry_market','行业与市场'], ['product_company','产品与公司'], ['type.technology_breakthrough','技术突破'], ['scope.visual_core','视觉AI核心'], ['scope.ai_extended','外围AI观察']]
     };
     const readLocal = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch { return fallback; } };
-    const writeLocal = (key, value) => { try { localStorage.setItem(key, JSON.stringify(value)); } catch {} };
+    const writeLocal = (key, value) => { if (window.SpectraAccount?.changed(key, value)) return; try { localStorage.setItem(key, JSON.stringify(value)); } catch {} };
     let interests = readLocal(PROFILE_KEY, DEFAULT_INTERESTS);
     let feedback = readLocal(FEEDBACK_KEY, {});
 
@@ -155,7 +143,7 @@
     const storyFor = id => storyMap.get(id);
     const priorityLabel = value => String(value || 'priority.p2').replace('priority.', '').toUpperCase();
     const displayPriority = story => priorityLabel(story.editorial_priority || story.priority);
-    const TIER_LABELS = {core_event:'核心事件', industry_signal:'核心事件', brief:'短读'};
+    const TIER_LABELS = {core_event:'核心事件', industry_signal:'行业信号', brief:'短读'};
     const CAPABILITY_LABELS = {
       motion_smoothness:'动作流畅度', temporal_consistency:'时序一致性', prompt_adherence:'提示词遵循',
       artifact_risk:'伪影风险', camera_control:'相机控制', character_consistency:'角色一致性',
@@ -184,7 +172,7 @@
     };
     const storyChannelFieldMatches = story => {
       if (channelFieldFilter === 'all') return true;
-      if (channelFieldFilter === 'core_event') return story.article_type === 'core_event' || story.editorial_tier === 'industry_signal';
+      if (channelFieldFilter === 'core_event') return story.article_type === 'core_event';
       if (channelFieldFilter === 'p0') return displayPriority(story) === 'P0';
       if (channelFieldFilter === 'editorial_judgment') return Boolean(story.editorial_judgment || story.why_it_matters || story.article_body?.judgment);
       return true;
@@ -198,9 +186,10 @@
       const matchesScope = scopeFilter === 'all' || scopeFor(story) === scopeFilter;
       const matchesSecondary = secondaryFilter === 'all' || tags.includes(secondaryFilter);
       const matchesFocus = focus === '全部领域' || tags.includes(focus);
-      const matchesMine = !mineOnly || tags.some(tag => interests.includes(tag));
+      const matchesMine = !mineOnly || (feedback[story.story_id] !== 'not_relevant' && (feedback[story.story_id] === 'useful' || tags.some(tag => interests.includes(tag))));
       const matchesChannel = editorialChannel === 'weekly_selection' || story.editorial_channel === editorialChannel;
-      return matchesQuery && matchesPrimary && matchesScope && matchesSecondary && matchesFocus && matchesMine && matchesChannel && storyChannelFieldMatches(story);
+      const matchesMain = channelFieldFilter === 'all' || (channelFieldFilter.startsWith('scope.') ? scopeFor(story) === channelFieldFilter : intelligenceGroup(story) === channelFieldFilter);
+      return matchesQuery && matchesPrimary && matchesScope && matchesSecondary && matchesFocus && matchesMine && matchesChannel && matchesMain;
     };
     const intelligenceLabel = story => ({
       'type.industry_market': '行业与市场',
@@ -208,7 +197,7 @@
       'type.technology_breakthrough': '技术突破'
     })[intelligenceGroup(story)];
     const VIEW_COPY = {
-      overview: ['情报总览', '情报总览', '视频与图像模型 · 产品策略情报'],
+      overview: ['情报总览', '情报总览', '洞察 AI 前沿，启发产品方向'],
       selection: ['情报文章', '情报文章', '模型进展与产品策略参考'],
       interests: ['我的关注', '关注方向与匹配内容', '你的关注仅保存在当前设备，并用于过滤本期内容。'],
       ideas: ['视觉灵感库', '视觉灵感库', '从真实资讯中，留意方法、边界与后续进展。']
@@ -225,7 +214,7 @@
     function showView(target, scrollTop = true) {
       const channelTargets = ['selection'];
       const view = target === 'overview' ? 'overview' : target === 'ideas' ? 'ideas' : 'articles';
-      if (channelTargets.includes(target)) channelFieldFilter = 'all';
+      if (channelTargets.includes(target) || target === 'interests') channelFieldFilter = 'all';
       editorialChannel = channelTargets.includes(target) ? target.replace('selection', 'weekly_selection') : editorialChannel;
       document.body.dataset.currentView = view;
       document.querySelectorAll('[data-platform-view]').forEach(section => {
@@ -362,6 +351,9 @@
     }
     function storyImageFigure(story, className) {
       if (story.editorial_tier === 'brief') return '';
+      const configured = story.cover_image || {};
+      // A missing final cover is a presentation concern, never an editorial downgrade.
+      if (story.article_type === 'core_event' && (configured.provisional || configured.review_status !== 'approved')) return '';
       const cover = storyCover(story);
       if (!cover) return '';
       const caption = [cover.label, cover.credit].filter(Boolean).join(' · ');
@@ -376,7 +368,8 @@
       const numberCards = story.key_numbers.length ? `<div class="key-number-row">${story.key_numbers.map(number => `<div><strong>${escapeHtml(number.value)}</strong><span>${escapeHtml(number.label)}</span></div>`).join('')}</div>` : '';
       const numbers = renderMiniChart(story) || numberCards;
       const vote = feedback[story.story_id] || '';
-      document.getElementById('editorialArticle').innerHTML = `<div class="article-meta"><span class="primary-intel-tag">${escapeHtml(TIER_LABELS[story.editorial_tier] || '正式内容')}</span><span>${displayPriority(story)}</span><em>${escapeHtml(story.category)}</em><i>${formatPublished(story.published_at)} · ${story.reading_time_minutes} 分钟阅读</i></div>${storyImageFigure(story, 'article-hero-image')}<h2>${escapeHtml(story.headline)}</h2><p class="article-dek">${escapeHtml(story.dek)}</p><div class="editorial-judgment"><b>策略启示</b><p>${escapeHtml(story.one_line_takeaway)}</p></div>${numbers}<div class="complete-story">${renderCompleteArticle(story)}</div><div class="article-actions"><a href="${safeUrl(story.source_links[0].url)}" target="_blank" rel="noopener noreferrer">核验原文 · ${escapeHtml(story.source_links[0].label)} ↗</a><div class="feedback-box"><span>这条内容对你有用吗？</span><button class="${vote === 'useful' ? 'active' : ''}" data-feedback="useful" data-feedback-story="${story.story_id}">有用</button><button class="${vote === 'not_relevant' ? 'active' : ''}" data-feedback="not_relevant" data-feedback-story="${story.story_id}">不相关</button><em>${vote ? '已记录' : '反馈将优化后续筛选'}</em></div></div>`;
+      const takeaway = story.one_line_takeaway ? `<div class="editorial-judgment"><b>策略启示</b><p>${escapeHtml(story.one_line_takeaway)}</p></div>` : '';
+      document.getElementById('editorialArticle').innerHTML = `<div class="article-meta"><span class="primary-intel-tag">${escapeHtml(TIER_LABELS[story.editorial_tier] || '正式内容')}</span><span>${displayPriority(story)}</span><em>${escapeHtml(story.category)}</em><i>${formatPublished(story.published_at)} · ${story.reading_time_minutes} 分钟阅读</i></div>${storyImageFigure(story, 'article-hero-image')}<h2>${escapeHtml(story.headline)}</h2>${takeaway}${numbers}<div class="complete-story">${renderCompleteArticle(story)}</div><div class="article-actions"><a href="${safeUrl(story.source_links[0].url)}" target="_blank" rel="noopener noreferrer">核验原文 · ${escapeHtml(story.source_links[0].label)} ↗</a><div class="feedback-box"><span>这条内容对你有用吗？</span><button class="${vote === 'useful' ? 'active' : ''}" data-feedback="useful" data-feedback-story="${story.story_id}">有用</button><button class="${vote === 'not_relevant' ? 'active' : ''}" data-feedback="not_relevant" data-feedback-story="${story.story_id}">不相关</button><em>${vote ? '已记录' : '有用加入我的关注，不相关从我的关注隐藏'}</em></div></div>`;
       document.getElementById('articleReader').hidden = false;
       document.getElementById('editorial-reader').classList.add('reading');
       document.body.classList.add('is-reading');
@@ -399,17 +392,18 @@
     }
 
     function briefCard(story, index) {
-      return storyCard(story, index).replace('story-browse-card ', 'story-browse-card brief-card ');
+      return newsBriefCard(story);
     }
 
     function newsBriefCard(brief) {
       const source = brief.source_links[0];
-      return `<article class="news-brief-card" data-intel="${escapeHtml(intelligenceGroup(brief))}" data-share-brief="${escapeHtml(brief.brief_id)}">
-        <div class="news-brief-meta"><b class="primary-type-badge">短讯</b><span>${displayPriority(brief)}</span><em>${escapeHtml(brief.category)}</em></div>
+      const formalBrief = Boolean(brief.story_id);
+      return `<article class="news-brief-card" data-intel="${escapeHtml(intelligenceGroup(brief))}" data-share-brief="${escapeHtml(brief.story_id || brief.brief_id)}">
+        <div class="news-brief-meta"><b class="primary-type-badge">${formalBrief ? '短读' : '短讯'}</b><span>${displayPriority(brief)}</span><em>${escapeHtml(brief.category)}</em></div>
         <h4><a href="${safeUrl(source.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(brief.headline)}</a></h4>
         <p>${escapeHtml(brief.dek)}</p>
-        <div class="news-brief-status"><span>${escapeHtml(brief.source_badge)}</span><i>尚未完成深度核验</i></div>
-        <footer><time>${formatPublished(brief.published_at)} · 1 分钟阅读</time><a href="${safeUrl(source.url)}" target="_blank" rel="noopener noreferrer">查看来源 ↗</a></footer>
+        <div class="news-brief-status"><span>${escapeHtml(formalBrief ? source.label : brief.source_badge)}</span><i>${formalBrief ? '完整内容见原文' : '尚未完成深度核验'}</i></div>
+        <footer><time>${formatPublished(brief.published_at)} · ${formalBrief ? '来源短读' : '1 分钟阅读'}</time><a href="${safeUrl(source.url)}" target="_blank" rel="noopener noreferrer">查看来源 ↗</a></footer>
       </article>`;
     }
 
@@ -418,6 +412,8 @@
       const coreEvents = filtered.filter(story => story.article_type === 'core_event' || story.editorial_tier === 'industry_signal');
       const formalBriefs = filtered.filter(story => story.editorial_tier === 'brief');
       const briefs = bundle.news_briefs.filter(storyMatches);
+      const chronologicalBriefs = [...formalBriefs, ...briefs]
+        .sort((left, right) => String(right.published_at || '').localeCompare(String(left.published_at || '')));
       const hasAny = coreEvents.length > 0 || formalBriefs.length > 0 || briefs.length > 0;
       document.getElementById('coreEventCount').textContent = `${coreEvents.length} 个`;
       document.getElementById('briefCount').textContent = `${formalBriefs.length + briefs.length} 条`;
@@ -426,7 +422,9 @@
       const interestEmpty = mineOnly && interests.length === 0;
       const emptyCopy = interestEmpty ? '尚未建立关注档案。请在上方选择关注领域，完成后这里才会出现个性化情报。' : '当前筛选下暂无内容';
       document.getElementById('coreEventIndex').innerHTML = coreEvents.map(story => storyCard(story, bundle.editorial_stories.indexOf(story))).join('') || `<div class="empty-search interest-empty">${emptyCopy}</div>`;
-      document.getElementById('briefIndex').innerHTML = formalBriefs.map(briefCard).join('') + briefs.map(newsBriefCard).join('') || (interestEmpty ? '' : '<div class="empty-search">当前页签暂无短讯</div>');
+      document.getElementById('briefIndex').innerHTML = chronologicalBriefs
+        .map(item => item.story_id ? briefCard(item) : newsBriefCard(item)).join('')
+        || (interestEmpty ? '' : '<div class="empty-search">当前页签暂无短讯</div>');
       document.querySelectorAll('[data-story-card]').forEach(card => card.classList.toggle('active', card.dataset.storyCard === selectedStoryId));
     }
 
@@ -487,11 +485,16 @@
       document.getElementById('publishCount').textContent = `${workflowLabel} · 今日新增 ${bundle.issue.today_new_count ?? bundle.issue.total_intelligence_count} · 近7日累计 ${bundle.issue.rolling_window_count ?? bundle.issue.total_intelligence_count}`;
       document.getElementById('issuePeriod').textContent = `${formatDay(bundle.issue.period_start)} — ${formatDay(bundle.issue.period_end)}`;
       document.getElementById('updatedAt').textContent = `更新于 ${updated.toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false})}`;
-      document.getElementById('trendCount').textContent = `${bundle.presentation.trend_radar.length}条趋势 · ${bundle.issue.story_count}个事件支撑`;
+      const trendCountNode = document.getElementById('trendCount');
+      if (trendCountNode) trendCountNode.textContent = `${bundle.presentation.trend_radar.length}条趋势 · ${bundle.issue.story_count}个事件支撑`;
       document.getElementById('timelineCount').textContent = `共 ${String(bundle.issue.total_intelligence_count || bundle.issue.story_count).padStart(2,'0')} 条 ↗`;
-      const displayedCoreEventCount = (bundle.issue.core_event_count || 0) + (bundle.issue.industry_signal_count || 0);
-      document.getElementById('storyMix').textContent = `${displayedCoreEventCount}个核心事件 · ${(bundle.issue.formal_brief_count || 0) + bundle.issue.brief_count}条短讯`;
-      document.getElementById('footerSummary').textContent = `${displayedCoreEventCount}个核心事件 · 近7日共${bundle.issue.total_intelligence_count}条内容`;
+      const displayedCoreEventCount = bundle.issue.core_event_count || 0;
+      if (!displayedCoreEventCount && bundle.issue.total_intelligence_count > 0) {
+        document.getElementById('publishCount').textContent += ' · 短讯版';
+        document.getElementById('storyMix').textContent = '本期以短讯更新，暂无达到深度报道标准的核心事件';
+      }
+      if (displayedCoreEventCount) document.getElementById('storyMix').textContent = `${displayedCoreEventCount}个核心事件 · ${bundle.issue.industry_signal_count || 0}条行业信号 · ${(bundle.issue.formal_brief_count || 0) + bundle.issue.brief_count}条短讯`;
+      document.getElementById('footerYear').textContent = new Date().getFullYear();
       const p0Count = bundle.issue.p0_count || 0;
       document.getElementById('p0Status').innerHTML = p0Count
         ? `<b>P0 · ${p0Count}</b><span>存在需要立即关注并可采取行动的高优先级信号</span>`
@@ -500,9 +503,11 @@
       const thesisBreak = thesisText.search(/[；。]/);
       const thesisLead = thesisBreak >= 0 ? thesisText.slice(0, thesisBreak) : thesisText;
       const thesisDetail = thesisBreak >= 0 ? thesisText.slice(thesisBreak + 1).trim() : '';
-      document.getElementById('rollingThesis').textContent = thesisLead;
-      document.getElementById('thesisDek').textContent = [thesisDetail, bundle.issue.thesis_dek].filter(Boolean).join(' ');
-      renderTimeline(); renderRadar(); renderFilters(); renderEditorial();
+      const rollingThesisNode = document.getElementById('rollingThesis');
+      const thesisDekNode = document.getElementById('thesisDek');
+      if (rollingThesisNode) rollingThesisNode.textContent = thesisLead;
+      if (thesisDekNode) thesisDekNode.textContent = [thesisDetail, bundle.issue.thesis_dek].filter(Boolean).join(' ');
+      renderTimeline(); renderFilters(); renderEditorial();
       document.getElementById('search').addEventListener('input', event => { if (event.target.value.trim() && document.body.dataset.currentView === 'ideas') showView('selection', false); renderStoryGroups(); }); document.getElementById('focus').addEventListener('change', renderStoryGroups);
       document.getElementById('primaryFilters').addEventListener('click', event => { const trigger = event.target.closest('[data-primary-filter]'); if (!trigger) return; primaryFilter = trigger.dataset.primaryFilter; secondaryFilter = 'all'; refreshBrowse(); });
       document.getElementById('advancedFilterToggle').addEventListener('click', event => { const panel = document.getElementById('advancedFilterPanel'); const willOpen = panel.hidden; panel.hidden = !willOpen; event.currentTarget.setAttribute('aria-expanded', String(willOpen)); });
@@ -524,7 +529,7 @@
       document.querySelectorAll('.nav-item[data-view-target]').forEach(item => item.addEventListener('click', () => showView(item.dataset.viewTarget)));
       showView('overview', false);
     }
-    start().catch(error => { document.getElementById('rollingThesis').textContent = '数据加载失败，请刷新页面重试。'; console.error(error); });
+    start().catch(error => { const node = document.getElementById('rollingThesis'); if (node) node.textContent = '数据加载失败，请刷新页面重试。'; console.error(error); });
   </script>
 </body>
 </html>

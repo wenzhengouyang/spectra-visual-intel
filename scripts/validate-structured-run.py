@@ -72,13 +72,10 @@ if unknown_types:
     errors.append(f"存在未知一级情报分类：{sorted(unknown_types)}")
 if editorial_types["type.technology_breakthrough"] > 12:
     errors.append("技术突破短名单超过上限12，来源或选刊配比失衡")
-available_types = Counter(
-    item.get("deterministic_intelligence_type") or item.get("intelligence_type")
-    for item in selected + data.get("overflow_candidates", [])
-)
-for intelligence_type in allowed_types - {"type.technology_breakthrough"}:
-    if available_types[intelligence_type] and not editorial_types[intelligence_type]:
-        errors.append(f"候选池存在{intelligence_type}，但人工核验短名单未保留")
+# `overflow_candidates` are not necessarily LLM-enriched or eligible for this
+# review cycle. Editorial coverage is established by the deterministic
+# selector; a post-LLM validation must not require an overflow item to be
+# promoted after the review packet has already been created.
 github = [item for item in selected if item["canonical_title"] == "Wan-Animate-2 repository opened and documented"]
 collapsed = data["summary"].get("same_event_records_collapsed", 0)
 if github:

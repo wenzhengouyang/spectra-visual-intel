@@ -54,6 +54,15 @@ class EditorialPolicyTest(unittest.TestCase):
         self.assertEqual(result["editorial_priority"], "priority.p3")
         self.assertEqual(result["content_format"], "source_brief")
 
+    def test_incomplete_visual_story_falls_back_to_source_brief(self):
+        item = story("Mecka AI是一家成立两年的初创公司。")
+        item["article_body"]["full_text"]["text"] = "Mecka AI是一家成立两年的初创公司。"
+        event = {"primary_route": "frontier.embodied_ai", "secondary_routes": [], "intelligence_type": "type.industry_market"}
+        result = classify_story(item, event, source_type="industry_media", selected=True, writer_draft=False)
+        self.assertFalse(result["content_complete"])
+        self.assertEqual(result["editorial_tier"], "brief")
+        self.assertEqual(result["content_format"], "source_brief")
+
     def test_no_urgency_means_no_forced_p0(self):
         event = {"primary_route": "frontier.video_generation", "secondary_routes": [], "intelligence_type": "type.technology_breakthrough"}
         result = classify_story(story("长程视频生成支持相机轨迹和世界一致性。"), event, source_type="paper_report", selected=True, writer_draft=True)

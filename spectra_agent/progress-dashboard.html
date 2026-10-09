@@ -44,6 +44,18 @@
     .action[hidden] { display: none; }
     .action strong { display: block; font-size: 1.05rem; }
     .action p { margin: .45rem 0 0; color: var(--muted); line-height: 1.55; }
+    .review-panel { margin-top: var(--space-5); padding: var(--space-4); border: 1px solid var(--accent); background: var(--paper-raised); }
+    .review-panel[hidden] { display: none; }
+    .review-panel h2 { margin: 0 0 var(--space-3); font: 600 1.25rem/1.2 var(--display); }
+    .review-item { padding: var(--space-3) 0; border-top: 1px solid var(--rule); }
+    .review-item:first-child { border-top: 0; }
+    .review-item h3 { margin: 0 0 .45rem; font-size: .98rem; line-height: 1.45; }
+    .review-item p { margin: .35rem 0; color: var(--muted); font-size: .84rem; line-height: 1.55; overflow-wrap: anywhere; }
+    .review-item img { width: min(32rem, 100%); aspect-ratio: 16/9; object-fit: cover; background: var(--paper); }
+    .approve { width: 100%; min-height: 3rem; margin-top: var(--space-3); padding: .9rem 1rem; border: 0; border-radius: .35rem; background: var(--accent); color: #081018; font-weight: 700; cursor: pointer; touch-action: manipulation; }
+    .approve:disabled { cursor: not-allowed; opacity: .45; }
+    .publish { background: var(--green); color: #07120d; }
+    .review-result { min-height: 1.4em; color: var(--muted); font-size: .84rem; }
     ol { list-style: none; margin: 0; padding: var(--space-5) 0 0; }
     li { display: grid; grid-template-columns: 2.25rem minmax(0, 1fr); gap: var(--space-3); padding: var(--space-4) 0; border-bottom: 1px solid var(--rule); color: var(--muted); }
     .mark { display: grid; place-items: center; width: 1.65rem; height: 1.65rem; border: 1px solid var(--rule); border-radius: 50%; font: .72rem/1 var(--mono); }
@@ -75,11 +87,30 @@
     body.widget li { grid-template-columns: 1.45rem minmax(0, 1fr); gap: .45rem; padding: .5rem 0; font-size: .72rem; }
     body.widget .mark { width: 1.15rem; height: 1.15rem; font-size: .55rem; }
     body.widget .step-detail, body.widget footer { display: none; }
+    body.widget .review-panel, body.widget details { display: none; }
     @media (min-width: 40rem) {
       .summary { grid-template-columns: minmax(0, 1fr) 13rem; }
       .meta { text-align: right; }
       ol { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: var(--space-5); }
       li { grid-template-columns: 2.25rem minmax(0, 1fr); }
+    }
+    @media (max-width: 39.99rem) {
+      main { padding: 1rem 1rem 6.5rem; }
+      header { align-items: flex-start; padding-bottom: 1rem; }
+      h1 { font-size: 2rem; letter-spacing: 0; }
+      .meta { width: 100%; display: flex; justify-content: space-between; gap: .75rem; }
+      .meta br { display: none; }
+      .summary { grid-template-columns: minmax(0, 1fr) 5.5rem; align-items: end; gap: .75rem; padding: 1rem 0; }
+      .status { font-size: 1.35rem; }
+      .status-note { font-size: .82rem; }
+      .measure { text-align: right; }
+      .measure strong { font-size: 2rem; }
+      .review-panel { margin: 1rem -1rem 0; padding: 1rem; border-left: 0; border-right: 0; }
+      .review-item img { margin: 0 -1rem .85rem; width: calc(100% + 2rem); max-width: none; }
+      .approve:not([hidden]) { position: fixed; z-index: 20; left: 1rem; right: 1rem; bottom: max(1rem, env(safe-area-inset-bottom)); width: calc(100% - 2rem); margin: 0; box-shadow: 0 1rem 2.5rem #000a; }
+      ol { padding-top: 1rem; }
+      details { font-size: .86rem; }
+      #source-health table { min-width: 48rem; }
     }
   </style>
 </head>
@@ -94,18 +125,86 @@
       <div class="measure"><strong id="fraction">—</strong><span id="measure-label">总流程进度</span><div class="bar"><i id="bar"></i></div></div>
     </section>
     <aside class="action" id="action" hidden><strong id="action-title"></strong><p id="action-detail"></p></aside>
+    <section class="review-panel" id="review-panel">
+      <h2 id="review-title">审核中心</h2>
+      <div id="review-items"><p class="review-result">正在读取审核状态…</p></div>
+      <button class="approve" id="approve-review" type="button" hidden></button>
+      <button class="approve publish" id="publish-run" type="button" hidden>发布到网页</button>
+      <p class="review-result" id="review-result" aria-live="polite"></p>
+    </section>
     <ol id="stages"></ol>
+    <details open><summary>两条采集线</summary><div id="collection-lanes" style="margin:16px 0"></div></details>
+    <details open><summary>逐来源采集健康（正文存在不代表已核验）</summary><div id="source-health" style="overflow-x:auto;margin:16px 0"></div></details>
+    <details><summary>定向补搜 · 待核验证据</summary><div id="evidence-search"></div></details>
     <footer><span id="run-id">—</span> · 状态展示与内容生产相互独立；“生成完成”不等于“已发布”。</footer>
   </main>
   <script>
     if (new URLSearchParams(location.search).get('widget') === '1') document.body.classList.add('widget');
     const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const time = value => value ? new Intl.DateTimeFormat('zh-CN', {month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit', second:'2-digit'}).format(new Date(value)) : '暂无更新时间';
+    let currentRunId = null;
+    function renderReview(review) {
+      const panel = document.querySelector('#review-panel');
+      const button = document.querySelector('#approve-review');
+      panel.hidden = false;
+      if (!review) {
+        document.querySelector('#review-title').textContent = '审核中心';
+        document.querySelector('#review-items').innerHTML = '<article class="review-item"><h3>当前没有待审核内容</h3><p>新的事实、中文稿或配图需要确认时，会在这里自动出现。</p></article>';
+        button.hidden = true;
+        document.querySelector('#review-result').textContent = '';
+        return;
+      }
+      document.querySelector('#review-title').textContent = review.title;
+      document.querySelector('#review-items').innerHTML = (review.items || []).map(item => {
+        const facts = (item.facts || []).map(fact => `<p><strong>${esc(fact.claim || fact.risk_type || '事实差异')}</strong><br>${esc(fact.evidence || fact.source || '')}${fact.candidate ? `<br>候选：${esc(fact.candidate)}` : ''}${(fact.risk_flags || []).length ? `<br>风险：${esc(fact.risk_flags.join('、'))}` : ''}</p>`).join('');
+        const image = item.image_url ? `<img src="${esc(item.image_url)}" alt="${esc(item.title || '')}">` : '';
+        const link = item.url ? `<p><a class="stage-link" href="${esc(item.url)}" target="_blank" rel="noopener">查看原文 →</a></p>` : '';
+        return `<article class="review-item">${image}<h3>${esc(item.title || item.id)}</h3>${facts}${link}</article>`;
+      }).join('');
+      button.hidden = false;
+      button.textContent = review.button || '一键通过并继续';
+      button.disabled = !review.can_approve;
+      document.querySelector('#review-result').textContent = review.disabled_reason || '';
+    }
+    document.querySelector('#approve-review').addEventListener('click', async event => {
+      const button = event.currentTarget;
+      if (!window.confirm(`确认执行“${button.textContent}”？审核结果保存后，流程会自动继续。`)) return;
+      button.disabled = true;
+      document.querySelector('#review-result').textContent = '正在保存审核并恢复流程…';
+      try {
+        const response = await fetch('/api/review/approve', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({run_id:currentRunId})});
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || '审核未保存');
+        document.querySelector('#review-result').textContent = '审核已保存，流程正在自动继续。';
+        setTimeout(refresh, 800);
+      } catch (error) {
+        document.querySelector('#review-result').textContent = error.message;
+        button.disabled = false;
+      }
+    });
+    document.querySelector('#publish-run').addEventListener('click', async event => {
+      const button = event.currentTarget;
+      if (!window.confirm('确认发布今天的内容到正式网页？发布前会再次执行全部质量检查。')) return;
+      button.disabled = true;
+      button.textContent = '正在发布…';
+      document.querySelector('#review-result').textContent = '正在执行发布检查并更新网页…';
+      try {
+        const response = await fetch('/api/publish', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({run_id:currentRunId})});
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || '发布未启动');
+        setTimeout(refresh, 800);
+      } catch (error) {
+        document.querySelector('#review-result').textContent = error.message;
+        button.disabled = false;
+        button.textContent = '重新发布';
+      }
+    });
     async function refresh() {
       try {
         const response = await fetch('/api/status', {cache:'no-store'});
         if (!response.ok) throw new Error('status unavailable');
         const data = await response.json();
+        currentRunId = data.run_id || null;
         document.querySelector('#status').textContent = data.label;
         document.title = `${data.label} · SPECTRA`;
         document.querySelector('#updated').textContent = `最后更新 ${time(data.updated_at)}`;
@@ -120,9 +219,30 @@
         link.href = data.target?.url || '/run-artifact/command-progress.json';
         document.querySelector('#note').textContent = writer.total ? `长文通过 ${writer.passed}，转短讯 ${writer.demoted}，转人工 ${writer.manual || 0}。` : '页面每 5 秒自动更新，不会修改后台任务。';
         document.querySelector('#stages').innerHTML = (data.stages || []).map((stage, index) => `<li class="${esc(stage.state)}"><span class="mark">${stage.state === 'done' ? '✓' : index + 1}</span><div><div class="step-name">${esc(stage.name)}</div><div class="step-detail">${esc(stage.detail)}</div></div></li>`).join('');
+        const lanes = data.collection_lanes || {};
+        const accounting = data.collection_accounting || {};
+        const model = data.model_collection || {};
+        document.querySelector('#collection-lanes').innerHTML = `<p><strong>日报主线</strong> · ${esc(lanes.mainline?.status || '未开始')} · ${esc(lanes.mainline?.source_count || 0)} 个固定来源 · 直接进入日报</p><p><strong>覆盖补齐线</strong> · ${esc(lanes.coverage?.status || '未开始')} · ${esc(lanes.coverage?.source_count || 0)} 个来源 · 不阻塞日报${lanes.coverage?.error ? ` · ${esc(lanes.coverage.error)}` : ''}</p>`;
+        document.querySelector('#evidence-search').innerHTML = (data.evidence_search?.jobs || []).map(j => `<p>${esc(j.candidate_id)} · ${esc(j.status)} · ${esc((j.evidence || []).length)} 条来源，尚未核验</p>`).join('') || '暂无补搜任务';
+        document.querySelector('#collection-lanes').innerHTML += `<p>滚动记录 ${esc(accounting.rolling_records ?? '—')} · 历史复用 ${esc(accounting.historical_reused ?? '—')} · 本次主线抓取 ${esc(accounting.mainline_fetched ?? '—')} · 补齐抓取 ${esc(accounting.coverage_fetched ?? '—')}</p><p>补齐处理：${esc(accounting.coverage_receipt?.status || '尚未消费')} · 新增链接 ${esc(accounting.coverage_receipt?.new_record_count ?? '—')} · 内容变化 ${esc(accounting.coverage_receipt?.changed_record_count ?? '—')}</p><p>${esc(accounting.note || '')}</p><p>自动恢复：${esc(data.recovery?.reason || '暂无异常')}${data.recovery?.next_retry_at ? ' · 下次 ' + esc(new Date(data.recovery.next_retry_at * 1000).toLocaleTimeString()) : ''}</p>`;
+        data.collection_health = accounting.source_checks?.length ? accounting.source_checks : data.collection_health;
+        document.querySelector('#collection-lanes').innerHTML += `<p><strong>模型与 AI</strong> · 官网采集 ${esc(model.status || '等待巡检启动')} · ${esc(model.source_count ?? 0)} 个来源 · 错误 ${esc(model.errors ?? 0)} · 待核验 ${esc(model.pending_verification ?? 0)}</p><p>最近采集 ${esc(model.last_checked_at || '尚无记录')} · 最近目录核验 ${esc(model.last_verified_at || '尚无新核验')} · 日报关联资讯 ${esc(model.news?.related_news ?? '待发布时生成')}</p><p>恢复：${esc(model.error || '沿用现有巡检，最多自动重试两轮，不阻塞日报')} · ${esc(model.note || '')}</p>`;
+        document.querySelector('#collection-lanes').innerHTML += `<p>首次发现链接 ${esc(accounting.first_seen_urls ?? '无历史基线')} · 已知链接内容变化 ${esc(accounting.updated_known_urls ?? '无历史基线')} · 候选 ${esc(accounting.candidate_funnel?.candidate_events_after_aggregation ?? '—')} · 未路由 ${esc(accounting.candidate_funnel?.unrouted ?? '—')} · 正文不足 ${esc(accounting.candidate_funnel?.content_completeness_gate_failed ?? '—')}</p>`;
+        document.querySelector('#source-health').innerHTML = (data.collection_health || []).length ? '<table style="width:100%;text-align:left;border-spacing:12px"><thead><tr><th>来源</th><th>状态</th><th>条数</th><th>有正文</th><th>仅摘要</th><th>原因与处理</th></tr></thead><tbody>' + data.collection_health.map(s => `<tr><td>${esc(s.source_name || s.registry_id)} · ${s.lane === 'coverage' ? '补齐' : '主线'}</td><td>${esc(s.status)}${s.resumed_from_checkpoint ? ' · 断点恢复' : ''}</td><td>${esc(s.record_count ?? s.accepted ?? '未知')}</td><td>${esc(s.full_text_count ?? '未记录')}</td><td>${esc(s.summary_only_count ?? '未记录')}</td><td>${esc(s.health_action || s.failure_reason || s.error || s.note || '—')}</td></tr>`).join('') + '</tbody></table>' : '尚无来源结果；等待采集器写入断点。';
         const action = document.querySelector('#action');
         action.hidden = !data.action;
         if (data.action) { document.querySelector('#action-title').textContent = data.action.title; document.querySelector('#action-detail').textContent = data.action.detail; }
+        renderReview(data.review);
+        const publication = data.publication || {};
+        const publishButton = document.querySelector('#publish-run');
+        publishButton.hidden = publication.state === 'unavailable' || publication.state === 'published';
+        publishButton.disabled = !publication.can_publish;
+        publishButton.textContent = publication.button || '发布到网页';
+        if (!data.review && publication.state !== 'unavailable') {
+          document.querySelector('#review-title').textContent = publication.title || '发布';
+          document.querySelector('#review-items').innerHTML = `<article class="review-item"><h3>${esc(publication.title || '')}</h3><p>${esc(publication.detail || '')}</p></article>`;
+          document.querySelector('#review-result').textContent = publication.state === 'failed' ? publication.detail : '';
+        }
         document.querySelector('#live').classList.toggle('error', data.reliability === 'failed');
       } catch (error) {
         document.querySelector('#status').textContent = '暂时无法读取进展';

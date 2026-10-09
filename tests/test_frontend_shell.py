@@ -33,7 +33,7 @@ class FrontendShellTest(unittest.TestCase):
         self.assertIn('article_type === \'core_event\'', self.html)
         self.assertIn('bundle.issue.core_event_count', self.html)
         self.assertIn('id="coreEventIndex"', self.html)
-        self.assertIn("industry_signal:'核心事件'", self.html)
+        self.assertIn("industry_signal:'行业信号'", self.html)
         self.assertNotIn('id="industrySignalIndex"', self.html)
 
     def test_primary_navigation_is_limited_to_four_product_destinations(self):
@@ -59,7 +59,7 @@ class FrontendShellTest(unittest.TestCase):
         self.assertNotIn('data-view-target="model_frontier"', self.html)
 
     def test_article_view_exposes_only_high_value_direct_buttons(self):
-        for label in ("全部文章", "核心事件", "P0", "编辑判断"):
+        for label in ("全部", "行业与市场", "产品与公司", "技术突破", "视觉AI核心", "外围AI观察"):
             self.assertIn(label, self.html)
         self.assertIn('id="channelFieldBar"', self.html)
         self.assertIn('data-channel-field=', self.html)
@@ -84,6 +84,12 @@ class FrontendShellTest(unittest.TestCase):
         self.assertIn("const reading = sourceBrief ? '来源短读'", self.html)
         validator = (ROOT / 'scripts/validate-editorial-issue.py').read_text()
         self.assertIn('"source_brief" if story.get("editorial_tier") == "brief"', validator)
+
+    def test_pending_core_cover_is_hidden_without_changing_editorial_tier(self):
+        self.assertIn("A missing final cover is a presentation concern, never an editorial downgrade.", self.html)
+        self.assertIn("story.article_type === 'core_event' && (configured.provisional || configured.review_status !== 'approved')", self.html)
+        self.assertNotIn("story.article_type = 'brief'", self.html)
+        self.assertNotIn("story.editorial_tier = 'brief'", self.html)
 
     def test_priority_zero_has_an_explicit_empty_state(self):
         self.assertIn("本期无 P0", self.html)
