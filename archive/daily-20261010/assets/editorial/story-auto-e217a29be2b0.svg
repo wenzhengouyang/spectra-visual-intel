@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+<title id="title">ZYT-World: 一种用于闭环自动驾驶模拟的实时可控世界模型</title><desc id="desc">SPECTRA根据文章主题生成的编辑示意图</desc>
+<style>.bg{fill:#0c1118}.grid{stroke:#26303c;stroke-width:1}.shape{fill:none;stroke:#72c1bd;stroke-width:5}.line{fill:none;stroke:#72c1bd;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}.strong{stroke-width:9}.node{fill:#0c1118;stroke:#72c1bd;stroke-width:7}.nodes{fill:#72c1bd}</style>
+<rect width="1600" height="900" class="bg"/><path d="M0 150h1600M0 300h1600M0 450h1600M0 600h1600M0 750h1600M200 0v900M400 0v900M600 0v900M800 0v900M1000 0v900M1200 0v900M1400 0v900" class="grid"/>
+<path d="M870 690c140-260 300-300 560-480M1030 760c140-260 300-300 560-480" class="line"/><path d="M1110 530l105-45 105 45v115l-105 45-105-45z" class="shape"/><path d="M1145 530v-65M1285 530v-65M1145 650v65M1285 650v65" class="line"/><circle cx="1040" cy="405" r="32" class="node"/><circle cx="1370" cy="350" r="32" class="node"/><path d="M1070 415l55 105M1340 365l-55 105" class="line"/>
+</svg>
