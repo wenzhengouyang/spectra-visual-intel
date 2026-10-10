@@ -65,8 +65,11 @@ def choose_action(run_dir: Path) -> str:
             return "resume_retry"
         return "noop_human_gate"
     if status == "failed" or status in ACTIVE_STATUSES:
-        required = (run_dir / "collection.json", run_dir / "candidates.json")
-        return "resume_retry" if all(path.is_file() for path in required) else "run"
+        # A failed LLM structure pass can leave a valid collection and a
+        # durable checkpoint but no final candidates.json.  `resume --retry`
+        # rebuilds that artifact from the checkpoint; starting a new run with
+        # the same ID only loops on "run already exists".
+        return "resume_retry" if (run_dir / "collection.json").is_file() else "run"
     return "resume_retry"
 
 

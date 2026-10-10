@@ -542,6 +542,8 @@ VERIFIED_HEADLINE_OVERRIDES = {
     "evt_20260825_gemini_legal": "Google Cloud发布面向法律行业的Gemini Enterprise",
     "evt_39d45e3610efd0f0": "Anthropic公开Claude消费端系统提示，并说明版权内容复现限制",
     "evt_52eb93eb65eb7990": "量化可能导致世界动作模型任务性能下降",
+    "evt_e9c92d0da6cfec0e": "Mirror Particle拟推出人类行为世界模型",
+    "evt_9b6d8795f8da19dc": "ME-World引入共享世界一致性度量",
 }
 
 CHINESE_TEXT_RE = re.compile(r"[\u3400-\u9fff]")
@@ -614,6 +616,10 @@ def fallback_summary_paragraphs(claims: list[dict], paragraph_size: int = 3) -> 
 # The summary may restate the source abstract; it must not present an LLM
 # judgment or an unlocated metric as a verified fact.
 P2_BRIEF_COPY = {
+    "cand_e44881913e864bd2": {
+        "headline": "GitHub Copilot将设备端AI编码能力引入新Windows PC",
+        "summary": "微软发布的产品更新介绍，这项能力面向新的Windows PC提供设备端AI编码；具体可用范围仍以产品说明为准。",
+    },
     "cand_04f007eab88ff413": {
         "headline": "Anthropic与OpenAI将亮相TechCrunch Disrupt 2026人工智能舞台",
         "summary": "TechCrunch宣布两家公司将参与Disrupt 2026的人工智能专题讨论；议程内容与具体发言仍以大会最终安排为准。",

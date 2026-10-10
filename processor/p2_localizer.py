@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+import html
 import json
 import math
 import os
@@ -107,14 +108,20 @@ def fields_needing_translation(brief: dict[str, Any]) -> list[str]:
 
 
 def raw_number_tokens(value: str) -> set[str]:
-    return {item.replace(",", "").replace("％", "%") for item in NUMBER_RE.findall(value or "")}
+    value = html.unescape(value or "")
+    return {item.replace(",", "").replace("％", "%") for item in NUMBER_RE.findall(value)}
 
 
 def number_basis(value: str) -> str:
-    text = value or ""
+    # Source extracts can contain HTML non-breaking-space entities.  Decode
+    # them before numeric validation so ``&#160;`` is never mistaken for fact 160.
+    text = html.unescape(value or "")
     # "one of the largest" is a ranking idiom, not a factual count that must
     # appear as the digit 1 in Chinese.
     text = re.sub(r"(?i)\bone\s+of\b", "ranking-of", text)
+    # In "a shared training primitive, one that ...", "one" is an anaphoric
+    # pronoun rather than a measurable quantity.
+    text = re.sub(r"(?i)\bone\s+(?=that\b|which\b)", "anaphoric-item ", text)
     # Hyphenated dimensionality and demonstratives are descriptive language,
     # not reportable quantities. Converting them to bare digits makes the
     # shared numeric validator invent a missing fact in otherwise faithful

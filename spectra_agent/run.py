@@ -1559,6 +1559,18 @@ def resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
 def _resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
     run_dir = locate_run(config, args.run_id)
     state = read_json(run_dir / "run.json")
+    # Retry preparation must precede the artifact preflight.  An interrupted
+    # LLM structure pass persists its checkpoint after each completed batch,
+    # but writes candidates.json only once all batches are complete.
+    structure_rebuilt = (
+        prepare_retry_artifacts(
+            run_dir,
+            config,
+            bool(state.get("llm_requested")),
+        )
+        if args.retry
+        else False
+    )
     missing = [name for name in ('collection.json', 'candidates.json') if not (run_dir / name).is_file()]
     if missing:
         raise WorkflowError('resume preflight missing required artifacts: ' + ', '.join(missing))
@@ -1593,15 +1605,6 @@ def _resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
         log(run_dir, "human_review", "review_imported", source=args.review)
     collection_path = run_dir / "collection.json"
     candidates_path = run_dir / "candidates.json"
-    structure_rebuilt = (
-        prepare_retry_artifacts(
-            run_dir,
-            config,
-            bool(state.get("llm_requested")),
-        )
-        if args.retry
-        else False
-    )
     recoverable_pre_review = pre_review_artifacts_recoverable(run_dir, review_path)
     if args.retry and (structure_rebuilt or recoverable_pre_review):
         # Recover a run that failed after structure output was persisted but

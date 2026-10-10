@@ -74,6 +74,13 @@ class DailyRuntimeTest(unittest.TestCase):
             (run_dir / "run.json").write_text(json.dumps({"status": "failed"}))
             self.assertEqual(choose_action(run_dir), "resume_retry")
 
+    def test_failed_run_with_collection_resumes_llm_checkpoint(self):
+        with tempfile.TemporaryDirectory() as temp:
+            run_dir = Path(temp)
+            (run_dir / "collection.json").write_text("{}")
+            (run_dir / "run.json").write_text(json.dumps({"status": "failed", "failed_stage": "collect"}))
+            self.assertEqual(choose_action(run_dir), "resume_retry")
+
     def test_failed_pre_collection_run_restarts_collection(self):
         with tempfile.TemporaryDirectory() as temp:
             run_dir = Path(temp)

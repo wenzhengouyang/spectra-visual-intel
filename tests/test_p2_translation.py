@@ -44,6 +44,13 @@ class P2TranslationTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             validate_translation("Model improves scores", "模型得分提高20%", "headline")
 
+    def test_html_nonbreaking_space_entity_is_not_a_number(self):
+        validate_translation(
+            "Amazon says it will&#160;stop using NDAs with local governments.",
+            "亚马逊表示将停止在与地方政府谈判时使用保密协议。",
+            "dek",
+        )
+
     def test_equivalent_bilingual_currency_is_preserved(self):
         validate_translation(
             "Robotics startup reaches $3B valuation, sources say",
@@ -113,6 +120,13 @@ class P2TranslationTests(unittest.TestCase):
         validate_translation(
             "Data centers could become one of the largest consumers.",
             "数据中心可能成为全球最大的消费者之一。",
+            "dek",
+        )
+
+    def test_anaphoric_one_is_not_treated_as_a_count(self):
+        validate_translation(
+            "This can serve as a shared training primitive, one that models can reuse.",
+            "这可以作为可被模型复用的共享训练基础。",
             "dek",
         )
 
