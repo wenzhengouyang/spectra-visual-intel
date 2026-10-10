@@ -94,7 +94,7 @@ def editorial_facet(kind: str) -> str:
 
 
 def build_fact_selection(verified: dict[str, Any], review: dict[str, Any],
-                         collection: dict[str, Any]) -> dict[str, Any]:
+                         collection: dict[str, Any], min_long_form_fact_units: int = 8) -> dict[str, Any]:
     claims = {item["claim_id"]: item for item in verified["evidence_claims"]}
     review_by_event = {
         item.get("event", {}).get("event_id"): item
@@ -196,10 +196,10 @@ def build_fact_selection(verified: dict[str, Any], review: dict[str, Any],
             },
             "allowed_judgment": reader_judgment,
         }
-        if len(selected_facts) >= 8:
+        if len(selected_facts) >= min_long_form_fact_units:
             reader_packet["writing_profile"] = {
                 "mode": "long_form",
-                "min_fact_units": 8,
+                "min_fact_units": min_long_form_fact_units,
                 "min_fact_characters": 300,
                 "min_characters": 0,
                 "preferred_characters": 600,
@@ -264,12 +264,14 @@ def main() -> int:
     parser.add_argument("--review", required=True)
     parser.add_argument("--collection", required=True)
     parser.add_argument("--output", required=True)
+    parser.add_argument("--min-long-form-fact-units", type=int, default=8)
     args = parser.parse_args()
     verified = json.loads(Path(args.verified).read_text(encoding="utf-8"))
     bundle = build_fact_selection(
         verified,
         json.loads(Path(args.review).read_text(encoding="utf-8")),
         json.loads(Path(args.collection).read_text(encoding="utf-8")),
+        args.min_long_form_fact_units,
     )
     validate_fact_selection(bundle, verified)
     output = Path(args.output)

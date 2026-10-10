@@ -123,6 +123,17 @@ class CoreEventPipelineTest(unittest.TestCase):
         self.assertEqual(bundle["demoted"][0]["target_article_type"], "quick_read")
         self.assertEqual(audit["records"], [])
 
+    def test_uses_configured_fact_threshold_for_core_eligibility(self):
+        client = FakeClient(valid_result())
+        configured = selection(3)
+        configured["selections"][0]["reader_packet"]["writing_profile"] = {
+            "mode": "long_form", "min_fact_units": 3,
+            "min_characters": 260, "max_characters": 1000,
+        }
+        bundle, _ = build_bundle(verified(), configured, client, min_fact_units=3)
+        self.assertGreater(client.calls, 0)
+        self.assertFalse(any(item["reason"].startswith("fewer_than_") for item in bundle["demoted"]))
+
     def test_serial_writer_emits_only_programmatically_audited_draft(self):
         client = FakeClient(valid_result())
         bundle, audit = build_bundle(verified(), selection(8), client)

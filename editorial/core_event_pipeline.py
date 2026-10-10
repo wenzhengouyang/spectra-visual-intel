@@ -60,7 +60,7 @@ def write_checkpoint(path: Path | None, payload: dict[str, Any]) -> None:
 
 def build_bundle(verified: dict[str, Any], selection: dict[str, Any], client,
                  checkpoint_path: Path | None = None, max_attempts: int = 3,
-                 event_ids: list[str] | None = None) -> tuple[dict, dict]:
+                 event_ids: list[str] | None = None, min_fact_units: int | None = None) -> tuple[dict, dict]:
     plans = {item["event_id"]: item for item in selection["selections"]}
     event_map = {item["event_id"]: item for item in verified["intelligence_events"]}
     requested_event_ids = set(event_ids) if event_ids is not None else None
@@ -123,11 +123,12 @@ def build_bundle(verified: dict[str, Any], selection: dict[str, Any], client,
         ).hexdigest()
         facts = reader.get("fact_units") or []
         profile = reader.get("writing_profile") or {}
-        if profile.get("mode") != "long_form" or len(facts) < int(profile.get("min_fact_units", 8)):
+        required_fact_units = int(min_fact_units if min_fact_units is not None else profile.get("min_fact_units", 8))
+        if profile.get("mode") != "long_form" or len(facts) < required_fact_units:
             demoted.append({
                 "event_id": event_id,
                 "target_article_type": "quick_read",
-                "reason": "fewer_than_8_human_verified_fact_units",
+                "reason": f"fewer_than_{required_fact_units}_human_verified_fact_units",
                 "fact_units": len(facts),
             })
             jobs[event_id] = {
@@ -347,6 +348,7 @@ def main() -> int:
     parser.add_argument("--num-predict", type=int, default=1200)
     parser.add_argument("--checkpoint", required=True)
     parser.add_argument("--max-attempts", type=int, default=3)
+    parser.add_argument("--min-fact-units", type=int)
     parser.add_argument("--event-id", action="append", dest="event_ids")
     args = parser.parse_args()
     os.environ["SPECTRA_MODEL"] = args.model
@@ -355,7 +357,7 @@ def main() -> int:
     bundle, audit = build_bundle(
         json.loads(Path(args.verified).read_text(encoding="utf-8")),
         json.loads(Path(args.fact_selection).read_text(encoding="utf-8")),
-        create_llm_client(), Path(args.checkpoint), args.max_attempts, args.event_ids,
+        create_llm_client(), Path(args.checkpoint), args.max_attempts, args.event_ids, args.min_fact_units,
     )
     Path(args.output).write_text(json.dumps(bundle, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     Path(args.audit_output).write_text(json.dumps(audit, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

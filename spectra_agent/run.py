@@ -1747,6 +1747,7 @@ def _resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
         if not attainable_minimum <= count <= config["maximum_formal_events"]:
             raise WorkflowError(f"formal event count outside configured boundary: {count}")
 
+        core_event_config = config_section(config, "core_event_writer")
         fact_selection_path = run_dir / "fact-selection.json"
         update_state(run_dir, current_stage="fact_selection")
         command(run_dir, "fact_selection", [
@@ -1755,9 +1756,9 @@ def _resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
             "--review", str(review_path),
             "--collection", str(run_dir / "collection.json"),
             "--output", str(fact_selection_path),
+            "--min-long-form-fact-units", str(core_event_config.get("min_verified_fact_units", 8)),
         ])
 
-        core_event_config = config_section(config, "core_event_writer")
         editorial_drafts_path = canonical_artifact(run_dir, "core-event-drafts.json")
         editorial_audit_path = canonical_artifact(run_dir, "core-event-audit.json")
         editorial_checkpoint_path = canonical_artifact(run_dir, "core-event-checkpoint.json")
@@ -1843,6 +1844,8 @@ def _resume_run(args: argparse.Namespace, config: dict[str, Any]) -> int:
                     core_event_command += ["--num-predict", str(core_event_config["num_predict"])]
                 if core_event_config.get("max_attempts"):
                     core_event_command += ["--max-attempts", str(core_event_config["max_attempts"])]
+                if core_event_config.get("min_verified_fact_units"):
+                    core_event_command += ["--min-fact-units", str(core_event_config["min_verified_fact_units"])]
                 command(run_dir, "p1_editorial_background", core_event_command)
             except WorkflowError:
                 if core_event_config.get("required", False):
