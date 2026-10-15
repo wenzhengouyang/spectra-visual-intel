@@ -2110,6 +2110,161 @@ body {
   }
 }
 
+/* Hallmark · component: core-event reading list · genre: editorial · theme: studied-DNA
+ * tone: serious newsroom · anchor hue: steel blue · structural fingerprint: lead + directory
+ * Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V5
+ */
+.core-event-group .story-card-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+  border-top: 1px solid var(--color-rule);
+}
+
+.core-event-group .story-browse-card {
+  min-height: 0;
+  overflow: visible;
+  border: 0;
+  border-bottom: 1px solid var(--color-rule);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.core-event-group .story-browse-card:hover,
+.core-event-group .story-browse-card.active {
+  transform: none;
+  border-color: var(--color-rule-strong);
+  background: color-mix(in oklch, var(--color-accent-soft) 42%, transparent);
+  box-shadow: none;
+}
+
+.core-event-lead {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(13rem, 0.65fr);
+  grid-template-areas: "copy visual";
+  gap: var(--space-xl);
+  padding-block: var(--space-xl);
+}
+
+.core-event-lead > .story-card-content {
+  grid-area: copy;
+  min-height: 0;
+  padding: 0;
+}
+
+.core-event-lead > .story-card-image,
+.core-event-lead > .story-card-editorial {
+  grid-area: visual;
+  align-self: stretch;
+  min-height: 14rem;
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-card);
+}
+
+.core-event-lead .story-card-copy strong {
+  display: block;
+  overflow: visible;
+  font-size: clamp(1.75rem, 3.1vw, 3rem);
+  line-height: 1.18;
+  letter-spacing: -0.03em;
+  -webkit-line-clamp: unset;
+  overflow-wrap: anywhere;
+}
+
+.core-event-lead .story-card-copy p {
+  display: block;
+  overflow: visible;
+  max-width: 48rem;
+  font-size: var(--text-md);
+  -webkit-line-clamp: unset;
+}
+
+.core-event-directory-row {
+  display: grid;
+  grid-template-columns: 3.5rem minmax(0, 1fr);
+  gap: var(--space-md);
+  padding-block: var(--space-lg);
+}
+
+.story-directory-index {
+  display: block;
+  padding-top: var(--space-2xs);
+  color: var(--color-accent);
+  font-family: var(--font-label);
+  font-size: var(--text-xs);
+  letter-spacing: 0.1em;
+}
+
+.core-event-directory-row > .story-card-content {
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+}
+
+.core-event-directory-row .story-card-meta {
+  margin-bottom: var(--space-2xs);
+}
+
+.core-event-directory-row .story-card-copy strong {
+  display: block;
+  overflow: visible;
+  font-size: clamp(1.25rem, 1.8vw, 1.625rem);
+  line-height: 1.35;
+  -webkit-line-clamp: unset;
+  overflow-wrap: anywhere;
+}
+
+.core-event-directory-row .story-card-copy p {
+  display: block;
+  overflow: visible;
+  max-width: 54rem;
+  margin-top: var(--space-2xs);
+  -webkit-line-clamp: unset;
+}
+
+.core-event-group .story-card-footer {
+  justify-content: flex-start;
+  gap: var(--space-sm);
+  margin-top: var(--space-sm);
+  padding-top: var(--space-sm);
+}
+
+.core-event-group .story-card-footer a {
+  margin-left: 0;
+}
+
+@media (max-width: 48rem) {
+  .core-event-lead {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "visual" "copy";
+    gap: var(--space-md);
+    padding-block: var(--space-lg);
+  }
+
+  .core-event-lead > .story-card-image,
+  .core-event-lead > .story-card-editorial {
+    min-height: 0;
+  }
+
+  .core-event-directory-row {
+    grid-template-columns: 2.5rem minmax(0, 1fr);
+    gap: var(--space-sm);
+    padding-block: var(--space-md);
+  }
+}
+
+@media (max-width: 25.875rem) {
+  .core-event-lead .story-card-copy strong {
+    font-size: var(--text-2xl);
+  }
+
+  .core-event-group .story-card-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
 /* Third-pass direction: dark desktop dashboard + image-led editorial catalogue. */
 body,
 .intel-app,
@@ -3209,5 +3364,114 @@ body.is-reading .editorial-feature > .editorial-judgment {
   .article-hero-image {
     aspect-ratio: 16 / 9;
     margin-bottom: var(--space-md);
+  }
+}
+
+/* Hallmark · component refresh: core-event visual fallback · genre: editorial
+ * Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V5
+ * Reviewed imagery remains primary; unreviewed imagery becomes an intentional
+ * editorial marker so card hierarchy never depends on generation success.
+ */
+.story-card-editorial {
+  position: relative;
+  display: grid;
+  aspect-ratio: 16 / 9;
+  min-width: 0;
+  padding: var(--space-md);
+  overflow: hidden;
+  align-content: end;
+  border-bottom: 1px solid var(--color-rule);
+  background: linear-gradient(145deg, var(--color-paper-3), var(--color-paper-2));
+}
+
+.story-card-editorial::before {
+  position: absolute;
+  top: var(--space-md);
+  right: var(--space-md);
+  width: clamp(3.5rem, 8vw, 5.5rem);
+  aspect-ratio: 1;
+  border: 1px solid var(--color-rule-strong);
+  border-radius: 50%;
+  content: "";
+  opacity: 0.7;
+}
+
+.story-card-editorial::after {
+  position: absolute;
+  top: calc(var(--space-md) + var(--space-xs));
+  right: calc(var(--space-md) + var(--space-xs));
+  width: clamp(2rem, 5vw, 3.5rem);
+  aspect-ratio: 1;
+  border: 1px solid var(--color-accent);
+  border-radius: 50%;
+  content: "";
+  opacity: 0.45;
+}
+
+.story-card-editorial > span,
+.story-card-editorial > strong,
+.story-card-editorial > small {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+}
+
+.story-card-editorial > span {
+  align-self: start;
+  position: absolute;
+  top: var(--space-md);
+  left: var(--space-md);
+  color: var(--color-accent);
+  font-family: var(--font-label);
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
+}
+
+.story-card-editorial > strong {
+  max-width: 75%;
+  color: var(--color-ink);
+  font-family: var(--font-display);
+  font-size: clamp(1.35rem, 2.4vw, 2rem);
+  font-weight: 700;
+  line-height: 1.08;
+  overflow-wrap: anywhere;
+}
+
+.story-card-editorial > small {
+  margin-top: var(--space-2xs);
+  color: var(--color-muted);
+  font-family: var(--font-label);
+  font-size: var(--text-xs);
+  line-height: 1.4;
+}
+
+.story-card-editorial > i {
+  position: absolute;
+  right: var(--space-md);
+  bottom: var(--space-md);
+  width: 2.5rem;
+  height: 1px;
+  background: var(--color-accent);
+  opacity: 0.55;
+}
+
+@media (max-width: 414px) {
+  .story-card-editorial {
+    padding: var(--space-sm);
+  }
+
+  .story-card-editorial > span {
+    top: var(--space-sm);
+    left: var(--space-sm);
+  }
+
+  .story-card-editorial::before {
+    top: var(--space-sm);
+    right: var(--space-sm);
+  }
+
+  .story-card-editorial::after {
+    top: calc(var(--space-sm) + var(--space-xs));
+    right: calc(var(--space-sm) + var(--space-xs));
   }
 }

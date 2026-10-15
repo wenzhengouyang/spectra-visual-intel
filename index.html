@@ -353,11 +353,19 @@
       if (story.editorial_tier === 'brief') return '';
       const configured = story.cover_image || {};
       // A missing final cover is a presentation concern, never an editorial downgrade.
-      if (story.article_type === 'core_event' && (configured.provisional || configured.review_status !== 'approved')) return '';
+      // Provisional artwork must not appear as if it were a reviewed illustration.
+      if (configured.provisional || configured.review_status !== 'approved') return '';
       const cover = storyCover(story);
       if (!cover) return '';
       const caption = [cover.label, cover.credit].filter(Boolean).join(' · ');
       return `<figure class="${className}"><img src="${escapeHtml(cover.url)}" alt="${escapeHtml(`${story.headline}${cover.label}`)}" loading="lazy" decoding="async" referrerpolicy="no-referrer"><figcaption>${escapeHtml(caption)}</figcaption></figure>`;
+    }
+    function storyCardVisual(story, index) {
+      const image = storyImageFigure(story, 'story-card-image');
+      if (image) return image;
+      const number = String(index + 1).padStart(2, '0');
+      const signals = (story.capability_dimensions || []).slice(0, 2).map(item => CAPABILITY_LABELS[item] || item);
+      return `<div class="story-card-editorial" aria-label="${escapeHtml(`${story.category}编辑标识`)}"><span>CORE / ${number}</span><strong>${escapeHtml(story.category)}</strong><small>${escapeHtml(signals.join(' · ') || '深度事件')}</small><i aria-hidden="true"></i></div>`;
     }
     function renderArticle(storyId, scroll = false) {
       const story = storyFor(storyId); if (!story) return;
@@ -382,13 +390,15 @@
 
     function storyCard(story, index) {
       const source = story.source_links[0];
-      const coverMarkup = storyImageFigure(story, 'story-card-image');
+      const isLead = index === 0;
+      const coverMarkup = isLead && story.editorial_tier !== 'brief' ? storyCardVisual(story, index) : '';
+      const directoryIndex = `<span class="story-directory-index" aria-hidden="true">${String(index + 1).padStart(2, '0')}</span>`;
       const dimensions = (story.capability_dimensions || []).map(item => `<span>${escapeHtml(CAPABILITY_LABELS[item] || item)}</span>`).join('');
       const copy = story.editorial_tier === 'brief'
         ? `<a class="story-card-copy" href="${safeUrl(source.url)}" target="_blank" rel="noopener noreferrer"><strong>${escapeHtml(story.headline)}</strong><p>${escapeHtml(story.dek)}</p></a>`
         : `<button class="story-card-copy" data-open-story="${escapeHtml(story.story_id)}"><strong>${escapeHtml(story.headline)}</strong><p>${escapeHtml(story.dek)}</p></button>`;
       const readLabel = story.editorial_tier === 'brief' ? '来源短读' : `${story.reading_time_minutes} 分钟阅读`;
-      return `<article class="story-browse-card tier-${escapeHtml(story.editorial_tier || 'brief')} ${selectedStoryId === story.story_id ? 'active' : ''}" data-intel="${escapeHtml(intelligenceGroup(story))}" data-story-card="${escapeHtml(story.story_id)}">${coverMarkup}<div class="story-card-content"><div class="story-card-meta"><span class="priority-badge">${displayPriority(story)}</span><b class="primary-type-badge">${escapeHtml(TIER_LABELS[story.editorial_tier] || intelligenceLabel(story))}</b><em>${escapeHtml(story.category)}</em></div>${copy}${dimensions ? `<div class="capability-chips">${dimensions}</div>` : ''}<div class="story-card-footer"><span>${formatPublished(story.published_at)} · ${readLabel}</span><a href="${safeUrl(source.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(source.label)} ↗</a></div></div></article>`;
+      return `<article class="story-browse-card core-event-entry ${isLead ? 'core-event-lead' : 'core-event-directory-row'} tier-${escapeHtml(story.editorial_tier || 'brief')} ${selectedStoryId === story.story_id ? 'active' : ''}" data-intel="${escapeHtml(intelligenceGroup(story))}" data-story-card="${escapeHtml(story.story_id)}">${isLead ? coverMarkup : directoryIndex}<div class="story-card-content"><div class="story-card-meta"><span class="priority-badge">${displayPriority(story)}</span><b class="primary-type-badge">${escapeHtml(TIER_LABELS[story.editorial_tier] || intelligenceLabel(story))}</b><em>${escapeHtml(story.category)}</em></div>${copy}${dimensions ? `<div class="capability-chips">${dimensions}</div>` : ''}<div class="story-card-footer"><span>${formatPublished(story.published_at)} · ${readLabel}</span><a href="${safeUrl(source.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(source.label)} ↗</a></div></div></article>`;
     }
 
     function briefCard(story, index) {
@@ -421,7 +431,7 @@
       document.querySelector('.brief-group').hidden = formalBriefs.length + briefs.length === 0;
       const interestEmpty = mineOnly && interests.length === 0;
       const emptyCopy = interestEmpty ? '尚未建立关注档案。请在上方选择关注领域，完成后这里才会出现个性化情报。' : '当前筛选下暂无内容';
-      document.getElementById('coreEventIndex').innerHTML = coreEvents.map(story => storyCard(story, bundle.editorial_stories.indexOf(story))).join('') || `<div class="empty-search interest-empty">${emptyCopy}</div>`;
+      document.getElementById('coreEventIndex').innerHTML = coreEvents.map((story, index) => storyCard(story, index)).join('') || `<div class="empty-search interest-empty">${emptyCopy}</div>`;
       document.getElementById('briefIndex').innerHTML = chronologicalBriefs
         .map(item => item.story_id ? briefCard(item) : newsBriefCard(item)).join('')
         || (interestEmpty ? '' : '<div class="empty-search">当前页签暂无短讯</div>');
