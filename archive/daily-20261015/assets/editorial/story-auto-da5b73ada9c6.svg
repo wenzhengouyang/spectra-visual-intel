@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+<title id="title">从一颗芯片到万卡集群，燧原的八年算力长跑</title><desc id="desc">SPECTRA根据文章主题生成的编辑示意图</desc>
+<style>.bg{fill:#0c1118}.grid{stroke:#26303c;stroke-width:1}.shape{fill:none;stroke:#e0a36f;stroke-width:5}.line{fill:none;stroke:#e0a36f;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}.strong{stroke-width:9}.node{fill:#0c1118;stroke:#e0a36f;stroke-width:7}.nodes{fill:#e0a36f}.kicker{fill:#e0a36f;font:700 25px system-ui,sans-serif;letter-spacing:4px}.title{fill:#eef2f7;font:700 57px system-ui,sans-serif}.credit{fill:#7f8b9a;font:500 22px system-ui,sans-serif}</style>
+<rect width="1600" height="900" class="bg"/><path d="M0 150h1600M0 300h1600M0 450h1600M0 600h1600M0 750h1600M200 0v900M400 0v900M600 0v900M800 0v900M1000 0v900M1200 0v900M1400 0v900" class="grid"/>
+<text x="112" y="118" class="kicker">算力与数据 / VERIFIED INTELLIGENCE</text><text x="112" y="430" class="title">从一颗芯片到万卡集群，燧原的八年算力长跑</text>
+<text x="112" y="790" class="credit">来源：公众号原文 · SPECTRA 编辑示意</text><rect x="990" y="220" width="210" height="210" rx="18" class="shape"/><path d="M1040 270h110v110h-110zM1200 325h120M1200 365h120M1200 405h120M1095 430v105M1055 430v105M1135 430v105" class="line"/><g class="nodes"><circle cx="1260" cy="325" r="12"/><circle cx="1320" cy="325" r="12"/><circle cx="1260" cy="365" r="12"/><circle cx="1320" cy="365" r="12"/><circle cx="1260" cy="405" r="12"/><circle cx="1320" cy="405" r="12"/></g>
+</svg>

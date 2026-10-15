@@ -529,9 +529,7 @@
       "currentVersionStatus": "已确认版本摘录",
       "releaseDate": null,
       "releaseDateStatus": "官方发布日期待核实",
-      "newsIds": [
-        "brief_4ec39669e31f"
-      ]
+      "newsIds": []
     },
     {
       "id": "step-assistant",
@@ -2719,17 +2717,5 @@
       "newsIds": []
     }
   ],
-  "news": [
-    {
-      "id": "brief_4ec39669e31f",
-      "date": "2026-10-08",
-      "title": "AtomWorld-Mirror：用于材料动力学的宏观步长世界建模与关键演化主干",
-      "summary": "原子模拟是研究材料长期演化的基本工具，从扩散和缺陷动力学到界面反应和断裂。然而，传统模拟器通常以微观分辨率推进，花费大量计算资源在低影响的局部更新上，才能达到结构上有意义的状态，这种演化过程……",
-      "source": "https://arxiv.org/abs/2610.11527",
-      "label": "日报相关资讯",
-      "provenance": "根据来源标题与摘要整理，尚未完成P1级原文核验。",
-      "candidate_id": "cand_3beaaa6b5408df68",
-      "run_id": "daily-20261010"
-    }
-  ]
+  "news": []
 }
